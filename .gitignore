@@ -1,1 +1,6 @@
 nbproject
+ec
+*.o
+.dep.inc
+Makefile-cppec.mk
+
