@@ -9,9 +9,11 @@
 #include <iomanip>
 
 #include <boost/program_options.hpp>
+#include <omp.h>
+#include <gsl/gsl_rng.h>
+
 #include "EvaporativeCooling.h"
 #include "../cpprelieff/Dataset.h"
-#include <omp.h>
 
 #include "librjungle.h"
 #include "RJunglePar.h"
