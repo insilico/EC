@@ -21,7 +21,10 @@ C++C = g++
 
 # Debug parallel OpenMP
 C++C_COMPILE_FLAGS =-Wall -Wno-deprecated -g -fopenmp -I../afni_src \
-	-Wno-long-long -I../cpprelieff
+	-Wno-long-long -I../cpprelieff -I. \
+	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
+	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
+	-D__NOPLUGIN__
 #C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -L./libmdr-0.2.3 -lmdr \
 #	-lboost_program_options -lgomp \
 #	-lgomp -lmri -L$(HOME)/abin -lf2c
@@ -30,7 +33,8 @@ C++C_COMPILE_FLAGS =-Wall -Wno-deprecated -g -fopenmp -I../afni_src \
 #C++C_COMPILE_FLAGS =-Wall -ansi -pedantic -O3 -DNDEBUG -fopenmp \
 #	-I../afni_src -Wno-long-long
 C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -lboost_program_options \
-	-lgomp -lmri -L$(HOME)/abin -lf2c -lmdr
+	-lgomp -lmri -L$(HOME)/abin -lf2c -lmdr -lxml2 \
+	-L/usr/local/lib -lrjungle -lz -llr -L/usr/local/Cellar/libxml2/2.7.8/lib
 
 # -------------------------------------------------------------------------- EC
 EC_PROG_NAME = ec

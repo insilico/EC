@@ -35,6 +35,7 @@ namespace po = boost::program_options;
 typedef enum
 {
   SNP_ONLY_ANALYSIS,
+  NUMERIC_ONLY_ANALYSIS,
   DIAGNOSTIC_ANALYSIS,
   NO_ANALYSIS
 } AnalysisType;
@@ -52,11 +53,13 @@ int main(int argc, char** argv) {
 
   // command line processing variables: defaults and storage for boost
   string snpsFilename = "";
+  string numericsFilename = "";
   unsigned int k = 10;
   unsigned int m = 0;
   bool wbd = false;
   double sigma = 0.0;
   string snpMetric = "gm";
+  string numMetric = "manhattan";
   string diagnosticLogFilename = "";
   string diagnosticLevelsCountsFilename = "";
   unsigned int iterNumToRemove = 0;
@@ -64,7 +67,7 @@ int main(int argc, char** argv) {
   string snpExclusionFile = "";
   bool doRecodeA = false;
   string altPhenotypeFilename = "";
-  
+
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
@@ -75,14 +78,24 @@ int main(int argc, char** argv) {
            "specifies an alternative phenotype/class label file; one value per line"
            )
           (
+           "snp-data,d",
+           po::value<string > (&snpsFilename),
+           "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+           )
+          (
            "snp-metric",
            po::value<string > (&snpMetric)->default_value(snpMetric),
            "metric for determining the difference between SNPs (gm=default|am)"
            )
           (
-           "snp-data,d",
+           "numeric-data,n",
            po::value<string > (&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+           )
+            (
+           "numeric-metric",
+           po::value<string > (&numMetric)->default_value(numMetric),
+           "metric for determining the difference between numeric attributes (manhattan=default|euclidean)"
            )
           (
            "diagnostic-tests,g",
@@ -144,7 +157,7 @@ int main(int argc, char** argv) {
 
   if(vm.count("help")) {
     cerr << desc << "\n";
-    return 1;
+    exit(1);
   }
 
   // -------------------------------------------------------------------------
@@ -155,13 +168,29 @@ int main(int argc, char** argv) {
     cout << "\t\tDiagnostic test requested." << endl;
     analysisType = DIAGNOSTIC_ANALYSIS;
   } else {
-    if(vm.count("snp-data")) {
+    if(vm.count("snp-data") && vm.count("numeric-data")) {
+      cerr << "Integrated data not supported in this version of EC." << endl;
+      exit(1);
+    }
+    if(vm.count("snp-data") && !vm.count("numeric-data")) {
       cout << "\t\tSNP-only analysis requested." << endl;
       analysisType = SNP_ONLY_ANALYSIS;
     } else {
-      cerr << "Could not determine the analysis to do based on "
-              << "command line options: " << endl << desc << endl;
-      exit(1);
+      if(!vm.count("snp-data") && vm.count("numeric-data")) {
+        cout << "\t\tNumeric-only analysis requested." << endl;
+        analysisType = NUMERIC_ONLY_ANALYSIS;
+        // must have an alternate phenotype file for numeric only
+        if(!vm.count("alternate-pheno-file")) {
+          cerr << "An alternate phenotype file must be specified with the "
+                  << "--alternate-pheno-file option for numeric only data."
+                  << endl;
+          exit(1);
+        }
+      } else {
+        cerr << "Could not determine the analysis to do based on "
+                << "command line options: " << endl << desc << endl;
+        exit(1);
+      }
     }
   }
 
@@ -173,7 +202,16 @@ int main(int argc, char** argv) {
   cout << "\tChecking for covariates and/or alternate phenotype files." << endl;
   vector<string> numericsIds;
   vector<string> phenoIds;
-  if(analysisType == SNP_ONLY_ANALYSIS) {
+  if(analysisType == SNP_ONLY_ANALYSIS ||
+     analysisType == NUMERIC_ONLY_ANALYSIS) {
+    if(numericsFilename != "") {
+      cout << "\t\tLoading individual IDs from covar file: "
+              << numericsFilename << endl;
+      if(!LoadIndividualIds(numericsFilename, numericsIds, true)) {
+        exit(1);
+      }
+      // copy (numericsIds.begin(), numericsIds.end(), ostream_iterator<string> (cout, "\n"));
+    }
     if(altPhenotypeFilename != "") {
       cout << "\t\tLoading individual IDs from alternate phenotype file: "
               << altPhenotypeFilename << endl;
@@ -182,20 +220,60 @@ int main(int argc, char** argv) {
       }
       // copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
     }
-
   }
 
   // -------------------------------------------------------------------------
   // find IDs for loading from the dataset
   cout << "\tDetermining the IDs to be read from the dataset." << endl;
   vector<string> indIds;
-  if(altPhenotypeFilename != "") {
-    cout << "\t\tIDs come from the alternate phenotype file." << endl;
-    // PrintVector(phenoIds, "phenoIds");
-    indIds.resize(phenoIds.size());
-    copy(phenoIds.begin(), phenoIds.end(), indIds.begin());
+  if(numericsFilename != "" && altPhenotypeFilename != "") {
+    cout << "\t\tIDs come from the numeric and the alternate "
+            << "phenotype files. Checking for intersection/matches." << endl;
+
+    // find intersection of numeric and phenotype IDs
+    unsigned int maxMatches = max(numericsIds.size(), phenoIds.size());
+    unsigned int maxMismatches = numericsIds.size() + phenoIds.size();
+    indIds.resize(maxMatches);
+    vector<string>::iterator goodIdsIt;
+    vector<string> skippedIds(maxMismatches);
+    vector<string>::iterator badIdsIt;
+
+    sort(numericsIds.begin(), numericsIds.end());
+    sort(phenoIds.begin(), phenoIds.end());
+    goodIdsIt = set_intersection(numericsIds.begin(), numericsIds.end(),
+                                 phenoIds.begin(), phenoIds.end(),
+                                 indIds.begin());
+    badIdsIt = set_difference(numericsIds.begin(), numericsIds.end(),
+                              phenoIds.begin(), phenoIds.end(),
+                              skippedIds.begin());
+    if(skippedIds.begin() != badIdsIt) {
+      cerr << "\t\t\tWARNING: Covariates and phenotypes files do not contain "
+              << "the same IDs. These IDs differ: ";
+      vector<string>::const_iterator skippedIt = skippedIds.begin();
+      for(; skippedIt != badIdsIt; ++skippedIt) {
+        cerr << *skippedIt << " ";
+      }
+      cerr << endl;
+      // chaged to warning - 8/15/11
+      // exit(1);
+    }
+    indIds.resize(int(goodIdsIt - indIds.begin()));
   } else {
-    cout << "\t\tIDs are not needed for this analysis." << endl;
+    if(numericsFilename != "") {
+      cout << "\t\tIDs come from the numerics file." << endl;
+      indIds.resize(numericsIds.size());
+      copy(numericsIds.begin(), numericsIds.end(), indIds.begin());
+      // copy(numericsIds.begin(), numericsIds.end(), ostream_iterator<string > (cout, "\n"));
+    } else {
+      if(altPhenotypeFilename != "") {
+        cout << "\t\tIDs come from the alternate phenotype file." << endl;
+        // PrintVector(phenoIds, "phenoIds");
+        indIds.resize(phenoIds.size());
+        copy(phenoIds.begin(), phenoIds.end(), indIds.begin());
+      } else {
+        cout << "\t\tIDs are not needed for this analysis." << endl;
+      }
+    }
   }
   cout << "\t\t" << indIds.size()
           << " individual IDs read from numeric and/or phenotype file(s)."
@@ -210,7 +288,13 @@ int main(int argc, char** argv) {
     case SNP_ONLY_ANALYSIS:
       cout << "\tReading SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, "",
+      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
+                                      altPhenotypeFilename, indIds);
+      break;
+    case NUMERIC_ONLY_ANALYSIS:
+      cout << "\tReading numerics only data set" << endl;
+      ds = new Dataset();
+      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
                                       altPhenotypeFilename, indIds);
       break;
     case DIAGNOSTIC_ANALYSIS:
@@ -221,7 +305,7 @@ int main(int argc, char** argv) {
         exit(1);
       }
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      ds->LoadDataset(snpsFilename, doRecodeA, "",
+      ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
                       altPhenotypeFilename, indIds);
       ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
       if(diagnosticLevelsCountsFilename != "") {
@@ -243,15 +327,34 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  // ds->Print();
-  ds->PrintStats();
-  
+  // happy lights
+  if(analysisType == SNP_ONLY_ANALYSIS) {
+    ds->PrintStats();  
+  }
+  else {
+    if(analysisType == NUMERIC_ONLY_ANALYSIS) {
+      ds->PrintNumericsStats();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // FINALLY! run EC algorithm
   cout << "\tRunning EC..." << endl;
   EvaporativeCooling ec(ds, vm);
   map<string, double> ecScores;
-  ec.GetECScores(ecScores);
+  ec.ComputeECScores();
+
+  // ---------------------------------------------------------------------------
+  // write the scores to the same name as the dataset with
+  // <metric>.relieff suffix
+  string fileToWriteOutput;
+  if(snpsFilename != "") {
+    fileToWriteOutput = snpsFilename + "." + snpMetric + "." + numMetric;
+  } else {
+    fileToWriteOutput = numericsFilename + "." + snpMetric + "." + numMetric;
+  }
+  cout << "\tWriting ReliefF scores to [" + fileToWriteOutput << ".relieff]" << endl;
+  ec.WriteAttributeScores(fileToWriteOutput);
 
   // ---------------------------------------------------------------------------
   cout << "\tClean up and shutdown." << endl;
@@ -365,8 +468,7 @@ bool LoadIndividualIds(string filename, vector<string>& retIds,
     if(idsSeen.find(ID) == idsSeen.end()) {
       idsSeen[ID] = true;
       retIds.push_back(ID);
-    }
-    else {
+    } else {
       cerr << "\t\t\tWARNING: Duplicate ID [" << ID << "] detected and "
               << "skipped on line [" << lineNumber << "]." << endl;
     }
