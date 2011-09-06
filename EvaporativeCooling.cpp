@@ -5,15 +5,13 @@
  * Created on July 14, 2011, 9:25 PM
  */
 
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 
 #include <boost/program_options.hpp>
 #include <omp.h>
 #include <gsl/gsl_rng.h>
-
-#include "EvaporativeCooling.h"
-#include "../cpprelieff/Dataset.h"
 
 #include "librjungle.h"
 #include "RJunglePar.h"
@@ -22,13 +20,16 @@
 #include "FittingFct.h"
 #include "RJungleHelper.h"
 
-#undef bool
+#include "EvaporativeCooling.h"
+#include "../cpprelieff/Dataset.h"
+#include "../cpprelieff/StringUtils.h"
 
 using namespace std;
 namespace po = boost::program_options;
+using namespace insilico;
 
 EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
-  cout << "\tEvaporative Cooling initialization:" << endl;
+  cout << "\t\tEvaporative Cooling initialization:" << endl;
   if(ds) {
     dataset = ds;
   } else {
@@ -46,9 +47,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
   if((rjParams.nthreads < omp_get_max_threads()) && (rjParams.nthreads != 0)) {
     omp_set_num_threads(rjParams.nthreads);
   }
+  cout << "\t\t\t" << omp_get_num_procs() << " OpenMP processors available" << endl;
 
-  // ------------------------------------------------------------------ Relief-F
-
+  // Relief-F parameters
   if(vm.count("iter-remove-n")) {
     removePerIteration = vm["iter-remove-n"].as<unsigned int>();
     if((removePerIteration < 1) ||
@@ -72,7 +73,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
     cout << "\t\tIteratively removing " << (percentage * 100)
             << "% = " << removePerIteration << endl;
   }
-  cout << "\t\t" << omp_get_num_procs() << " OpenMP processors available" << endl;
+
 }
 
 EvaporativeCooling::~EvaporativeCooling() {
@@ -82,7 +83,137 @@ bool EvaporativeCooling::ComputeECScores() {
   // run random jungle (76)
   // get attribute importance scores to map (257)
   // store normalize scores to map igMap (282)
+  // set return values in the passed map reference
 
+  cout << "\t\tRunning EC algorithm..." << endl;
+
+  cout << "\t\t\tRunning Random Jungle..." << endl;
+  std::vector<uli_t> *colMaskVec = NULL;
+  time_t start, end;
+  clock_t startgrow, endgrow;
+  uli_t ntree = 1000;
+
+  // fill in the parameters object for the RJ run
+  rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);
+  gsl_rng_set(rjParams.rng, rjParams.seed);
+  rjParams.ntree = ntree;
+  rjParams.nrow = dataset->NumInstances();
+  rjParams.ncol = dataset->NumNumerics() + 1;
+  rjParams.depVar = rjParams.ncol - 1;
+  rjParams.depVarCol = rjParams.ncol - 1;
+  rjParams.depVarName = (char *) "Class";
+  rjParams.verbose_flag = true;
+  rjParams.filename = (char*) "";
+
+// prepare input/output
+  if(dataset->HasNumerics()) {
+    rjParams.outprefix = (char *) dataset->GetNumericsFilename().c_str();
+  }
+  else {
+    rjParams.outprefix = (char *) dataset->GetSnpsFilename().c_str();
+  }
+  string outPrefix(rjParams.outprefix);
+  string importanceFilename = outPrefix + ".importance";
+  RJungleIO io;
+  io.open(rjParams);
+
+  if(dataset->HasNumerics()) {
+    // numeric data
+    cout << "\t\t\t\tPreparing numeric version of Random Jungle" << endl;
+    time(&start);
+
+    // load data frame
+    cout << "\t\t\t\tLoading RJ DataFrame" << endl;
+    DataFrame<double>* data = new DataFrame<double>(rjParams);
+    data->setDim(rjParams.nrow, rjParams.ncol);
+    vector<string> numericNames = dataset->GetNumericsNames();
+    numericNames.push_back(rjParams.depVarName);
+    data->setVarNames(numericNames);
+    data->setDepVarName(rjParams.depVarName);
+    data->setDepVar(rjParams.depVarCol);
+    data->initMatrix();
+    for(unsigned int i=0; i < dataset->NumInstances(); ++i) {
+      for(unsigned int j=0; j < dataset->NumNumerics(); ++j) {
+        data->set(i, j, dataset->GetInstance(i)->GetNumeric(j));
+      }
+      data->set(i, rjParams.depVarCol, dataset->GetInstance(i)->GetClass());
+    }
+    data->storeCategories();
+    data->makeDepVecs();
+    data->getMissings();
+
+//    *io.outVerbose << "DATA" << endl;
+//    *io.outVerbose << *data << std::endl;
+
+    RJungleGen<double> rjGen;
+    rjGen.init(rjParams, *data);
+
+    startgrow = clock();
+    TIMEPROF_START("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
+    // create controller
+    RJungleCtrl<double> rjCtrl;
+    cout << "\t\t\t\tRunning Random Jungle" << endl;
+    rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
+    TIMEPROF_STOP("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
+    endgrow = clock();
+
+    // print info stuff
+    RJungleHelper<double>::printRJunglePar(rjParams, *io.outLog);
+
+    // clean up
+    if (data != NULL)
+      delete data;
+    if (colMaskVec != NULL)
+      delete colMaskVec;
+
+    time(&end);
+
+    RJungleHelper<double>::printFooter(rjParams, io, start, end,
+                                       startgrow, endgrow);
+
+#ifdef HAVE_TIMEPROF
+		timeProf.writeToFile(*io.outTimeProf);
+#endif
+
+  }
+  else {
+    // SNP data
+    if(dataset->HasGenotypes()) {
+      cout << "\t\t\tPreparing discrete version of Random Jungle" << endl;
+    }
+    else {
+      cerr << "ERROR: Dataset is no loaded or of unknown data type." << endl;
+      return false;
+    }
+  }
+
+  // clean up Random Jungle run
+  io.close();
+  gsl_rng_free(rjParams.rng);
+
+  // set RJ scores for use in EC
+  cout << "\t\t\t\tLoading RJ variable importance (VI) scores" << endl;
+  ifstream importanceStream(importanceFilename.c_str());
+    if(!importanceStream.is_open()) {
+    cerr << "ERROR: Could not open Random Jungle importnace file: "
+            << importanceFilename << endl;
+    return false;
+  }
+  string line;
+  // strip the header line
+  getline(importanceStream, line);
+  // read and store variable name and gini index
+  unsigned int lineNumber = 0;
+  while(getline(importanceStream, line)) {
+    ++lineNumber;
+    vector<string> tokens;
+    split(tokens, line);
+    rjScores[tokens[2]] = strtod(tokens[3].c_str(), NULL);
+  }
+  importanceStream.close();
+  
+  cout << "\t\t\tRandom Jungle finished." << endl;
+  
   // declare and initialize iterative relieff runtime variables (150)
   // while number of attributes grater than the target number (214)
   // run relieff on current set of attributes (220)
@@ -99,70 +230,6 @@ bool EvaporativeCooling::ComputeECScores() {
   // 4. pick trial temperature (and attribute to remove) that
   // gives best accuracy
 
-  // set return values in the passed map reference
-  std::vector<uli_t> *colMaskVec = NULL;
-  time_t start, end;
-  clock_t startgrow, endgrow;
-  gsl_rng *rng = gsl_rng_alloc(gsl_rng_taus);
-  uli_t ntree = 1000;
-  rjParams.rng = rng;
-  rjParams.ntree = ntree;
-  
-  // prepare input/output
-  if(strcmp(rjParams.outprefix, "") == 0) {
-    rjParams.outprefix = (char *) "rjungle";
-  }
-  RJungleIO io;
-  io.open(rjParams);
-
-  if(dataset->HasNumerics()) {
-    // numeric data
-    // create controller
-    RJungleCtrl<double> rjCtrl;
-
-    time(&start);
-
-    // load data frame
-    DataFrame<double>* data = new DataFrame<double>(rjParams);
-    data->setDim(dataset->NumInstances(), dataset->NumAttributes() + 1);
-    data->setVarNames(dataset->GetAttributeNames());
-    data->setDepVar(dataset->GetClassColumn());
-    data->initMatrix();
-    for(unsigned int i=0; i < dataset->NumInstances(); ++i) {
-      for(unsigned int j=0; j < dataset->NumNumerics(); ++j) {
-        data->set(i, j, dataset->GetInstance(i)->GetNumeric(j));
-      }
-      data->set(i, dataset->NumNumerics(), dataset->GetInstance(i)->GetClass());
-    }
-
-    RJungleGen<double> rjGen;
-    rjGen.init(rjParams, *data);
-
-    startgrow = clock();
-    TIMEPROF_START("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
-    rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
-    TIMEPROF_STOP("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
-    endgrow = clock();
-
-    time(&end);
-
-    RJungleHelper<double>::printFooter(rjParams, io, start, end, startgrow, endgrow);
-
-  }
-  else {
-    // SNP data
-    if(dataset->HasGenotypes()) {
-      
-    }
-    else {
-      cerr << "ERROR: Dataset is no loaded or of unknown data type." << endl;
-      return false;
-    }
-  }
-
-  io.close();
-
-  gsl_rng_free(rjParams.rng);
 
   return true;
 }

@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
            )
           (
            "numeric-data,n",
-           po::value<string > (&snpsFilename),
+           po::value<string > (&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
             (
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
           (
            "number-random-samples,m",
            po::value<unsigned int>(&m)->default_value(m),
-           "number of random samples (default=0=all|1 <= n < number of samples)"
+           "number of random samples (default=0=all|1 <= n <= number of samples)"
            )
           (
            "iter-remove-percent,p",
@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
   // po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
   po::notify(vm);
 
-  if(vm.count("help")) {
+  if((argc < 2) || vm.count("help")) {
     cerr << desc << "\n";
     exit(1);
   }
@@ -288,13 +288,13 @@ int main(int argc, char** argv) {
     case SNP_ONLY_ANALYSIS:
       cout << "\tReading SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
+      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, "",
                                       altPhenotypeFilename, indIds);
       break;
     case NUMERIC_ONLY_ANALYSIS:
       cout << "\tReading numerics only data set" << endl;
       ds = new Dataset();
-      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
+      datasetLoaded = ds->LoadDataset("", doRecodeA, numericsFilename,
                                       altPhenotypeFilename, indIds);
       break;
     case DIAGNOSTIC_ANALYSIS:
@@ -342,7 +342,10 @@ int main(int argc, char** argv) {
   cout << "\tRunning EC..." << endl;
   EvaporativeCooling ec(ds, vm);
   map<string, double> ecScores;
-  ec.ComputeECScores();
+  if(!ec.ComputeECScores()) {
+    cerr << "ERROR: Failed to calculate EC scores." << endl;
+    exit(1);
+  }
 
   // ---------------------------------------------------------------------------
   // write the scores to the same name as the dataset with
@@ -353,7 +356,7 @@ int main(int argc, char** argv) {
   } else {
     fileToWriteOutput = numericsFilename + "." + snpMetric + "." + numMetric;
   }
-  cout << "\tWriting ReliefF scores to [" + fileToWriteOutput << ".relieff]" << endl;
+  cout << "\tWriting EC scores to [" + fileToWriteOutput << ".ec]" << endl;
   ec.WriteAttributeScores(fileToWriteOutput);
 
   // ---------------------------------------------------------------------------
