@@ -99,7 +99,7 @@ bool EvaporativeCooling::ComputeECScores() {
   rjParams.ntree = ntree;
   rjParams.nrow = dataset->NumInstances();
   rjParams.depVarName = (char *) "Class";
-  rjParams.verbose_flag = true;
+//  rjParams.verbose_flag = true;
   rjParams.filename = (char*) "";
   if(dataset->HasNumerics()) {
     rjParams.outprefix = (char *) dataset->GetNumericsFilename().c_str();

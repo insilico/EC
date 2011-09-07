@@ -24,7 +24,7 @@ C++C_COMPILE_FLAGS =-Wall -Wno-deprecated -g -fopenmp -I../afni_src \
 	-Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
-	-D__NOPLUGIN__ -D__DEBUG__
+	-D__NOPLUGIN__
 #C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -L./libmdr-0.2.3 -lmdr \
 #	-lboost_program_options -lgomp \
 #	-lgomp -lmri -L$(HOME)/abin -lf2c
