@@ -19,6 +19,15 @@ class EvaporativeCooling
 public:
   EvaporativeCooling(Dataset* ds, po::variables_map& vm);
   bool ComputeECScores();
+  const std::map<std::string, double>& GetRandomJungleScores() {
+    return rjScores;
+  }
+  const std::map<std::string, double>& GetReliefFScores() {
+    return rfScores;
+  }
+  const std::map<std::string, double>& GetECScores() {
+    return ecScores;
+  }
   void WriteAttributeScores(std::string baseFilename);
   void PrintAttributeScores(std::ofstream& outFile);
   virtual ~EvaporativeCooling();

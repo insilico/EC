@@ -98,20 +98,19 @@ bool EvaporativeCooling::ComputeECScores() {
   gsl_rng_set(rjParams.rng, rjParams.seed);
   rjParams.ntree = ntree;
   rjParams.nrow = dataset->NumInstances();
-  rjParams.ncol = dataset->NumNumerics() + 1;
-  rjParams.depVar = rjParams.ncol - 1;
-  rjParams.depVarCol = rjParams.ncol - 1;
   rjParams.depVarName = (char *) "Class";
   rjParams.verbose_flag = true;
   rjParams.filename = (char*) "";
-
-// prepare input/output
   if(dataset->HasNumerics()) {
     rjParams.outprefix = (char *) dataset->GetNumericsFilename().c_str();
+    rjParams.ncol = dataset->NumNumerics() + 1;
   }
   else {
     rjParams.outprefix = (char *) dataset->GetSnpsFilename().c_str();
+    rjParams.ncol = dataset->NumAttributes() + 1;
   }
+  rjParams.depVar = rjParams.ncol - 1;
+  rjParams.depVarCol = rjParams.ncol - 1;
   string outPrefix(rjParams.outprefix);
   string importanceFilename = outPrefix + ".importance";
   RJungleIO io;
@@ -119,11 +118,11 @@ bool EvaporativeCooling::ComputeECScores() {
 
   if(dataset->HasNumerics()) {
     // numeric data
-    cout << "\t\t\t\tPreparing numeric version of Random Jungle" << endl;
+    cout << "\t\t\t\tPreparing numeric version of Random Jungle." << endl;
     time(&start);
 
     // load data frame
-    cout << "\t\t\t\tLoading RJ DataFrame" << endl;
+    cout << "\t\t\t\tLoading RJ DataFrame with double values." << endl;
     DataFrame<double>* data = new DataFrame<double>(rjParams);
     data->setDim(rjParams.nrow, rjParams.ncol);
     vector<string> numericNames = dataset->GetNumericsNames();
@@ -136,14 +135,11 @@ bool EvaporativeCooling::ComputeECScores() {
       for(unsigned int j=0; j < dataset->NumNumerics(); ++j) {
         data->set(i, j, dataset->GetInstance(i)->GetNumeric(j));
       }
-      data->set(i, rjParams.depVarCol, dataset->GetInstance(i)->GetClass());
+      data->set(i, rjParams.depVarCol, (double) dataset->GetInstance(i)->GetClass());
     }
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
-
-//    *io.outVerbose << "DATA" << endl;
-//    *io.outVerbose << *data << std::endl;
 
     RJungleGen<double> rjGen;
     rjGen.init(rjParams, *data);
@@ -161,31 +157,79 @@ bool EvaporativeCooling::ComputeECScores() {
     RJungleHelper<double>::printRJunglePar(rjParams, *io.outLog);
 
     // clean up
-    if (data != NULL)
+    if(data != NULL) {
       delete data;
-    if (colMaskVec != NULL)
+    }
+    if (colMaskVec != NULL) {
       delete colMaskVec;
+    }
 
     time(&end);
-
-    RJungleHelper<double>::printFooter(rjParams, io, start, end,
-                                       startgrow, endgrow);
-
-#ifdef HAVE_TIMEPROF
-		timeProf.writeToFile(*io.outTimeProf);
-#endif
-
   }
   else {
     // SNP data
     if(dataset->HasGenotypes()) {
       cout << "\t\t\tPreparing discrete version of Random Jungle" << endl;
+      time(&start);
+
+      // load data frame
+      cout << "\t\t\t\tLoading RJ DataFrame with SNP (character) values." << endl;
+      DataFrame<int>* data = new DataFrame<int>(rjParams);
+      data->setDim(rjParams.nrow, rjParams.ncol);
+      vector<string> attributeNames = dataset->GetAttributeNames();
+      attributeNames.push_back(rjParams.depVarName);
+      data->setVarNames(attributeNames);
+      data->setDepVarName(rjParams.depVarName);
+      data->setDepVar(rjParams.depVarCol);
+      data->initMatrix();
+      for(unsigned int i=0; i < dataset->NumInstances(); ++i) {
+        for(unsigned int j=0; j < dataset->NumAttributes(); ++j) {
+          data->set(i, j, (int) dataset->GetInstance(i)->GetAttribute(j));
+        }
+        data->set(i, rjParams.depVarCol, (int) dataset->GetInstance(i)->GetClass());
+      }
+      data->storeCategories();
+      data->makeDepVecs();
+      data->getMissings();
+
+      RJungleGen<int> rjGen;
+      rjGen.init(rjParams, *data);
+
+      startgrow = clock();
+      TIMEPROF_START("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
+      // create controller
+      RJungleCtrl<int> rjCtrl;
+      cout << "\t\t\t\tRunning Random Jungle" << endl;
+      rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
+      TIMEPROF_STOP("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
+      endgrow = clock();
+
+      // clean up
+      if(data != NULL) {
+        delete data;
+      }
+      if(colMaskVec != NULL) {
+        delete colMaskVec;
+      }
+
+      time(&end);
     }
     else {
       cerr << "ERROR: Dataset is no loaded or of unknown data type." << endl;
       return false;
     }
   }
+
+  // print info stuff
+  RJungleHelper<double>::printRJunglePar(rjParams, *io.outLog);
+
+  
+  RJungleHelper<double>::printFooter(rjParams, io, start, end,
+                                     startgrow, endgrow);
+
+#ifdef HAVE_TIMEPROF
+  timeProf.writeToFile(*io.outTimeProf);
+#endif
 
   // clean up Random Jungle run
   io.close();
