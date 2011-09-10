@@ -18,6 +18,7 @@
             </sourceRootList>
             <confList>
                 <confElem>Default</confElem>
+                <confElem>Simple_test.txt</confElem>
             </confList>
         </data>
     </configuration>

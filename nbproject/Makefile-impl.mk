@@ -31,7 +31,7 @@ DEFAULTCONF=Default
 CONF=${DEFAULTCONF}
 
 # All Configurations
-ALLCONFS=Default 
+ALLCONFS=Default Simple_test.txt 
 
 
 # build

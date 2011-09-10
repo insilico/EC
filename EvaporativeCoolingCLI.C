@@ -1,8 +1,13 @@
 /*
- * ECCLI.C - Bill White - 8/29/11
+ * EvaporativeCoolingCLI.C - Bill White - 8/29/11
  *
- * Evaporative Cooling Optimization of Information Free Energy -
- * Command Line Interface
+ * Evaporative Cooling (EC) Optimization of Information Free Energy -
+ * Command Line Interface (CLI)
+ *
+ * Implements the Evaporative Cooling algorithm as described in:
+ * McKinney, et. al. "Capturing the Spectrum of Interaction Effects in Genetic
+ * Association Studies by Simulated Evaporative Cooling Network Analysis."
+ * PLoS Genetics, Vol 5, Issue 3, 2009.
  */
 
 #include <cstdlib>
@@ -32,14 +37,7 @@ using namespace std;
 using namespace insilico;
 namespace po = boost::program_options;
 
-typedef enum
-{
-  SNP_ONLY_ANALYSIS,
-  NUMERIC_ONLY_ANALYSIS,
-  DIAGNOSTIC_ANALYSIS,
-  NO_ANALYSIS
-} AnalysisType;
-
+// forward declarations of main program helper functions
 Dataset* ChooseSnpsDatasetByExtension(string snpsFilename);
 bool LoadIndividualIds(string filename, vector<string>& retIds, bool hasHeader);
 
@@ -64,53 +62,73 @@ int main(int argc, char** argv) {
   string diagnosticLevelsCountsFilename = "";
   unsigned int iterNumToRemove = 0;
   unsigned int iterPercentToRemove = 0;
+  unsigned int ecIterNumToRemove = 1;
+  unsigned int ecIterPercentToRemove = 0;
   string snpExclusionFile = "";
   bool doRecodeA = false;
   string altPhenotypeFilename = "";
+  bool verbose = false;
+  unsigned int ecNumTarget = 0;
+  unsigned int rjNumTrees = 1000;
 
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
           (
+           "ec-num-target",
+           po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
+           "EC N_target - target number of attributes to keep"
+           )
+          (
+           "rj-num-trees",
+           po::value<unsigned int>(&rjNumTrees)->default_value(rjNumTrees),
+           "Random Jungle number of trees to grow"
+           )
+          (
            "alternate-pheno-file,a",
-           po::value<string > (&altPhenotypeFilename),
+           po::value<string> (&altPhenotypeFilename),
            "specifies an alternative phenotype/class label file; one value per line"
            )
           (
            "snp-data,d",
-           po::value<string > (&snpsFilename),
+           po::value<string> (&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
            "snp-metric",
-           po::value<string > (&snpMetric)->default_value(snpMetric),
+           po::value<string> (&snpMetric)->default_value(snpMetric),
            "metric for determining the difference between SNPs (gm=default|am)"
            )
           (
            "numeric-data,n",
-           po::value<string > (&numericsFilename),
+           po::value<string> (&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
             (
            "numeric-metric",
-           po::value<string > (&numMetric)->default_value(numMetric),
+           po::value<string> (&numMetric)->default_value(numMetric),
            "metric for determining the difference between numeric attributes (manhattan=default|euclidean)"
            )
           (
            "diagnostic-tests,g",
-           po::value<string > (&diagnosticLogFilename),
+           po::value<string> (&diagnosticLogFilename),
            "performs diagnostic tests and sends output to filename without running Relief-F"
            )
           (
            "iter-remove-n,i",
            po::value<unsigned int>(&iterNumToRemove),
-           "iterative ReliefF number to remove per iteration"
+           "iterative ReliefF number of attributes to remove per iteration"
+           )
+          (
+           "ec-iter-remove-n",
+           po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
+           "Evaporative Cooling number of attributes to remove per iteration"
            )
           (
            "k-nearest-neighbors,k",
            po::value<unsigned int>(&k)->default_value(k),
-           "set k nearest neighbors (default=10)"
+           "set k nearest neighbors"
            )
           (
            "diagnostic-levels-file,l",
@@ -125,7 +143,12 @@ int main(int argc, char** argv) {
           (
            "iter-remove-percent,p",
            po::value<unsigned int>(&iterPercentToRemove),
-           "iterative ReliefF precentage to remove per iteration"
+           "iterative ReliefF precentage of attributes to remove per iteration"
+           )
+          (
+           "ec-iter-remove-percent,p",
+           po::value<unsigned int>(&ecIterPercentToRemove),
+           "Evaporative Cooling precentage of attributes to remove per iteration"
            )
           (
            "recode-a,r",
@@ -134,17 +157,22 @@ int main(int argc, char** argv) {
            )
           (
            "weight-by-distance-sigma,s",
-           po::value<double>(&sigma)->default_value(sigma),
+           po::value<double>(&sigma),
            "weight by distance sigma (default=20.0)"
            )
           (
            "weight-by-distance,w",
            po::value<bool>(&wbd)->default_value(wbd),
-           "weight differences by distance (0=no=default|1=yes)"
+           "weight differences by distance (0=no|1=yes)"
+           )
+          (
+           "verbose,v",
+           po::value<bool>(&verbose)->default_value(verbose),
+           "verbose output to stdout (0=no|1=yes)"
            )
           (
            "snp-exclusion-file,x",
-           po::value<string > (&snpExclusionFile),
+           po::value<string>(&snpExclusionFile),
            "file of SNP names to be excluded"
            )
           ;
@@ -155,7 +183,7 @@ int main(int argc, char** argv) {
   // po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
   po::notify(vm);
 
-  if((argc < 2) || vm.count("help")) {
+  if(vm.count("help")) {
     cerr << desc << "\n";
     exit(1);
   }
@@ -187,7 +215,7 @@ int main(int argc, char** argv) {
           exit(1);
         }
       } else {
-        cerr << "Could not determine the analysis to do based on "
+        cerr << "ERROR: Could not determine the analysis to do based on "
                 << "command line options: " << endl << desc << endl;
         exit(1);
       }

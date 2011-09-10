@@ -76,5 +76,61 @@
         </ccTool>
       </folder>
     </conf>
+    <conf name="Simple_test.txt" type="0">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <compilerSet>GNU|GNU</compilerSet>
+        <platform>4</platform>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>$(MAKE) -f Makefile -j2</buildCommand>
+          <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
+          <executablePath>ec</executablePath>
+          <ccTool>
+            <incDir>
+              <pElem>../cpprelieff</pElem>
+              <pElem>/usr/local/include</pElem>
+              <pElem>/usr/local/include/rjungle</pElem>
+              <pElem>/usr/local/Cellar/libxml2/2.7.8/include/libxml2</pElem>
+            </incDir>
+            <preprocessorList>
+              <Elem>HAVE__BOOL</Elem>
+              <Elem>__NOPLUGIN__</Elem>
+            </preprocessorList>
+          </ccTool>
+        </makeTool>
+        <requiredProjects>
+          <makeArtifact PL="../cpprelieff_fucku"
+                        CT="0"
+                        CN="Default"
+                        AC="false"
+                        BL="true"
+                        WD="../cpprelieff_fucku"
+                        BC="${MAKE}  -f cpprelieff_fucku-Makefile.mk CONF=Default"
+                        CC="${MAKE}  -f cpprelieff_fucku-Makefile.mk CONF=Default clean"
+                        OP="../cpprelieff/relieff">
+          </makeArtifact>
+          <makeArtifact PL="../randomjungle-1.2.362"
+                        CT="0"
+                        CN="Default"
+                        AC="true"
+                        BL="false"
+                        WD="../randomjungle-1.2.362"
+                        BC="${MAKE}  -f Makefile-randomjungle-1.2.362.mk CONF=Default"
+                        CC="${MAKE}  -f Makefile-randomjungle-1.2.362.mk CONF=Default clean"
+                        OP="">
+          </makeArtifact>
+        </requiredProjects>
+      </makefileType>
+      <folder path="cppec">
+        <ccTool>
+          <incDir>
+            <pElem>/usr/local/include</pElem>
+          </incDir>
+        </ccTool>
+      </folder>
+    </conf>
   </confs>
 </configurationDescriptor>

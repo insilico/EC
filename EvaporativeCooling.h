@@ -3,29 +3,40 @@
  * Author: billwhite
  *
  * Created on July 14, 2011, 9:25 PM
+ *
+ * Implements the Evaporative Cooling algorithm in:
+ * McKinney, et. al. "Capturing the Spectrum of Interaction Effects in Genetic
+ * Association Studies by Simulated Evaporative Cooling Network Analysis."
+ * PLoS Genetics, Vol 5, Issue 3, 2009.
  */
 
 #ifndef EVAPORATIVECOOLING_H
 #define	EVAPORATIVECOOLING_H
 
+#include <map>
 #include <boost/program_options.hpp>
 #include "rjungle/RJunglePar.h"
 #include "../cpprelieff/Dataset.h"
+#include "../cpprelieff/ReliefF.h"
 
 namespace po = boost::program_options;
+
+typedef std::map<std::string, double> EcScoresMap;
+typedef std::map<std::string, double>::iterator EcScoresMapIt;
+typedef std::map<std::string, double>::const_iterator EcScoresMapCIt;
 
 class EvaporativeCooling
 {
 public:
   EvaporativeCooling(Dataset* ds, po::variables_map& vm);
   bool ComputeECScores();
-  const std::map<std::string, double>& GetRandomJungleScores() {
+  EcScoresMap& GetRandomJungleScores() {
     return rjScores;
   }
-  const std::map<std::string, double>& GetReliefFScores() {
+  EcScoresMap& GetReliefFScores() {
     return rfScores;
   }
-  const std::map<std::string, double>& GetECScores() {
+  EcScoresMap& GetECScores() {
     return ecScores;
   }
   void WriteAttributeScores(std::string baseFilename);
@@ -33,15 +44,28 @@ public:
   virtual ~EvaporativeCooling();
 private:
   bool RunRandomJungle();
+  bool ReadRandomJungleScores(std::string filename);
+  bool RunReliefF();
+  bool ComputeFreeEnergy(double temperature);
+  bool RemoveWorstAttributes();
+  
   Dataset* dataset;
-
-  std::map<std::string, double> rjScores;
-  std::map<std::string, double> rfScores;
-  std::map<std::string, double> ecScores;
+  po::variables_map paramsMap;
   
   RJunglePar rjParams;
 
-  unsigned int removePerIteration;
+  ReliefF* reliefF;
+
+  EcScoresMap rjScores;
+  EcScoresMap rfScores;
+  EcScoresMap freeEnergyScores;
+
+  unsigned int numTargetAttributes;
+  EcScoresMap evaporatedAttributes;
+  EcScoresMap ecScores;
+  
+  // attributes to be considered
+  std::map<std::string, bool> attributesToConsider;
 };
 
 #endif	/* EVAPORATIVECOOLING_H */

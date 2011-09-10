@@ -38,16 +38,12 @@ C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -lboost_program_options \
 
 # -------------------------------------------------------------------------- EC
 EC_PROG_NAME = ec
-EC_INTERFACES = EvaporativeCooling.h StringUtils.h Dataset.h DatasetInstance.h \
-	GSLRandomBase.h GSLRandomFlat.h Statistics.h \
-	ArffDataset.h PlinkDataset.h PlinkRawDataset.h PlinkBinaryDataset.h \
-	ChiSquared.h FilesystemUtils.h
 EC_OBJS = EvaporativeCoolingCLI.o EvaporativeCooling.o ../cpprelieff/Dataset.o \
 	../cpprelieff/DatasetInstance.o ../cpprelieff/Statistics.o \
 	../cpprelieff/ArffDataset.o ../cpprelieff/PlinkDataset.o \
 	../cpprelieff/PlinkRawDataset.o ../cpprelieff/PlinkBinaryDataset.o \
 	../cpprelieff/DistanceMetrics.o ../cpprelieff/ChiSquared.o \
-	../cpprelieff/FilesystemUtils.o
+	../cpprelieff/FilesystemUtils.o ../cpprelieff/ReliefF.o
 
 # ----------------------------------------------------------------- BUILD RULES
 
