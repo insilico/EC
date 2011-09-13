@@ -36,8 +36,9 @@ public:
   EcScores& GetECScores();
   void WriteAttributeScores(std::string baseFilename);
   void PrintAttributeScores(std::ofstream& outFile);
+  bool PrintAllScoresTabular();
 private:
-  bool InitializeRandomJungle(uli_t ntree=1000);
+  bool InitializeRandomJungle(uli_t ntree=100);
   bool RunRandomJungle();
   bool ReadRandomJungleScores(std::string filename);
   bool FinalizeRandomJungle();

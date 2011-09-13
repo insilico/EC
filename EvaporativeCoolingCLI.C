@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   string altPhenotypeFilename = "";
   bool verbose = false;
   unsigned int ecNumTarget = 0;
-  uli_t rjNumTrees = 1000;
+  uli_t rjNumTrees = 100;
 
   // declare the supported options
   po::options_description desc("Allowed options");

@@ -37,12 +37,17 @@ using namespace insilico;
 
 bool freeEnergyScoresSortAsc(const pair<double, string>& p1,
                               const pair<double, string>& p2) {
+  return p1.first < p2.first;
+}
+
+bool scoresSortAscByName(const pair<double, string>& p1,
+                         const pair<double, string>& p2) {
   return p1.second < p2.second;
 }
 
 bool freeEnergyScoresSortDesc(const pair<double, string>& p1,
                              const pair<double, string>& p2) {
-  return p1.second > p2.second;
+  return p1.first > p2.first;
 }
 
 /*****************************************************************************
@@ -187,7 +192,8 @@ bool EvaporativeCooling::ComputeECScores() {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
-
+    PrintAllScoresTabular();
+    
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
     unsigned int numToRemove = numToRemovePerIteration;
@@ -271,6 +277,42 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
   }
   PrintAttributeScores(outFile);
   outFile.close();
+}
+
+/*****************************************************************************
+ * Method: PrintAllScoresTabular
+ *
+ * IN:  none
+ * OUT: success
+ *
+ * Print all scores to stdout.
+ ****************************************************************************/
+bool EvaporativeCooling::PrintAllScoresTabular() {
+  // sanity checks
+  if(rjScores.size() != rfScores.size()) {
+    cerr << "Random Jungle and Relief-F scores lists are not the same size."
+            << endl;
+    return false;
+  }
+  if(freeEnergyScores.size() != rfScores.size()) {
+    cerr << "Random Jungle and Relief-F scores lists are not the same size."
+            << endl;
+    return false;
+  }
+
+  cout << "E (RF)\t\tS (RJ)\t\tE (free energy)\n";
+  unsigned int numScores = freeEnergyScores.size();
+  for(unsigned int i=0; i < numScores; ++i) {
+    pair<double, string> thisRJScores = rjScores[i];
+    pair<double, string> thisRFScores = rfScores[i];
+    pair<double, string> thisFEScores = freeEnergyScores[i];
+    printf("%s\t%6.4f\t%s\t%6.4f\t%s\t%6.4f\n",
+      thisRFScores.second.c_str(), thisRFScores.first,
+      thisRJScores.second.c_str(), thisRJScores.first,
+      thisFEScores.second.c_str(), thisFEScores.first);
+  }
+
+  return true;
 }
 
 /*****************************************************************************
@@ -630,6 +672,8 @@ bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
             rfScores.size() << endl;
     return false;
   }
+  sort(rjScores.begin(), rjScores.end(), scoresSortAscByName);
+  sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
   freeEnergyScores.clear();
   EcScoresCIt rjIt = rjScores.begin();
   EcScoresCIt rfIt = rfScores.begin();
