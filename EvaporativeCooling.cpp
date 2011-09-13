@@ -192,7 +192,7 @@ bool EvaporativeCooling::ComputeECScores() {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
-    PrintAllScoresTabular();
+    // PrintAllScoresTabular();
     
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
@@ -680,7 +680,7 @@ bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
   for(; rjIt != rjScores.end(); ++rjIt, ++rfIt) {
     string val = rjIt->second;
     double key = rjIt->first;
-    freeEnergyScores.push_back(make_pair((*rfIt).first - (temperature * key), val));
+    freeEnergyScores.push_back(make_pair((*rfIt).first + (temperature * key), val));
   }
   return true;
 }
@@ -695,10 +695,13 @@ bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
  ****************************************************************************/
 bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
   unsigned int numToRemoveAdj = numToRemove;
-  if(numToRemove >= freeEnergyScores.size()) {
-    cerr << "WARNING: attempt to remove more attributes " << numToRemove
-            << " than in the data set " << freeEnergyScores.size() << endl;
-    numToRemoveAdj = freeEnergyScores.size();
+  unsigned int numAttr = dataset->NumAttributes();
+  if((numAttr - numToRemove) < numTargetAttributes) {
+    cerr << "WARNING: attempt to remove " << numToRemove
+            << " attributes which will remove more than target "
+            << "number of attributes " << numTargetAttributes
+            << ". Adjusting." << endl;
+    numToRemoveAdj = numAttr - numTargetAttributes;
   }
   cout << "\t\t\tRemoving " << numToRemoveAdj << " attributes..." << endl;
   sort(freeEnergyScores.begin(), freeEnergyScores.end(), freeEnergyScoresSortAsc);
