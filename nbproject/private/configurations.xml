@@ -23,7 +23,7 @@
         <configurationname>GizmoSimple</configurationname>
       </gizmo_options>
       <runprofile version="6">
-        <args>-d /Users/billwhite/analysis/mdrsample/minimdr/test.txt</args>
+        <args>-d /Users/billwhite/analysis/mdrsample/minimdr/test.txt --ec-num-target 1</args>
         <rundir></rundir>
         <buildfirst>true</buildfirst>
         <console-type>0</console-type>

@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   string altPhenotypeFilename = "";
   bool verbose = false;
   unsigned int ecNumTarget = 0;
-  unsigned int rjNumTrees = 1000;
+  uli_t rjNumTrees = 1000;
 
   // declare the supported options
   po::options_description desc("Allowed options");
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
            )
           (
            "rj-num-trees",
-           po::value<unsigned int>(&rjNumTrees)->default_value(rjNumTrees),
+           po::value<uli_t>(&rjNumTrees)->default_value(rjNumTrees),
            "Random Jungle number of trees to grow"
            )
           (
@@ -215,9 +215,15 @@ int main(int argc, char** argv) {
           exit(1);
         }
       } else {
-        cerr << "ERROR: Could not determine the analysis to do based on "
-                << "command line options: " << endl << desc << endl;
-        exit(1);
+        if(vm.count("snp-data") && vm.count("numeric-data")) {
+          cerr << "ERROR: integrated analysis not supported." << endl;
+          exit(1);
+        }
+        else {
+          cerr << "ERROR: Could not determine the analysis to do based on "
+                  << "command line options: " << endl << desc << endl;
+          exit(1);
+        }
       }
     }
   }
@@ -374,6 +380,7 @@ int main(int argc, char** argv) {
     cerr << "ERROR: Failed to calculate EC scores." << endl;
     exit(1);
   }
+  cout << "\tEC done." << endl;
 
   // ---------------------------------------------------------------------------
   // write the scores to the same name as the dataset with
