@@ -30,10 +30,10 @@ C++C = g++
 #	-lgomp -lmri -L$(HOME)/abin -lf2c
 
 # Optimized parallel OpenMP
-C++C_COMPILE_FLAGS =-Wall -ansi -pedantic -O3 -DNDEBUG -fopenmp \
+C++C_COMPILE_FLAGS =-Wall -ansi -O3 -DNDEBUG -fopenmp \
 	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
-	-D__NOPLUGIN__
+	-D__NOPLUGIN__ -I/usr/include/libxml2
 C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -lboost_program_options -lgomp -lmri \
   -L$(HOME)/abin -lf2c -lxml2 -L/usr/local/lib -lrjungle -lz -llr
 
