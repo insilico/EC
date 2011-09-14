@@ -85,8 +85,8 @@
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
-          <buildCommand>$(MAKE) -f Makefile -j2</buildCommand>
-          <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
+          <buildCommand>$(MAKE) -f Makefile.mac -j2</buildCommand>
+          <cleanCommand>$(MAKE) -f Makefile.mac clean</cleanCommand>
           <executablePath>ec</executablePath>
           <ccTool>
             <incDir>
