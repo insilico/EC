@@ -253,8 +253,8 @@ void EvaporativeCooling::PrintAttributeScores(ofstream& outFile) {
 
   for(EcScoresCIt ecScoresIt = ecScores.begin();
       ecScoresIt != ecScores.end(); ++ecScoresIt) {
-    outFile << fixed << setprecision(8) << (*ecScoresIt).second << "\t"
-            << (*ecScoresIt).first << endl;
+    outFile << fixed << setprecision(8) << (*ecScoresIt).first << "\t"
+            << (*ecScoresIt).second << endl;
   }
 }
 
@@ -612,11 +612,12 @@ bool EvaporativeCooling::FinalizeRandomJungle() {
 bool EvaporativeCooling::RunReliefF() {
   if(rfNumToRemovePerIteration) {
     cout << "\t\t\t\tRunning Iterative ReliefF..." << endl;
-    rfScores = reliefF->ComputeAttributeScoresIteratively();
+    reliefF->ComputeAttributeScoresIteratively();
   } else {
     cout << "\t\t\t\tRunning standard ReliefF..." << endl;
-    rfScores = reliefF->ComputeAttributeScores();
+    reliefF->ComputeAttributeScores();
   }
+  rfScores = reliefF->GetScores();
 
   cout << "\t\t\t\tNormalizing ReliefF scores to 0-1..." << endl;
   pair<double, string> firstScore = rfScores[0];
