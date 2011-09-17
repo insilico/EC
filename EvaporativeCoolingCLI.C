@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
 
   // command line processing variables: defaults and storage for boost
   string snpsFilename = "";
+  string cleanSnpsFilename = "";
   string numericsFilename = "";
   unsigned int k = 10;
   unsigned int m = 0;
@@ -106,6 +107,11 @@ int main(int argc, char** argv) {
            "snp-data,d",
            po::value<string> (&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+           )
+          (
+           "snp-data-clean",
+           po::value<string> (&cleanSnpsFilename),
+           "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
            "snp-metric",
@@ -212,9 +218,20 @@ int main(int argc, char** argv) {
       cerr << "Integrated data not supported in this version of EC." << endl;
       exit(1);
     }
-    if(vm.count("snp-data") && !vm.count("numeric-data")) {
-      cout << "\t\tSNP-only analysis requested." << endl;
-      analysisType = SNP_ONLY_ANALYSIS;
+    if(vm.count("snp-data-clean") && vm.count("numeric-data")) {
+      cerr << "Integrated data not supported in this version of EC." << endl;
+      exit(1);
+    }
+    if((vm.count("snp-data") || vm.count("snp-data-clean")) &&
+       !vm.count("numeric-data")) {
+      if(vm.count("snp-data")) {
+        cout << "\t\tSNP-only analysis requested." << endl;
+        analysisType = SNP_ONLY_ANALYSIS;
+      }
+      else {
+        cout << "\t\tClean SNP analysis requested." << endl;
+        analysisType = SNP_CLEAN_ANALYSIS;     
+      }
     } else {
       if(!vm.count("snp-data") && vm.count("numeric-data")) {
         cout << "\t\tNumeric-only analysis requested." << endl;
@@ -266,6 +283,10 @@ int main(int argc, char** argv) {
       }
       // copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
     }
+  }
+  else {
+    cout << "\t\tCovariate and alternate phenotype files not used for "
+            << "this analysis type." << endl;
   }
 
   // -------------------------------------------------------------------------
@@ -332,6 +353,7 @@ int main(int argc, char** argv) {
   bool datasetLoaded = false;
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
+    case SNP_CLEAN_ANALYSIS:
       cout << "\tReading SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
       datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, "",
@@ -374,7 +396,8 @@ int main(int argc, char** argv) {
   }
 
   // happy lights
-  if(analysisType == SNP_ONLY_ANALYSIS) {
+  if((analysisType == SNP_ONLY_ANALYSIS) ||
+     (analysisType == SNP_CLEAN_ANALYSIS)) {
     ds->PrintStats();  
   }
   else {

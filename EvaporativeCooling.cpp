@@ -640,7 +640,12 @@ bool EvaporativeCooling::RunReliefF() {
     reliefF->ComputeAttributeScoresIteratively();
   } else {
     cout << "\t\t\t\tRunning standard ReliefF..." << endl;
-    reliefF->ComputeAttributeScores();
+    if(analysisType == SNP_ONLY_ANALYSIS) {
+      reliefF->ComputeAttributeScores();
+    }
+    else {
+      reliefF->ComputeAttributeScoresCleanSnps();
+    }
   }
   rfScores = reliefF->GetScores();
 
