@@ -58,7 +58,8 @@ bool freeEnergyScoresSortDesc(const pair<double, string>& p1,
  *
  * Initialize an EvaporativeCooling object.
  ****************************************************************************/
-EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
+EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
+                                       AnalysisType anaType) {
   cout << "\t\tEvaporative Cooling initialization:" << endl;
   if(ds) {
     dataset = ds;
@@ -67,6 +68,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
     exit(-1);
   }
   paramsMap = vm;
+  analysisType = anaType;
 
   // set the number of attributea to remove per iteration
   if(paramsMap.count("ec-iter-remove-n")) {
@@ -108,9 +110,30 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
   cout << "\t\t\tEC is removing attributes until best " << numTargetAttributes
           << " remain." << endl;
 
+  // multithreading setup
+  unsigned int maxThreads = omp_get_num_procs();
+  cout << "\t\t\t" << maxThreads << " OpenMP processors available." << endl;
+
+  numRJThreads = vm["rj-num-threads"].as<unsigned int>();
+  if((numRJThreads < 1) || (numRJThreads > maxThreads)) {
+    cerr << "ERROR: rj-num-threads must be between 1 and " << maxThreads
+            << ". Setting to maximum threads." << endl;
+    numRJThreads = maxThreads;
+  }
+  cout << "\t\t\tRandom Jungle will use " << numRJThreads << " threads." << endl;
+
+  numRFThreads = vm["rf-num-threads"].as<unsigned int>();
+  if((numRFThreads < 1) || (numRFThreads > maxThreads)) {
+    cerr << "ERROR: rf-num-threads must be between 1 and " << maxThreads
+            << ". Setting to maximum threads." << endl;
+    numRFThreads = maxThreads;
+  }
+  cout << "\t\t\tRelief-F will use " << numRFThreads << " threads." << endl;
+
   // ------------------------------------------------------------- Random Jungle
   // initialize Random Jungle
   uli_t numTrees = vm["rj-num-trees"].as<uli_t>();
+  cout << "\t\t\tInitializing Random Jungle with " << numTrees << " trees." << endl;
   if(!InitializeRandomJungle(numTrees)) {
     cerr << "ERROR: could not initialize Random Jungle." << endl;
     exit(1);
@@ -118,9 +141,10 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
 
   // ------------------------------------------------------------------ Relief-F
   // intialize Relief-F
-  reliefF = new ReliefF(dataset, paramsMap);
+  cout << "\t\t\tInitializing Relief-F." << endl;
+  reliefF = new ReliefF(dataset, paramsMap, analysisType);
 
-  cout << "\t\t\t" << omp_get_num_procs() << " OpenMP processors available" << endl;
+  // end of constructor
 }
 
 /*****************************************************************************
@@ -133,7 +157,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm) {
  ****************************************************************************/
 EvaporativeCooling::~EvaporativeCooling() {
   FinalizeRandomJungle();
-  delete reliefF;
+  if(reliefF) {
+    delete reliefF;
+  }
 }
 
 /*****************************************************************************
@@ -326,6 +352,7 @@ bool EvaporativeCooling::PrintAllScoresTabular() {
 bool EvaporativeCooling::InitializeRandomJungle(uli_t ntree) {
   rjParams = initRJunglePar();
   rjParams.mpiId = 0;
+  rjParams.nthreads = numRJThreads;
   rjParams.verbose_flag = paramsMap["verbose"].as<bool>();
 
   // fill in the parameters object for the RJ run
@@ -342,11 +369,6 @@ bool EvaporativeCooling::InitializeRandomJungle(uli_t ntree) {
   rjParams.depVarName = (char *) "Class";
   //  rjParams.verbose_flag = true;
   rjParams.filename = (char*) "";
-
-  // set the number of OpenMP threads that will be used
-  if((rjParams.nthreads < omp_get_max_threads()) && (rjParams.nthreads != 0)) {
-    omp_set_num_threads(rjParams.nthreads);
-  }
 
   return true;
 }
@@ -610,6 +632,9 @@ bool EvaporativeCooling::FinalizeRandomJungle() {
  * Run the ReliefF algorithm to get interaction ranked variables.
  ****************************************************************************/
 bool EvaporativeCooling::RunReliefF() {
+  int saveThreads = omp_get_num_threads();
+  omp_set_num_threads(numRFThreads);
+
   if(rfNumToRemovePerIteration) {
     cout << "\t\t\t\tRunning Iterative ReliefF..." << endl;
     reliefF->ComputeAttributeScoresIteratively();
@@ -636,7 +661,7 @@ bool EvaporativeCooling::RunReliefF() {
 
   // normalize attribute scores
   if(minRFScore == maxRFScore) {
-    cerr << "WARNING: Relief-F min and max scores are the same." 
+    cerr << "\t\t\t\t\tWARNING: Relief-F min and max scores are the same."
             << "No normalization necessary." << endl;
     return true;
   }
@@ -652,7 +677,9 @@ bool EvaporativeCooling::RunReliefF() {
 
   rfScores.clear();
   rfScores = newRFScores;
-  
+
+  omp_set_num_threads(saveThreads);
+
   return true;
 }
 

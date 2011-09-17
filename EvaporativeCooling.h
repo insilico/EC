@@ -28,7 +28,8 @@ typedef std::vector<std::pair<double, std::string> >::const_iterator EcScoresCIt
 class EvaporativeCooling
 {
 public:
-  EvaporativeCooling(Dataset* ds, po::variables_map& vm);
+  EvaporativeCooling(Dataset* ds, po::variables_map& vm,
+                     AnalysisType anaType=SNP_ONLY_ANALYSIS);
   virtual ~EvaporativeCooling();
   bool ComputeECScores();
   EcScores& GetRandomJungleScores();
@@ -48,7 +49,9 @@ private:
   
   Dataset* dataset;
   po::variables_map paramsMap;
-  
+
+  AnalysisType analysisType;
+
   RJunglePar rjParams;
 
   ReliefF* reliefF;
@@ -58,6 +61,8 @@ private:
   EcScores rfScores;
   EcScores freeEnergyScores;
 
+  unsigned int numRJThreads;
+  unsigned int numRFThreads;
   unsigned int numToRemovePerIteration;
   unsigned int numTargetAttributes;
   EcScores evaporatedAttributes;

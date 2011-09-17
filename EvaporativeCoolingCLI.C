@@ -70,11 +70,23 @@ int main(int argc, char** argv) {
   bool verbose = false;
   unsigned int ecNumTarget = 0;
   uli_t rjNumTrees = 100;
+  unsigned int rjNumThreads = 0;
+  unsigned int rfNumThreads = 0;
 
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
+          (
+           "rj-num-threads",
+           po::value<unsigned int>(&rjNumThreads)->default_value(rjNumThreads),
+           "number of threads to use in Random Jungle, 0=all"
+           )
+          (
+           "rf-num-threads",
+           po::value<unsigned int>(&rfNumThreads)->default_value(rfNumThreads),
+           "number of threads to use in Relief-F, 0=all"
+           )
           (
            "ec-num-target",
            po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
@@ -374,8 +386,7 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   // FINALLY! run EC algorithm
   cout << "\tRunning EC..." << endl;
-  EvaporativeCooling ec(ds, vm);
-  map<string, double> ecScores;
+  EvaporativeCooling ec(ds, vm, analysisType);
   if(!ec.ComputeECScores()) {
     cerr << "ERROR: Failed to calculate EC scores." << endl;
     exit(1);

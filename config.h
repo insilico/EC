@@ -68,7 +68,8 @@
 #define HAVE_SYS_TYPES_H 1
 
 /* Time profiling */
-#define HAVE_TIMEPROF 1
+#define HAVE_TIMEPROF 0
+#undef HAVE_TIMEPROF
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
