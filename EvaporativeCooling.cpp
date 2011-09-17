@@ -632,8 +632,8 @@ bool EvaporativeCooling::FinalizeRandomJungle() {
  * Run the ReliefF algorithm to get interaction ranked variables.
  ****************************************************************************/
 bool EvaporativeCooling::RunReliefF() {
-  int saveThreads = omp_get_num_threads();
-  omp_set_num_threads(numRFThreads);
+//  int saveThreads = omp_get_num_threads();
+//  omp_set_num_threads(numRFThreads);
 
   if(rfNumToRemovePerIteration) {
     cout << "\t\t\t\tRunning Iterative ReliefF..." << endl;
@@ -678,7 +678,7 @@ bool EvaporativeCooling::RunReliefF() {
   rfScores.clear();
   rfScores = newRFScores;
 
-  omp_set_num_threads(saveThreads);
+  // omp_set_num_threads(saveThreads);
 
   return true;
 }
