@@ -226,6 +226,9 @@ bool EvaporativeCooling::ComputeECScores() {
     if((numWorkingAttributes - numToRemovePerIteration) < numTargetAttributes) {
       numToRemove = numWorkingAttributes - numToRemovePerIteration;
     }
+    if(numToRemove < 1) {
+      break;
+    }
     cout << "\t\t\tRemoving the worst " << numToRemove << " attributes..." << endl;
     if(!RemoveWorstAttributes(numToRemove)) {
       cerr << "ERROR: In EC algorithm: RemoveWorstAttribute failed." << endl;
@@ -233,8 +236,6 @@ bool EvaporativeCooling::ComputeECScores() {
     }
 
     numWorkingAttributes -= numToRemove;
-
-    reliefF->ResetForNextIteration();
 
     ++iteration;
   }
