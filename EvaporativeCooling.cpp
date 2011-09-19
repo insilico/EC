@@ -116,16 +116,12 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 
   numRJThreads = vm["rj-num-threads"].as<unsigned int>();
   if((numRJThreads < 1) || (numRJThreads > maxThreads)) {
-    cerr << "ERROR: rj-num-threads must be between 1 and " << maxThreads
-            << ". Setting to maximum threads." << endl;
     numRJThreads = maxThreads;
   }
   cout << "\t\t\tRandom Jungle will use " << numRJThreads << " threads." << endl;
 
   numRFThreads = vm["rf-num-threads"].as<unsigned int>();
   if((numRFThreads < 1) || (numRFThreads > maxThreads)) {
-    cerr << "ERROR: rf-num-threads must be between 1 and " << maxThreads
-            << ". Setting to maximum threads." << endl;
     numRFThreads = maxThreads;
   }
   cout << "\t\t\tRelief-F will use " << numRFThreads << " threads." << endl;
@@ -402,6 +398,8 @@ bool EvaporativeCooling::RunRandomJungle() {
   RJungleIO io;
   io.open(rjParams);
 
+  unsigned int numInstances = dataset->NumInstances();
+
   if(dataset->HasNumerics()) {
     // numeric data
     cout << "\t\t\t\tPreparing numeric version of Random Jungle." << endl;
@@ -418,13 +416,18 @@ bool EvaporativeCooling::RunRandomJungle() {
     data->setDepVarName(rjParams.depVarName);
     data->setDepVar(rjParams.depVarCol);
     data->initMatrix();
-    for(unsigned int i = 0; i < dataset->NumInstances(); ++i) {
+    for(unsigned int i = 0; i < numInstances; ++i) {
       for(unsigned int j = 0; j < numericNames.size()-1; ++j) {
         data->set(i, j, dataset->GetNumeric(i, numericNames[j]));
       }
       data->set(i, rjParams.depVarCol,
                 (double) dataset->GetInstance(i)->GetClass());
+            // happy lights
+      if(i && ((i % 100) == 0)) {
+        cout << "\t\t\t\t" << setw(5) << i << " / " << numInstances << " ";
+      }
     }
+    cout << "\t\t\t\t" << setw(5) << numInstances << " / " << numInstances << " ";
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
@@ -743,8 +746,8 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
 
     // worst score and attribute name
     pair<double, string> worst = freeEnergyScores[i];
-    cout << "\t\t\t\tRemoving: " << worst.second 
-            << " (" << worst.first << ")" << endl;
+//    cout << "\t\t\t\tRemoving: " << worst.second
+//            << " (" << worst.first << ")" << endl;
 
     // save worst
     evaporatedAttributes.push_back(worst);
