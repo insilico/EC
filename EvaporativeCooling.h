@@ -38,6 +38,7 @@ public:
   void WriteAttributeScores(std::string baseFilename);
   void PrintAttributeScores(std::ofstream& outFile);
   bool PrintAllScoresTabular();
+  bool PrintKendallTaus();
 private:
   bool InitializeRandomJungle(uli_t ntree=100);
   bool RunRandomJungle();

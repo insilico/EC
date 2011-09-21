@@ -100,32 +100,32 @@ int main(int argc, char** argv) {
            )
           (
            "alternate-pheno-file,a",
-           po::value<string> (&altPhenotypeFilename),
+           po::value<string>(&altPhenotypeFilename),
            "specifies an alternative phenotype/class label file; one value per line"
            )
           (
            "snp-data,d",
-           po::value<string> (&snpsFilename),
+           po::value<string>(&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
            "snp-data-clean",
-           po::value<string> (&cleanSnpsFilename),
+           po::value<string>(&cleanSnpsFilename),
            "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
            "snp-metric",
-           po::value<string> (&snpMetric)->default_value(snpMetric),
+           po::value<string>(&snpMetric)->default_value(snpMetric),
            "metric for determining the difference between SNPs (gm=default|am)"
            )
           (
            "numeric-data,n",
-           po::value<string> (&numericsFilename),
+           po::value<string>(&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
             (
            "numeric-metric",
-           po::value<string> (&numMetric)->default_value(numMetric),
+           po::value<string>(&numMetric)->default_value(numMetric),
            "metric for determining the difference between numeric attributes (manhattan=default|euclidean)"
            )
           (
@@ -353,10 +353,15 @@ int main(int argc, char** argv) {
   bool datasetLoaded = false;
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
-    case SNP_CLEAN_ANALYSIS:
       cout << "\tReading SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
       datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, "",
+                                      altPhenotypeFilename, indIds);
+      break;
+    case SNP_CLEAN_ANALYSIS:
+      cout << "\tReading CLEAN SNPs data set" << endl;
+      ds = ChooseSnpsDatasetByExtension(cleanSnpsFilename);
+      datasetLoaded = ds->LoadDataset(cleanSnpsFilename, doRecodeA, "",
                                       altPhenotypeFilename, indIds);
       break;
     case NUMERIC_ONLY_ANALYSIS:

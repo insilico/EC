@@ -23,8 +23,8 @@
         <configurationname>GizmoSimple</configurationname>
       </gizmo_options>
       <runprofile version="6">
-        <args>-d /Users/billwhite/analysis/mdrsample/minimdr/test.txt --ec-num-target 1</args>
-        <rundir></rundir>
+        <args>--snp-data-clean MDR-SampleData.txt --ec-num-target 3 --ec-iter-remove-percent 50 --rj-num-trees 1000</args>
+        <rundir>/Users/billwhite/analysis/mdrsample</rundir>
         <buildfirst>true</buildfirst>
         <console-type>0</console-type>
         <terminal-type>0</terminal-type>

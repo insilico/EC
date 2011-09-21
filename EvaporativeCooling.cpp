@@ -28,6 +28,7 @@
 
 #include "EvaporativeCooling.h"
 #include "../cpprelieff/Dataset.h"
+#include "../cpprelieff/Statistics.h"
 #include "../cpprelieff/StringUtils.h"
 #include "../cpprelieff/ReliefF.h"
 
@@ -35,8 +36,8 @@ using namespace std;
 namespace po = boost::program_options;
 using namespace insilico;
 
-bool freeEnergyScoresSortAsc(const pair<double, string>& p1,
-                              const pair<double, string>& p2) {
+bool scoresSortAsc(const pair<double, string>& p1,
+                   const pair<double, string>& p2) {
   return p1.first < p2.first;
 }
 
@@ -45,8 +46,8 @@ bool scoresSortAscByName(const pair<double, string>& p1,
   return p1.second < p2.second;
 }
 
-bool freeEnergyScoresSortDesc(const pair<double, string>& p1,
-                             const pair<double, string>& p2) {
+bool scoresSortDesc(const pair<double, string>& p1,
+                    const pair<double, string>& p2) {
   return p1.first > p2.first;
 }
 
@@ -77,12 +78,12 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   if(paramsMap.count("ec-iter-remove-percent")) {
     int iterPercentToRemove = paramsMap["ec-iter-remove-percent"].as<unsigned int>();
     numToRemovePerIteration = (int) (((double) iterPercentToRemove / 100.0) *
-            dataset->NumAttributes());
+                                     dataset->NumAttributes());
   }
   cout << "\t\t\tEC will remove " << numToRemovePerIteration
           << " attributes per iteration." << endl;
 
-    // set the number of attributea to remove per iteration - ReliefF
+  // set the number of attributea to remove per iteration - ReliefF
   rfNumToRemovePerIteration = 0;
   if(paramsMap.count("iter-remove-n")) {
     rfNumToRemovePerIteration = paramsMap["iter-remove-n"].as<unsigned int>();
@@ -90,7 +91,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   if(paramsMap.count("iter-remove-percent")) {
     unsigned int iterPercentToRemove = paramsMap["iter-remove-percent"].as<unsigned int>();
     rfNumToRemovePerIteration = (int) (((double) iterPercentToRemove / 100.0) *
-            dataset->NumAttributes());
+                                       dataset->NumAttributes());
   }
   cout << "\t\t\tRelief-F will remove " << rfNumToRemovePerIteration
           << " attributes per iteration." << endl;
@@ -128,7 +129,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 
   // ------------------------------------------------------------- Random Jungle
   // initialize Random Jungle
-  uli_t numTrees = vm["rj-num-trees"].as<uli_t>();
+  uli_t numTrees = vm["rj-num-trees"].as<uli_t > ();
   cout << "\t\t\tInitializing Random Jungle with " << numTrees << " trees." << endl;
   if(!InitializeRandomJungle(numTrees)) {
     cerr << "ERROR: could not initialize Random Jungle." << endl;
@@ -175,7 +176,7 @@ bool EvaporativeCooling::ComputeECScores() {
             << numTargetAttributes << endl;
     return false;
   }
-  
+
   // EC algorithm as in Figure 5, page 10 of the paper referenced
   // at top of this file. Modified per Brett's email to not do the
   // varying temperature and classifier accuracy optimization steps.
@@ -214,13 +215,20 @@ bool EvaporativeCooling::ComputeECScores() {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
-    // PrintAllScoresTabular();
-    
+    PrintAllScoresTabular();
+    PrintKendallTaus();
+
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
     unsigned int numToRemove = numToRemovePerIteration;
-    if((numWorkingAttributes - numToRemovePerIteration) < numTargetAttributes) {
-      numToRemove = numWorkingAttributes - numToRemovePerIteration;
+    if(paramsMap.count("ec-iter-remove-percent")) {
+      unsigned int iterPercentToRemove =
+        paramsMap["ec-iter-remove-percent"].as<unsigned int>();
+      numToRemove = (int) (((double) iterPercentToRemove / 100.0) *
+                                       dataset->NumAttributes());
+    }
+    if((numWorkingAttributes - numToRemove) < numTargetAttributes) {
+      numToRemove = numWorkingAttributes - numTargetAttributes;
     }
     if(numToRemove < 1) {
       break;
@@ -240,10 +248,10 @@ bool EvaporativeCooling::ComputeECScores() {
   // remaining free energy attributes are the ones we want to write as a
   // new dataset to be analyzed with (re)GAIN + SNPrank
   sort(freeEnergyScores.begin(), freeEnergyScores.end(),
-       freeEnergyScoresSortDesc);
+       scoresSortDesc);
   ecScores.resize(numTargetAttributes);
   copy(freeEnergyScores.begin(),
-       freeEnergyScores.begin() + numTargetAttributes, 
+       freeEnergyScores.begin() + numTargetAttributes,
        ecScores.begin());
 
   return true;
@@ -257,9 +265,11 @@ bool EvaporativeCooling::ComputeECScores() {
 EcScores& EvaporativeCooling::GetRandomJungleScores() {
   return rjScores;
 }
+
 EcScores& EvaporativeCooling::GetReliefFScores() {
   return rfScores;
 }
+
 EcScores& EvaporativeCooling::GetECScores() {
   return ecScores;
 }
@@ -323,17 +333,72 @@ bool EvaporativeCooling::PrintAllScoresTabular() {
     return false;
   }
 
-  cout << "E (RF)\t\tS (RJ)\t\tE (free energy)\n";
+  sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
+  sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+  sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
+
+  cout << "\t\t\tE (RF)\t\tS (RJ)\t\tF (free energy)\n";
   unsigned int numScores = freeEnergyScores.size();
-  for(unsigned int i=0; i < numScores; ++i) {
+  for(unsigned int i = 0; i < numScores; ++i) {
     pair<double, string> thisRJScores = rjScores[i];
     pair<double, string> thisRFScores = rfScores[i];
     pair<double, string> thisFEScores = freeEnergyScores[i];
-    printf("%s\t%6.4f\t%s\t%6.4f\t%s\t%6.4f\n",
-      thisRFScores.second.c_str(), thisRFScores.first,
-      thisRJScores.second.c_str(), thisRJScores.first,
-      thisFEScores.second.c_str(), thisFEScores.first);
+    printf("\t\t\t%s\t%6.4f\t%s\t%6.4f\t%s\t%6.4f\n",
+           thisRFScores.second.c_str(), thisRFScores.first,
+           thisRJScores.second.c_str(), thisRJScores.first,
+           thisFEScores.second.c_str(), thisFEScores.first);
   }
+
+  return true;
+}
+
+/*****************************************************************************
+ * Method: PrintKendallTaus
+ *
+ * IN:  none
+ * OUT: success
+ *
+ * Print all ranked scores list combination Kendal Tau correlation coefficient.
+ ****************************************************************************/
+bool EvaporativeCooling::PrintKendallTaus() {
+  // sanity checks
+  if(rjScores.size() != rfScores.size()) {
+    cerr << "Random Jungle and Relief-F scores lists are not the same size."
+            << endl;
+    return false;
+  }
+  if(freeEnergyScores.size() != rfScores.size()) {
+    cerr << "Random Jungle and Relief-F scores lists are not the same size."
+            << endl;
+    return false;
+  }
+
+  sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
+  sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+  sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
+
+  vector<string> rjNames;
+  vector<string> rfNames;
+  vector<string> feNames;
+  unsigned int numScores = freeEnergyScores.size();
+  for(unsigned int i = 0; i < numScores; ++i) {
+    pair<double, string> thisRJScores = rjScores[i];
+    pair<double, string> thisRFScores = rfScores[i];
+    pair<double, string> thisFEScores = freeEnergyScores[i];
+    rjNames.push_back(thisRJScores.second);
+    rfNames.push_back(thisRFScores.second);
+    feNames.push_back(thisFEScores.second);
+  }
+
+  double tauRJRF = KendallTau(rjNames, rfNames);
+  double tauRJFE = KendallTau(rjNames, feNames);
+  double tauRFFE = KendallTau(rfNames, feNames);
+
+  cout << "\t\t\tKendall tau's: "
+          << "RJvRF: " << tauRJRF
+          << ", RJvFE: " << tauRJFE
+          << ", RFvFE: " << tauRFFE
+          << endl;
 
   return true;
 }
@@ -357,7 +422,7 @@ bool EvaporativeCooling::InitializeRandomJungle(uli_t ntree) {
   gsl_rng_set(rjParams.rng, rjParams.seed);
 
   if(paramsMap.count("rj-num-trees")) {
-    rjParams.ntree = paramsMap["rj-num-trees"].as<uli_t>();
+    rjParams.ntree = paramsMap["rj-num-trees"].as<uli_t > ();
   } else {
     rjParams.ntree = ntree;
   }
@@ -407,7 +472,7 @@ bool EvaporativeCooling::RunRandomJungle() {
 
     // load data frame
     // TODO: do not load data frame every time-- use column mask mechanism?
-    cout << "\t\t\t\tLoading RJ DataFrame with double values." << endl;
+    cout << "\t\t\t\tLoading RJ DataFrame with double values: ";
     DataFrame<double>* data = new DataFrame<double>(rjParams);
     data->setDim(rjParams.nrow, rjParams.ncol);
     vector<string> numericNames = dataset->GetNumericsNames();
@@ -417,17 +482,17 @@ bool EvaporativeCooling::RunRandomJungle() {
     data->setDepVar(rjParams.depVarCol);
     data->initMatrix();
     for(unsigned int i = 0; i < numInstances; ++i) {
-      for(unsigned int j = 0; j < numericNames.size()-1; ++j) {
+      for(unsigned int j = 0; j < numericNames.size() - 1; ++j) {
         data->set(i, j, dataset->GetNumeric(i, numericNames[j]));
       }
       data->set(i, rjParams.depVarCol,
                 (double) dataset->GetInstance(i)->GetClass());
-            // happy lights
+      // happy lights
       if(i && ((i % 100) == 0)) {
-        cout << "\t\t\t\t" << setw(5) << i << " / " << numInstances << " ";
+        cout << i << "/" << numInstances << " ";
       }
     }
-    cout << "\t\t\t\t" << setw(5) << numInstances << " / " << numInstances << " ";
+    cout << numInstances << "/" << numInstances << endl;
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
@@ -463,7 +528,7 @@ bool EvaporativeCooling::RunRandomJungle() {
       time(&start);
 
       // load data frame
-      cout << "\t\t\t\tLoading RJ DataFrame with SNP (character) values." << endl;
+      cout << "\t\t\t\tLoading RJ DataFrame with SNP (character) values: ";
       DataFrame<int>* data = new DataFrame<int>(rjParams);
       data->setDim(rjParams.nrow, rjParams.ncol);
       vector<string> attributeNames = dataset->GetAttributeNames();
@@ -473,11 +538,16 @@ bool EvaporativeCooling::RunRandomJungle() {
       data->setDepVar(rjParams.depVarCol);
       data->initMatrix();
       for(unsigned int i = 0; i < dataset->NumInstances(); ++i) {
-        for(unsigned int j = 0; j < attributeNames.size()-1; ++j) {
+        for(unsigned int j = 0; j < attributeNames.size() - 1; ++j) {
           data->set(i, j, (int) dataset->GetAttribute(i, attributeNames[j]));
         }
         data->set(i, rjParams.depVarCol, (int) dataset->GetInstance(i)->GetClass());
+        if(i && ((i % 100) == 0)) {
+          cout << i << "/" << numInstances << " ";
+        }
       }
+      cout << numInstances << "/" << numInstances << endl;
+      ;
       data->storeCategories();
       data->makeDepVecs();
       data->getMissings();
@@ -583,7 +653,7 @@ bool EvaporativeCooling::ReadRandomJungleScores(string importanceFilename) {
     }
   }
   importanceStream.close();
-  cout << "\t\t\tRead " << rjScores.size() << " scores from " 
+  cout << "\t\t\tRead " << rjScores.size() << " scores from "
           << importanceFilename << endl;
   // normalize map scores
   bool needsNormalization = true;
@@ -600,8 +670,7 @@ bool EvaporativeCooling::ReadRandomJungleScores(string importanceFilename) {
     if(needsNormalization) {
       key = (key - minRJScore) / rjRange;
       newRJScores.push_back(make_pair(key, val));
-    }
-    else {
+    } else {
       newRJScores.push_back(make_pair(key, val));
     }
   }
@@ -636,18 +705,18 @@ bool EvaporativeCooling::FinalizeRandomJungle() {
  * Run the ReliefF algorithm to get interaction ranked variables.
  ****************************************************************************/
 bool EvaporativeCooling::RunReliefF() {
-//  int saveThreads = omp_get_num_threads();
-//  omp_set_num_threads(numRFThreads);
+  //  int saveThreads = omp_get_num_threads();
+  //  omp_set_num_threads(numRFThreads);
 
   if(rfNumToRemovePerIteration) {
     cout << "\t\t\t\tRunning Iterative ReliefF..." << endl;
     reliefF->ComputeAttributeScoresIteratively();
   } else {
-    cout << "\t\t\t\tRunning standard ReliefF..." << endl;
     if(analysisType == SNP_ONLY_ANALYSIS) {
+      cout << "\t\t\t\tRunning standard ReliefF..." << endl;
       reliefF->ComputeAttributeScores();
-    }
-    else {
+    } else {
+      cout << "\t\t\t\tRunning CLEAN SNPS ReliefF..." << endl;
       reliefF->ComputeAttributeScoresCleanSnps();
     }
   }
@@ -741,13 +810,13 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
     numToRemoveAdj = numAttr - numTargetAttributes;
   }
   cout << "\t\t\tRemoving " << numToRemoveAdj << " attributes..." << endl;
-  sort(freeEnergyScores.begin(), freeEnergyScores.end(), freeEnergyScoresSortAsc);
-  for(unsigned int i=0; i < numToRemoveAdj; ++i) {
+  sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortAsc);
+  for(unsigned int i = 0; i < numToRemoveAdj; ++i) {
 
     // worst score and attribute name
     pair<double, string> worst = freeEnergyScores[i];
-//    cout << "\t\t\t\tRemoving: " << worst.second
-//            << " (" << worst.first << ")" << endl;
+    //    cout << "\t\t\t\tRemoving: " << worst.second
+    //            << " (" << worst.first << ")" << endl;
 
     // save worst
     evaporatedAttributes.push_back(worst);
