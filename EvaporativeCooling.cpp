@@ -247,8 +247,7 @@ bool EvaporativeCooling::ComputeECScores() {
 
   // remaining free energy attributes are the ones we want to write as a
   // new dataset to be analyzed with (re)GAIN + SNPrank
-  sort(freeEnergyScores.begin(), freeEnergyScores.end(),
-       scoresSortDesc);
+  sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
   ecScores.resize(numTargetAttributes);
   copy(freeEnergyScores.begin(),
        freeEnergyScores.begin() + numTargetAttributes,

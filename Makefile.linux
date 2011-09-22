@@ -10,26 +10,8 @@ PROJECT_NAME = ec
 # --------------------------------------------------- compile and link settings
 C++C = g++
 
-# Optimizing serial
-#C++C_COMPILE_FLAGS = -Wall -ansi -pedantic -O3 -DNDEBUG
-#++C_LINK_FLAGS = -lm -lgsl -lgslcblas -L./libmdr-0.2.3 \
-#	-lmdr -lboost_program_options
-
-# Debugging serial symbols and profiling information
-#C++C_COMPILE_FLAGS =-Wall -Wno-deprecated -g -pg
-#C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -L./libmdr-0.2.3 -lmdr -pg
-
-# Debug parallel OpenMP
-#C++C_COMPILE_FLAGS =-Wall -Wno-deprecated -g -fopenmp -I../afni_src \
-#	-Wno-long-long -I../cpprelieff -I. \
-#	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
-#	-D__NOPLUGIN__
-#C++C_LINK_FLAGS = -lm -lgsl -lgslcblas -L./libmdr-0.2.3 -lmdr \
-#	-lboost_program_options -lgomp \
-#	-lgomp -lmri -L$(HOME)/abin -lf2c
-
 # Optimized parallel OpenMP
-C++C_COMPILE_FLAGS =-Wall -ansi -pedantic -O3 -DNDEBUG -fopenmp \
+C++C_COMPILE_FLAGS =-Wall -ansi -pedantic -O2 -g -DNDEBUG -fopenmp \
 	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
 	-D__NOPLUGIN__

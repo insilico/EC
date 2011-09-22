@@ -73,11 +73,17 @@ int main(int argc, char** argv) {
   uli_t rjNumTrees = 100;
   unsigned int rjNumThreads = 0;
   unsigned int rfNumThreads = 0;
+  string outputDatasetFilename = "";
 
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
+          (
+           "out-dataset-filename",
+           po::value<string>(&outputDatasetFilename),
+           "write a new tab-delimited dataset with EC filtered attributes"
+           )
           (
            "rj-num-threads",
            po::value<unsigned int>(&rjNumThreads)->default_value(rjNumThreads),
@@ -432,6 +438,13 @@ int main(int argc, char** argv) {
   }
   cout << "\tWriting EC scores to [" + fileToWriteOutput << ".ec]" << endl;
   ec.WriteAttributeScores(fileToWriteOutput);
+
+  // write the EC filtered attributes as a new data set
+  if(outputDatasetFilename != "") {
+    cout << "\tWriting new data set to [" << outputDatasetFilename
+            << "]" << endl;
+    ds->WriteNewDataset(outputDatasetFilename);
+  }
 
   // ---------------------------------------------------------------------------
   cout << "\tClean up and shutdown." << endl;
