@@ -31,6 +31,7 @@
 #include "PlinkDataset.h"
 #include "PlinkRawDataset.h"
 #include "PlinkBinaryDataset.h"
+#include "CleanSnpDataset.h"
 #include "Debugging.h"
 
 using namespace std;
@@ -38,7 +39,7 @@ using namespace insilico;
 namespace po = boost::program_options;
 
 // forward declarations of main program helper functions
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename);
+Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps=false);
 bool LoadIndividualIds(string filename, vector<string>& retIds, bool hasHeader);
 
 int main(int argc, char** argv) {
@@ -366,9 +367,9 @@ int main(int argc, char** argv) {
       break;
     case SNP_CLEAN_ANALYSIS:
       cout << "\tReading CLEAN SNPs data set" << endl;
-      ds = ChooseSnpsDatasetByExtension(cleanSnpsFilename);
-      datasetLoaded = ds->LoadDataset(cleanSnpsFilename, doRecodeA, "",
-                                      altPhenotypeFilename, indIds);
+      ds = ChooseSnpsDatasetByExtension(cleanSnpsFilename, true);
+      datasetLoaded = ds->LoadDataset(cleanSnpsFilename, false, "",
+                                      "", indIds);
       break;
     case NUMERIC_ONLY_ANALYSIS:
       cout << "\tReading numerics only data set" << endl;
@@ -378,12 +379,17 @@ int main(int argc, char** argv) {
       break;
     case DIAGNOSTIC_ANALYSIS:
       cout << "\tPerforming SNP diagnostics on the data set" << endl;
-      if(snpsFilename == "") {
+      if(snpsFilename == "" || cleanSnpsFilename == "") {
         cerr << "Cannot run diagnostics without a SNP file specified with "
-                << "--snp-data flag." << endl;
+                << "--snp-data or --snp-data-clean flag." << endl;
         exit(1);
       }
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      if(cleanSnpsFilename == "") {
+        ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      }
+      else {
+        ds = ChooseSnpsDatasetByExtension(snpsFilename, true);
+      }
       ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
                       altPhenotypeFilename, indIds);
       ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
@@ -391,6 +397,7 @@ int main(int argc, char** argv) {
         ds->WriteLevelCounts(diagnosticLevelsCountsFilename + ".counts");
       }
       // brutal exit!
+      cout << argv[0] << " done." << endl;
       exit(0);
       break;
     case NO_ANALYSIS:
@@ -434,14 +441,19 @@ int main(int argc, char** argv) {
   if(snpsFilename != "") {
     fileToWriteOutput = snpsFilename + "." + snpMetric + "." + numMetric;
   } else {
-    fileToWriteOutput = numericsFilename + "." + snpMetric + "." + numMetric;
+    if(cleanSnpsFilename != "") {
+      fileToWriteOutput = cleanSnpsFilename + "." + snpMetric + "." + numMetric;
+    }
+    else {
+      fileToWriteOutput = numericsFilename + "." + snpMetric + "." + numMetric;
+    }
   }
   cout << "\tWriting EC scores to [" + fileToWriteOutput << ".ec]" << endl;
   ec.WriteAttributeScores(fileToWriteOutput);
 
   // write the EC filtered attributes as a new data set
   if(outputDatasetFilename != "") {
-    cout << "\tWriting new data set to [" << outputDatasetFilename
+    cout << "\tWriting EC filtered data set to [" << outputDatasetFilename
             << "]" << endl;
     ds->WriteNewDataset(outputDatasetFilename);
   }
@@ -465,7 +477,7 @@ int main(int argc, char** argv) {
  * Determines the data set type to instantiate based on the
  * data set filenames's extension.
  ****************************************************************************/
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
+Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps) {
   string fileExt = "";
   fileExt = GetFileExtension(snpsFilename);
   // cout << "File extension: " << fileExt << endl;
@@ -476,7 +488,12 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
   } else {
     if(fileExt == "tab" || fileExt == "txt") {
       cout << "\t\tWhitespace-delimited";
-      ds = new Dataset();
+      if(isCleanSnps) {
+        ds = new CleanSnpDataset();
+      }
+      else {
+        ds = new Dataset();
+      }
     } else {
       if(fileExt == "ped" || fileExt == "map") {
         cout << "\t\tPlink map/ped";

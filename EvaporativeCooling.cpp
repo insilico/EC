@@ -215,7 +215,7 @@ bool EvaporativeCooling::ComputeECScores() {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
-    PrintAllScoresTabular();
+    // PrintAllScoresTabular();
     PrintKendallTaus();
 
     // -------------------------------------------------------------------------

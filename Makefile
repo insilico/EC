@@ -25,8 +25,8 @@ EC_OBJS = EvaporativeCoolingCLI.o EvaporativeCooling.o ../cpprelieff/Dataset.o \
 	../cpprelieff/ArffDataset.o ../cpprelieff/PlinkDataset.o \
 	../cpprelieff/PlinkRawDataset.o ../cpprelieff/PlinkBinaryDataset.o \
 	../cpprelieff/DistanceMetrics.o ../cpprelieff/ChiSquared.o \
-	../cpprelieff/FilesystemUtils.o ../cpprelieff/ReliefF.o
-	../cpprelieff/Statistics.o
+	../cpprelieff/FilesystemUtils.o ../cpprelieff/ReliefF.o \
+	../cpprelieff/Statistics.o ../cpprelieff/CleanSnpDataset.o
 
 # ----------------------------------------------------------------- BUILD RULES
 
