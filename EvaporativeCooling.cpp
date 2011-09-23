@@ -216,7 +216,7 @@ bool EvaporativeCooling::ComputeECScores() {
       return false;
     }
     // PrintAllScoresTabular();
-    PrintKendallTaus();
+    // PrintKendallTaus();
 
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
@@ -489,6 +489,7 @@ bool EvaporativeCooling::RunRandomJungle() {
       // happy lights
       if(i && ((i % 100) == 0)) {
         cout << i << "/" << numInstances << " ";
+        cout.flush();
       }
     }
     cout << numInstances << "/" << numInstances << endl;
@@ -543,6 +544,7 @@ bool EvaporativeCooling::RunRandomJungle() {
         data->set(i, rjParams.depVarCol, (int) dataset->GetInstance(i)->GetClass());
         if(i && ((i % 100) == 0)) {
           cout << i << "/" << numInstances << " ";
+          cout.flush();
         }
       }
       cout << numInstances << "/" << numInstances << endl;
