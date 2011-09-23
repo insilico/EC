@@ -215,11 +215,13 @@ bool EvaporativeCooling::ComputeECScores() {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
+    cout << "Free energy calculations complete." << endl;
     // PrintAllScoresTabular();
     // PrintKendallTaus();
 
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
+    cout << "\t\t\tRemoving the worst attributes..." << endl;
     unsigned int numToRemove = numToRemovePerIteration;
     if(paramsMap.count("ec-iter-remove-percent")) {
       unsigned int iterPercentToRemove =
@@ -233,16 +235,17 @@ bool EvaporativeCooling::ComputeECScores() {
     if(numToRemove < 1) {
       break;
     }
-    cout << "\t\t\tRemoving the worst " << numToRemove << " attributes..." << endl;
+    cout << "\t\t\t\tRemoving the worst " << numToRemove << " attributes..." << endl;
     if(!RemoveWorstAttributes(numToRemove)) {
       cerr << "ERROR: In EC algorithm: RemoveWorstAttribute failed." << endl;
       return false;
     }
-
     numWorkingAttributes -= numToRemove;
+    cout << "Attribute removal complete." << endl;
 
     ++iteration;
   }
+
   cout << "\t\tEC algorithm ran for " << iteration << " iterations." << endl;
 
   // remaining free energy attributes are the ones we want to write as a
