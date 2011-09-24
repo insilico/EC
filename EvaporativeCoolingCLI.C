@@ -18,6 +18,7 @@
 #include <map>
 #include <sstream>
 #include <vector>
+#include <time.h>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -46,6 +47,8 @@ int main(int argc, char** argv) {
 
   // ---------------------------------------------------------------------------
   cout << argv[0] << " starting..." << endl;
+  clock_t t;
+  t = clock();
 
   // ---------------------------------------------------------------------------
   cout << "\tProcessing command line arguments..." << endl;
@@ -461,6 +464,9 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   cout << "\tClean up and shutdown." << endl;
   // delete ds;
+
+  float elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+  cout << "\tEC elapsed time " << elapsedTime << " secs." << endl;
 
   cout << argv[0] << " done." << endl;
 

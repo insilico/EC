@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <time.h>
 
 #include <boost/program_options.hpp>
 #include <omp.h>
@@ -181,6 +182,8 @@ bool EvaporativeCooling::ComputeECScores() {
   // at top of this file. Modified per Brett's email to not do the
   // varying temperature and classifier accuracy optimization steps.
   unsigned int iteration = 1;
+  clock_t t;
+  float elapsedTime = 0.0;
   while(numWorkingAttributes > numTargetAttributes) {
     cout << "\t\t----------------------------------------------------"
             << "-------------------------" << endl;
@@ -188,39 +191,48 @@ bool EvaporativeCooling::ComputeECScores() {
             << ", working attributes: " << numWorkingAttributes
             << ", target attributes: " << numTargetAttributes
             << endl;
-
+    cout << fixed << setprecision(1);
+    
     // -------------------------------------------------------------------------
     // run Random Jungle and get the normalized scores for use in EC
+  	t = clock();
     cout << "\t\t\tRunning Random Jungle..." << endl;
     if(!RunRandomJungle()) {
       cerr << "ERROR: In EC algorithm: Random Jungle failed." << endl;
       return false;
     }
-    cout << "\t\t\tRandom Jungle finished." << endl;
+    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+    cout << "\t\t\tRandom Jungle finished in " << elapsedTime << " secs." << endl;
 
     // -------------------------------------------------------------------------
     // run Relief-F and get normalized score for use in EC
+  	t = clock();
     cout << "\t\t\tRunning ReliefF..." << endl;
     if(!RunReliefF()) {
       cerr << "ERROR: In EC algorithm: ReliefF failed." << endl;
       return false;
     }
-    cout << "\t\t\tReliefF finished." << endl;
+    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+    cout << "\t\t\tReliefF finished in " << elapsedTime << " secs." << endl;
 
     // -------------------------------------------------------------------------
     // compute free energy for all attributes
+  	t = clock();
     cout << "\t\t\tComputing free energy..." << endl;
     double temperature = 1.0;
     if(!ComputeFreeEnergy(temperature)) {
       cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed." << endl;
       return false;
     }
-    cout << "Free energy calculations complete." << endl;
+    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+    cout << "\t\t\tFree energy calculations complete in " << elapsedTime
+            << " secs." << endl;
     // PrintAllScoresTabular();
     // PrintKendallTaus();
 
     // -------------------------------------------------------------------------
     // remove the worst attributes and iterate
+  	t = clock();
     cout << "\t\t\tRemoving the worst attributes..." << endl;
     unsigned int numToRemove = numToRemovePerIteration;
     if(paramsMap.count("ec-iter-remove-percent")) {
@@ -235,13 +247,16 @@ bool EvaporativeCooling::ComputeECScores() {
     if(numToRemove < 1) {
       break;
     }
-    cout << "\t\t\t\tRemoving the worst " << numToRemove << " attributes..." << endl;
+    cout << "\t\t\t\tRemoving the worst " << numToRemove
+            << " attributes..." << endl;
     if(!RemoveWorstAttributes(numToRemove)) {
       cerr << "ERROR: In EC algorithm: RemoveWorstAttribute failed." << endl;
       return false;
     }
     numWorkingAttributes -= numToRemove;
-    cout << "Attribute removal complete." << endl;
+    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+    cout << "\t\t\tAttribute removal complete in " << elapsedTime
+            << " secs." << endl;
 
     ++iteration;
   }
