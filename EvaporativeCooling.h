@@ -25,6 +25,10 @@ typedef std::vector<std::pair<double, std::string> > EcScores;
 typedef std::vector<std::pair<double, std::string> >::iterator EcScoresIt;
 typedef std::vector<std::pair<double, std::string> >::const_iterator EcScoresCIt;
 
+typedef enum {
+  EC_ALL, EC_RJ, EC_RF
+} EcAlgorithmType;
+
 class EvaporativeCooling
 {
 public:
@@ -52,7 +56,7 @@ private:
   po::variables_map paramsMap;
 
   AnalysisType analysisType;
-
+  EcAlgorithmType algorithmType;
   RJunglePar rjParams;
 
   ReliefF* reliefF;

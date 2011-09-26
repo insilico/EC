@@ -78,11 +78,17 @@ int main(int argc, char** argv) {
   unsigned int rjNumThreads = 0;
   unsigned int rfNumThreads = 0;
   string outputDatasetFilename = "";
+  string ecAlgorithmSteps = "all";
 
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
+          (
+           "ec-algorithm-steps",
+           po::value<string>(&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+           "EC steps to run (all|rj|rf)"
+           )
           (
            "out-dataset-filename",
            po::value<string>(&outputDatasetFilename),
@@ -126,7 +132,7 @@ int main(int argc, char** argv) {
           (
            "snp-metric",
            po::value<string>(&snpMetric)->default_value(snpMetric),
-           "metric for determining the difference between SNPs (gm=default|am)"
+           "metric for determining the difference between SNPs (gm|am)"
            )
           (
            "numeric-data,n",
@@ -136,7 +142,7 @@ int main(int argc, char** argv) {
             (
            "numeric-metric",
            po::value<string>(&numMetric)->default_value(numMetric),
-           "metric for determining the difference between numeric attributes (manhattan=default|euclidean)"
+           "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
            )
           (
            "diagnostic-tests,g",
@@ -166,7 +172,7 @@ int main(int argc, char** argv) {
           (
            "number-random-samples,m",
            po::value<unsigned int>(&m)->default_value(m),
-           "number of random samples (default=0=all|1 <= n <= number of samples)"
+           "number of random samples (0=all|1 <= n <= number of samples)"
            )
           (
            "iter-remove-percent,p",
@@ -181,7 +187,7 @@ int main(int argc, char** argv) {
           (
            "recode-a,r",
            po::value<bool>(&doRecodeA)->default_value(doRecodeA),
-           "do a plink recodeA encoding to insure genotype data values (0=no=default|1=yes)"
+           "do a plink recodeA encoding to insure genotype data values (0=no|1=yes)"
            )
           (
            "weight-by-distance-sigma,s",

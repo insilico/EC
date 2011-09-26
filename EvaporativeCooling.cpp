@@ -72,6 +72,30 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   paramsMap = vm;
   analysisType = anaType;
 
+  if(paramsMap.count("ec-algorithm-steps")) {
+    string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
+    if(ecAlgParam == "ALL") {
+      algorithmType = EC_ALL;
+      cout << "\t\t\tRunning EC in standard mode: Random Jungle + Relief-F." << endl;
+    }
+    else {
+      if(ecAlgParam == "RJ") {
+        algorithmType = EC_RJ;
+        cout << "\t\t\tRunning EC in Random Jungle only mode." << endl;
+      }
+      else {
+        if(ecAlgParam == "RF") {
+          algorithmType = EC_RF;
+          cout << "\t\t\tRunning EC in Relief-F only mode." << endl;
+        }
+        else {
+          cerr << "ec-algorithm-steps must be one of: all, rj or rf." << endl;
+          exit(1);
+        }
+      }
+    }
+  }
+
   // set the number of attributea to remove per iteration
   if(paramsMap.count("ec-iter-remove-n")) {
     numToRemovePerIteration = paramsMap["ec-iter-remove-n"].as<unsigned int>();
@@ -130,20 +154,22 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 
   // ------------------------------------------------------------- Random Jungle
   // initialize Random Jungle
-  uli_t numTrees = vm["rj-num-trees"].as<uli_t > ();
-  cout << "\t\t\tInitializing Random Jungle with " << numTrees << " trees." << endl;
-  if(!InitializeRandomJungle(numTrees)) {
-    cerr << "ERROR: could not initialize Random Jungle." << endl;
-    exit(1);
+  if((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
+    uli_t numTrees = vm["rj-num-trees"].as<uli_t > ();
+    cout << "\t\t\tInitializing Random Jungle with " << numTrees << " trees." << endl;
+    if(!InitializeRandomJungle(numTrees)) {
+      cerr << "ERROR: could not initialize Random Jungle." << endl;
+      exit(1);
+    }
   }
-
   // ------------------------------------------------------------------ Relief-F
   // intialize Relief-F
-  cout << "\t\t\tInitializing Relief-F." << endl;
-  reliefF = new ReliefF(dataset, paramsMap, analysisType);
-
-  // end of constructor
-}
+  if((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
+    cout << "\t\t\tInitializing Relief-F." << endl;
+    reliefF = new ReliefF(dataset, paramsMap, analysisType);
+  }
+  
+} // end of constructor
 
 /*****************************************************************************
  * Method: destructor
@@ -195,25 +221,29 @@ bool EvaporativeCooling::ComputeECScores() {
     
     // -------------------------------------------------------------------------
     // run Random Jungle and get the normalized scores for use in EC
-  	t = clock();
-    cout << "\t\t\tRunning Random Jungle..." << endl;
-    if(!RunRandomJungle()) {
-      cerr << "ERROR: In EC algorithm: Random Jungle failed." << endl;
-      return false;
+    if((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
+      t = clock();
+      cout << "\t\t\tRunning Random Jungle..." << endl;
+      if(!RunRandomJungle()) {
+        cerr << "ERROR: In EC algorithm: Random Jungle failed." << endl;
+        return false;
+      }
+      elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+      cout << "\t\t\tRandom Jungle finished in " << elapsedTime << " secs." << endl;
     }
-    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
-    cout << "\t\t\tRandom Jungle finished in " << elapsedTime << " secs." << endl;
 
     // -------------------------------------------------------------------------
     // run Relief-F and get normalized score for use in EC
-  	t = clock();
-    cout << "\t\t\tRunning ReliefF..." << endl;
-    if(!RunReliefF()) {
-      cerr << "ERROR: In EC algorithm: ReliefF failed." << endl;
-      return false;
+    if((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
+      t = clock();
+      cout << "\t\t\tRunning ReliefF..." << endl;
+      if(!RunReliefF()) {
+        cerr << "ERROR: In EC algorithm: ReliefF failed." << endl;
+        return false;
+      }
+      elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+      cout << "\t\t\tReliefF finished in " << elapsedTime << " secs." << endl;
     }
-    elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
-    cout << "\t\t\tReliefF finished in " << elapsedTime << " secs." << endl;
 
     // -------------------------------------------------------------------------
     // compute free energy for all attributes
@@ -791,22 +821,44 @@ bool EvaporativeCooling::RunReliefF() {
  * where E=Relief-F, S=Random Jungle, T=temperature
  ****************************************************************************/
 bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
-  if(rjScores.size() != rfScores.size()) {
-    cerr << "EvaporativeCooling::ComputeFreeEnergy scores lists are "
-            "unequal. RJ: " << rjScores.size() << " vs. RF: " <<
-            rfScores.size() << endl;
-    return false;
+  if(algorithmType == EC_ALL) {
+    if(rjScores.size() != rfScores.size()) {
+      cerr << "EvaporativeCooling::ComputeFreeEnergy scores lists are "
+              "unequal. RJ: " << rjScores.size() << " vs. RF: " <<
+              rfScores.size() << endl;
+      return false;
+    }
   }
-  sort(rjScores.begin(), rjScores.end(), scoresSortAscByName);
-  sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
+
   freeEnergyScores.clear();
   EcScoresCIt rjIt = rjScores.begin();
   EcScoresCIt rfIt = rfScores.begin();
-  for(; rjIt != rjScores.end(); ++rjIt, ++rfIt) {
-    string val = rjIt->second;
-    double key = rjIt->first;
-    freeEnergyScores.push_back(make_pair((*rfIt).first + (temperature * key), val));
+  switch(algorithmType) {
+    case EC_ALL:
+      sort(rjScores.begin(), rjScores.end(), scoresSortAscByName);
+      sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
+      for(; rjIt != rjScores.end(); ++rjIt, ++rfIt) {
+        string val = rjIt->second;
+        double key = rjIt->first;
+        freeEnergyScores.push_back(make_pair((*rfIt).first + (temperature * key), val));
+      }
+      break;
+    case EC_RJ:
+      for(; rjIt != rjScores.end(); ++rjIt) {
+        freeEnergyScores.push_back(make_pair(rjIt->first, rjIt->second));
+      }
+      break;
+    case EC_RF:
+      for(; rfIt != rfScores.end(); ++rfIt) {
+        freeEnergyScores.push_back(make_pair(rfIt->first, rfIt->second));
+      }
+      break;
+    default:
+      cerr << "ERROR: EvaporativeCooling::ComputeFreeEnergy: "
+              << "could not determine EC algorithm type." << endl;
+      return false;
   }
+
   return true;
 }
 
