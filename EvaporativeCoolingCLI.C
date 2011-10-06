@@ -55,74 +55,50 @@ int main(int argc, char** argv) {
 
   // command line processing variables: defaults and storage for boost
   string snpsFilename = "";
-  string cleanSnpsFilename = "";
-  string numericsFilename = "";
-  unsigned int k = 10;
-  unsigned int m = 0;
-  bool wbd = false;
-  double sigma = 0.0;
-  string snpMetric = "gm";
-  string numMetric = "manhattan";
-  string diagnosticLogFilename = "";
-  string diagnosticLevelsCountsFilename = "";
-  unsigned int iterNumToRemove = 0;
-  unsigned int iterPercentToRemove = 0;
-  unsigned int ecIterNumToRemove = 1;
-  unsigned int ecIterPercentToRemove = 0;
   string snpExclusionFile = "";
   bool doRecodeA = false;
+  string cleanSnpsFilename = "";
+  string numericsFilename = "";
+  bool continuousPhenotype = false;
   string altPhenotypeFilename = "";
+  string outputDatasetFilename = "";
+  string outputFilesPrefix = "ec_run";
   bool verbose = false;
-  unsigned int ecNumTarget = 0;
+  // Random Jungle
   uli_t rjNumTrees = 100;
   unsigned int rjNumThreads = 0;
+  // ReliefF
+  unsigned int k = 10;
+  unsigned int m = 0;
+  string snpMetric = "gm";
+  string numMetric = "manhattan";
+  string weightByDistanceMethod = "equal";
+  double weightByDistanceSigma = 2.0;
+  unsigned int iterNumToRemove = 0;
+  unsigned int iterPercentToRemove = 0;
   unsigned int rfNumThreads = 0;
-  string outputDatasetFilename = "";
+  // diagnostic
+  string diagnosticLogFilename = "";
+  string diagnosticLevelsCountsFilename = "";
+  // EC parameters
   string ecAlgorithmSteps = "all";
-
+  unsigned int ecNumTarget = 0;
+  unsigned int ecIterNumToRemove = 1;
+  unsigned int ecIterPercentToRemove = 0;
+  
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
           (
-           "ec-algorithm-steps",
-           po::value<string>(&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
-           "EC steps to run (all|rj|rf)"
-           )
-          (
-           "out-dataset-filename",
-           po::value<string>(&outputDatasetFilename),
-           "write a new tab-delimited dataset with EC filtered attributes"
-           )
-          (
-           "rj-num-threads",
-           po::value<unsigned int>(&rjNumThreads)->default_value(rjNumThreads),
-           "number of threads to use in Random Jungle, 0=all"
-           )
-          (
-           "rf-num-threads",
-           po::value<unsigned int>(&rfNumThreads)->default_value(rfNumThreads),
-           "number of threads to use in Relief-F, 0=all"
-           )
-          (
-           "ec-num-target",
-           po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
-           "EC N_target - target number of attributes to keep"
-           )
-          (
-           "rj-num-trees",
-           po::value<uli_t>(&rjNumTrees)->default_value(rjNumTrees),
-           "Random Jungle number of trees to grow"
-           )
-          (
-           "alternate-pheno-file,a",
-           po::value<string>(&altPhenotypeFilename),
-           "specifies an alternative phenotype/class label file; one value per line"
-           )
-          (
            "snp-data,d",
            po::value<string>(&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+           )
+          (
+           "snp-exclusion-file,x",
+           po::value<string>(&snpExclusionFile),
+           "file of SNP names to be excluded"
            )
           (
            "snp-data-clean",
@@ -130,74 +106,34 @@ int main(int argc, char** argv) {
            "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
-           "snp-metric",
-           po::value<string>(&snpMetric)->default_value(snpMetric),
-           "metric for determining the difference between SNPs (gm|am)"
+           "recode-a,r",
+           po::value<bool>(&doRecodeA)->default_value(doRecodeA),
+           "do a plink recodeA encoding to insure genotype data values (0=no|1=yes)"
            )
           (
            "numeric-data,n",
            po::value<string>(&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
-            (
-           "numeric-metric",
-           po::value<string>(&numMetric)->default_value(numMetric),
-           "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
+          (
+           "continuous-phenotype,w",
+           po::value<bool>(&continuousPhenotype)->default_value(continuousPhenotype),
+           "phenotype is continuous? (0=no|1=yes)"
            )
           (
-           "diagnostic-tests,g",
-           po::value<string> (&diagnosticLogFilename),
-           "performs diagnostic tests and sends output to filename without running Relief-F"
+           "alternate-pheno-file,a",
+           po::value<string>(&altPhenotypeFilename),
+           "specifies an alternative phenotype/class label file; one value per line"
            )
           (
-           "iter-remove-n,i",
-           po::value<unsigned int>(&iterNumToRemove),
-           "iterative ReliefF number of attributes to remove per iteration"
+           "out-dataset-filename",
+           po::value<string>(&outputDatasetFilename),
+           "write a new tab-delimited data set with EC filtered attributes"
            )
           (
-           "ec-iter-remove-n",
-           po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
-           "Evaporative Cooling number of attributes to remove per iteration"
-           )
-          (
-           "k-nearest-neighbors,k",
-           po::value<unsigned int>(&k)->default_value(k),
-           "set k nearest neighbors"
-           )
-          (
-           "diagnostic-levels-file,l",
-           po::value<string > (&diagnosticLevelsCountsFilename),
-           "write diagnostic attribute level counts to filename"
-           )
-          (
-           "number-random-samples,m",
-           po::value<unsigned int>(&m)->default_value(m),
-           "number of random samples (0=all|1 <= n <= number of samples)"
-           )
-          (
-           "iter-remove-percent,p",
-           po::value<unsigned int>(&iterPercentToRemove),
-           "iterative ReliefF precentage of attributes to remove per iteration"
-           )
-          (
-           "ec-iter-remove-percent,p",
-           po::value<unsigned int>(&ecIterPercentToRemove),
-           "Evaporative Cooling precentage of attributes to remove per iteration"
-           )
-          (
-           "recode-a,r",
-           po::value<bool>(&doRecodeA)->default_value(doRecodeA),
-           "do a plink recodeA encoding to insure genotype data values (0=no|1=yes)"
-           )
-          (
-           "weight-by-distance-sigma,s",
-           po::value<double>(&sigma),
-           "weight by distance sigma (default=20.0)"
-           )
-          (
-           "weight-by-distance,w",
-           po::value<bool>(&wbd)->default_value(wbd),
-           "weight differences by distance (0=no|1=yes)"
+           "out-files-prefix",
+           po::value<string>(&outputFilesPrefix)->default_value(outputFilesPrefix),
+           "write a new tab-delimited data set with EC filtered attributes"
            )
           (
            "verbose,v",
@@ -205,9 +141,89 @@ int main(int argc, char** argv) {
            "verbose output to stdout (0=no|1=yes)"
            )
           (
-           "snp-exclusion-file,x",
-           po::value<string>(&snpExclusionFile),
-           "file of SNP names to be excluded"
+           "rj-num-trees",
+           po::value<uli_t>(&rjNumTrees)->default_value(rjNumTrees),
+           "Random Jungle number of trees to grow"
+           )
+          (
+           "rj-num-threads",
+           po::value<unsigned int>(&rjNumThreads)->default_value(rjNumThreads),
+           "number of threads to use in Random Jungle, 0=all"
+           )
+          (
+           "k-nearest-neighbors,k",
+           po::value<unsigned int>(&k)->default_value(k),
+           "set k nearest neighbors"
+           )
+          (
+           "number-random-samples,m",
+           po::value<unsigned int>(&m)->default_value(m),
+           "number of random samples (0=all|1 <= n <= number of samples)"
+           )
+          (
+           "snp-metric",
+           po::value<string>(&snpMetric)->default_value(snpMetric),
+           "metric for determining the difference between SNPs (gm|am)"
+           )
+            (
+           "numeric-metric",
+           po::value<string>(&numMetric)->default_value(numMetric),
+           "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
+           )
+          (
+           "weight-by-distance-method",
+           po::value<string>(&weightByDistanceMethod)->default_value(weightByDistanceMethod),
+           "weight-by-distance method (equal|one_over_k|exponential)"
+           )
+          (
+           "weight-by-distance-sigma,s",
+           po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
+           "weight by distance sigma"
+           )
+          (
+           "iter-remove-n,i",
+           po::value<unsigned int>(&iterNumToRemove),
+           "iterative ReliefF number of attributes to remove per iteration"
+           )
+          (
+           "iter-remove-percent,p",
+           po::value<unsigned int>(&iterPercentToRemove),
+           "iterative ReliefF precentage of attributes to remove per iteration"
+           )
+          (
+           "rf-num-threads",
+           po::value<unsigned int>(&rfNumThreads)->default_value(rfNumThreads),
+           "number of threads to use in Relief-F, 0=all"
+           )
+          (
+           "diagnostic-tests,g",
+           po::value<string> (&diagnosticLogFilename),
+           "performs diagnostic tests and sends output to filename without running Relief-F"
+           )
+          (
+           "diagnostic-levels-file,l",
+           po::value<string > (&diagnosticLevelsCountsFilename),
+           "write diagnostic attribute level counts to filename"
+           )
+          (
+           "ec-algorithm-steps",
+           po::value<string>(&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+           "EC steps to run (all|rj|rf)"
+           )
+          (
+           "ec-num-target",
+           po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
+           "EC N_target - target number of attributes to keep"
+           )
+          (
+           "ec-iter-remove-n",
+           po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
+           "Evaporative Cooling number of attributes to remove per iteration"
+           )
+          (
+           "ec-iter-remove-percent,p",
+           po::value<unsigned int>(&ecIterPercentToRemove),
+           "Evaporative Cooling precentage of attributes to remove per iteration"
            )
           ;
 
@@ -231,12 +247,12 @@ int main(int argc, char** argv) {
     analysisType = DIAGNOSTIC_ANALYSIS;
   } else {
     if(vm.count("snp-data") && vm.count("numeric-data")) {
-      cerr << "Integrated data not supported in this version of EC." << endl;
-      exit(1);
+      cout << "\t\tIntegrated analysis requested." << endl;
+      analysisType = INTEGRATED_ANALYSIS;
     }
     if(vm.count("snp-data-clean") && vm.count("numeric-data")) {
-      cerr << "Integrated data not supported in this version of EC." << endl;
-      exit(1);
+      cout << "\t\tIntegrated analysis requested." << endl;
+      analysisType = INTEGRATED_ANALYSIS;
     }
     if((vm.count("snp-data") || vm.count("snp-data-clean")) &&
        !vm.count("numeric-data")) {
@@ -261,8 +277,8 @@ int main(int argc, char** argv) {
         }
       } else {
         if(vm.count("snp-data") && vm.count("numeric-data")) {
-          cerr << "ERROR: integrated analysis not supported." << endl;
-          exit(1);
+          cout << "\t\tIntegrated analysis requested." << endl;
+          analysisType = INTEGRATED_ANALYSIS;
         }
         else {
           cerr << "ERROR: Could not determine the analysis to do based on "
@@ -271,6 +287,12 @@ int main(int argc, char** argv) {
         }
       }
     }
+  }
+
+  if(continuousPhenotype && altPhenotypeFilename == "") {
+    cerr << "ERROR: Continuous phenotype option --continuous-phenotype "
+            << "requires --alternate-pheno-file option." << endl;
+    exit(1);
   }
 
   // -------------------------------------------------------------------------
@@ -282,7 +304,8 @@ int main(int argc, char** argv) {
   vector<string> numericsIds;
   vector<string> phenoIds;
   if(analysisType == SNP_ONLY_ANALYSIS ||
-     analysisType == NUMERIC_ONLY_ANALYSIS) {
+     analysisType == NUMERIC_ONLY_ANALYSIS ||
+     analysisType == INTEGRATED_ANALYSIS) {
     if(numericsFilename != "") {
       cout << "\t\tLoading individual IDs from covar file: "
               << numericsFilename << endl;
@@ -372,19 +395,28 @@ int main(int argc, char** argv) {
       cout << "\tReading SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(snpsFilename);
       datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, "",
-                                      altPhenotypeFilename, indIds);
+                                      altPhenotypeFilename, indIds,
+                                      continuousPhenotype);
       break;
     case SNP_CLEAN_ANALYSIS:
       cout << "\tReading CLEAN SNPs data set" << endl;
       ds = ChooseSnpsDatasetByExtension(cleanSnpsFilename, true);
       datasetLoaded = ds->LoadDataset(cleanSnpsFilename, false, "",
-                                      "", indIds);
+                                      "", indIds, continuousPhenotype);
       break;
     case NUMERIC_ONLY_ANALYSIS:
       cout << "\tReading numerics only data set" << endl;
       ds = new Dataset();
       datasetLoaded = ds->LoadDataset("", doRecodeA, numericsFilename,
-                                      altPhenotypeFilename, indIds);
+                                      altPhenotypeFilename, indIds,
+                                      continuousPhenotype);
+      break;
+    case INTEGRATED_ANALYSIS:
+      cout << "\tReading datasets for integrated analysis" << endl;
+      ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      datasetLoaded = ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
+                                      altPhenotypeFilename, indIds,
+                                      continuousPhenotype);
       break;
     case DIAGNOSTIC_ANALYSIS:
       cout << "\tPerforming SNP diagnostics on the data set" << endl;
@@ -400,7 +432,7 @@ int main(int argc, char** argv) {
         ds = ChooseSnpsDatasetByExtension(snpsFilename, true);
       }
       ds->LoadDataset(snpsFilename, doRecodeA, numericsFilename,
-                      altPhenotypeFilename, indIds);
+                      altPhenotypeFilename, indIds, continuousPhenotype);
       ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
       if(diagnosticLevelsCountsFilename != "") {
         ds->WriteLevelCounts(diagnosticLevelsCountsFilename + ".counts");
@@ -428,7 +460,8 @@ int main(int argc, char** argv) {
     ds->PrintStats();  
   }
   else {
-    if(analysisType == NUMERIC_ONLY_ANALYSIS) {
+    if(analysisType == NUMERIC_ONLY_ANALYSIS ||
+       analysisType == INTEGRATED_ANALYSIS) {
       ds->PrintNumericsStats();
     }
   }
@@ -446,19 +479,8 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   // write the scores to the same name as the dataset with
   // <metric>.relieff suffix
-  string fileToWriteOutput;
-  if(snpsFilename != "") {
-    fileToWriteOutput = snpsFilename + "." + snpMetric + "." + numMetric;
-  } else {
-    if(cleanSnpsFilename != "") {
-      fileToWriteOutput = cleanSnpsFilename + "." + snpMetric + "." + numMetric;
-    }
-    else {
-      fileToWriteOutput = numericsFilename + "." + snpMetric + "." + numMetric;
-    }
-  }
-  cout << "\tWriting EC scores to [" + fileToWriteOutput << ".ec]" << endl;
-  ec.WriteAttributeScores(fileToWriteOutput);
+  cout << "\tWriting EC scores to [" + outputFilesPrefix << ".ec]" << endl;
+  ec.WriteAttributeScores(outputFilesPrefix);
 
   // write the EC filtered attributes as a new data set
   if(outputDatasetFilename != "") {

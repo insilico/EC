@@ -19,6 +19,9 @@
 #include <omp.h>
 #include <gsl/gsl_rng.h>
 
+#include "EvaporativeCooling.h"
+
+// Random Jungle source distribution
 #include "librjungle.h"
 #include "RJunglePar.h"
 #include "RJungleCtrl.h"
@@ -27,11 +30,12 @@
 #include "RJungleHelper.h"
 #include "Helper.h"
 
-#include "EvaporativeCooling.h"
-#include "../cpprelieff/Dataset.h"
-#include "../cpprelieff/Statistics.h"
-#include "../cpprelieff/StringUtils.h"
-#include "../cpprelieff/ReliefF.h"
+// ReliefF project
+#include "Dataset.h"
+#include "Statistics.h"
+#include "StringUtils.h"
+#include "ReliefF.h"
+#include "RReliefF.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -72,6 +76,21 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   paramsMap = vm;
   analysisType = anaType;
 
+  // set the number of target attributes
+  numTargetAttributes = vm["ec-num-target"].as<unsigned int>();
+  if(numTargetAttributes < 1) {
+    cerr << "Use --ec-num-target to the number of best attributes desired."
+            << endl;
+    exit(-1);
+  }
+  if(numTargetAttributes > dataset->NumAttributes()) {
+    cerr << "--ec-num-taget must be less than or equal to the "
+            << "number of attributes in the data set." << endl;
+    exit(-1);
+  }
+  cout << "\t\t\tEC is removing attributes until best " << numTargetAttributes
+          << " remain." << endl;
+
   if(paramsMap.count("ec-algorithm-steps")) {
     string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
     if(ecAlgParam == "ALL") {
@@ -95,6 +114,8 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
       }
     }
   }
+
+  outFilesPrefix = paramsMap["out-files-prefix"].as<string>();
 
   // set the number of attributea to remove per iteration
   if(paramsMap.count("ec-iter-remove-n")) {
@@ -120,21 +141,6 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   }
   cout << "\t\t\tRelief-F will remove " << rfNumToRemovePerIteration
           << " attributes per iteration." << endl;
-
-  // set the number of target attributes
-  numTargetAttributes = vm["ec-num-target"].as<unsigned int>();
-  if(numTargetAttributes < 1) {
-    cerr << "Use --ec-num-target to the number of best attributes desired."
-            << endl;
-    exit(-1);
-  }
-  if(numTargetAttributes > dataset->NumAttributes()) {
-    cerr << "--ec-num-taget must be less than or equal to the "
-            << "number of attributes in the data set." << endl;
-    exit(-1);
-  }
-  cout << "\t\t\tEC is removing attributes until best " << numTargetAttributes
-          << " remain." << endl;
 
   // multithreading setup
   unsigned int maxThreads = omp_get_num_procs();
@@ -166,7 +172,14 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   // intialize Relief-F
   if((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
     cout << "\t\t\tInitializing Relief-F." << endl;
-    reliefF = new ReliefF(dataset, paramsMap, analysisType);
+    if(dataset->HasContinuousPhenotypes()) {
+      cout << "\t\t\t\tRRelief-F." << endl;
+      reliefF = new RReliefF(dataset, paramsMap);
+    }
+    else {
+      cout << "\t\t\t\tRelief-F." << endl;
+      reliefF = new ReliefF(dataset, paramsMap, analysisType);
+    }
   }
   
 } // end of constructor
@@ -341,13 +354,34 @@ void EvaporativeCooling::PrintAttributeScores(ofstream& outFile) {
 /*****************************************************************************
  * Method: WriteAttributeScores
  *
- * IN:  output file name into which scores will be printed
+ * IN:  base file name into which scores will be printed
  * OUT: none
  *
  * Send score and attribute name to output filename passed.
  ****************************************************************************/
 void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
-  string resultsFilename = baseFilename + ".ec";
+  string resultsFilename = baseFilename;
+  // added 9/26/11 for reflecting the fact that only parts of the
+  // complete EC algorithm were performed
+  switch(algorithmType) {
+    case EC_ALL:
+      resultsFilename += ".ec";
+      break;
+    case EC_RJ:
+      resultsFilename += ".ec.rj";
+      break;
+    case EC_RF:
+      resultsFilename += ".ec.rf";
+      break;
+    default:
+      // we should not get here by the CLI front end but it is possible to call
+      // this from other programs in the future or when used as a library
+      // TODO: better message
+      cerr << "Attempting to write attribute scores before the analysis "
+              << "type was determined. "
+              << endl;
+      return;
+  }
   ofstream outFile;
   outFile.open(resultsFilename.c_str());
   if(outFile.bad()) {
@@ -495,45 +529,106 @@ bool EvaporativeCooling::RunRandomJungle() {
   time_t start, end;
   clock_t startgrow, endgrow;
 
-  // only support numeric OR SNP data
-  if(dataset->HasNumerics()) {
-    rjParams.outprefix = (char *) dataset->GetNumericsFilename().c_str();
-    rjParams.ncol = dataset->NumNumerics() + 1;
-  } else {
-    rjParams.outprefix = (char *) dataset->GetSnpsFilename().c_str();
-    rjParams.ncol = dataset->NumAttributes() + 1;
-  }
+  time(&start);
+
+  rjParams.outprefix = (char*) outFilesPrefix.c_str();
+  rjParams.ncol = dataset->NumVariables() + 1;
   rjParams.depVar = rjParams.ncol - 1;
   rjParams.depVarCol = rjParams.ncol - 1;
-  string outPrefix(rjParams.outprefix);
-  string importanceFilename = outPrefix + ".importance";
+  string importanceFilename = outFilesPrefix + ".importance";
+
+  // base classifier: classification or regression trees?
+  string treeTypeDesc = "";
+  if(dataset->HasContinuousPhenotypes()) {
+    // regression
+    if(dataset->HasNumerics() && dataset->HasGenotypes()) {
+      // integrated/numeric
+      rjParams.treeType = 3;
+      treeTypeDesc = "Regression trees: integrated/continuous";
+    }
+    else {
+      if(dataset->HasGenotypes()) {
+        // nominal/numeric
+        rjParams.treeType = 4;
+        treeTypeDesc = "Regression trees: discrete/continuous";
+      }
+      else {
+      // numeric/numeric
+        if(dataset->HasNumerics()) {
+          rjParams.treeType = 3;
+          treeTypeDesc = "Regression trees: integrated/continuous";
+        }
+      }
+    }
+  }
+  else {
+    // classification
+    if(dataset->HasNumerics() && dataset->HasGenotypes()) {
+      // mixed/nominal
+      rjParams.treeType = 1;
+      treeTypeDesc = "Classification trees: integrated/discrete";
+    }
+    else {
+      if(dataset->HasGenotypes()) {
+        // nominal/nominal
+        rjParams.treeType = 2;
+        treeTypeDesc = "Classification trees: discrete/discrete";
+      }
+      else {
+      // numeric/nominal
+        if(dataset->HasNumerics()) {
+          rjParams.treeType = 1;
+          treeTypeDesc = "Classification trees: continuous/discrete";
+        }
+      }
+    }
+  }
+  cout << "\t\t\t\t" << treeTypeDesc << endl;
+
   RJungleIO io;
   io.open(rjParams);
-
   unsigned int numInstances = dataset->NumInstances();
-
-  if(dataset->HasNumerics()) {
-    // numeric data
-    cout << "\t\t\t\tPreparing numeric version of Random Jungle." << endl;
-    time(&start);
-
-    // load data frame
-    // TODO: do not load data frame every time-- use column mask mechanism?
-    cout << "\t\t\t\tLoading RJ DataFrame with double values: ";
-    DataFrame<double>* data = new DataFrame<double>(rjParams);
+  vector<string> variableNames = dataset->GetVariableNames();
+  vector<string> attributeNames = dataset->GetAttributeNames();
+  vector<string> numericNames = dataset->GetNumericsNames();
+  if((rjParams.treeType == 1) || 
+     (rjParams.treeType == 3) ||
+     (rjParams.treeType == 4)) {
+    // regression
+    cout << "\t\t\t\tPreparing regression version of Random Jungle." << endl;
+    rjParams.memMode = 0;
+    rjParams.impMeasure = 2;
+//    rjParams.backSel = 3;
+//    rjParams.numOfImpVar = 2;
+    DataFrame<Numeric>* data = new DataFrame<Numeric>(rjParams);
     data->setDim(rjParams.nrow, rjParams.ncol);
-    vector<string> numericNames = dataset->GetNumericsNames();
-    numericNames.push_back(rjParams.depVarName);
-    data->setVarNames(numericNames);
+    variableNames.push_back(rjParams.depVarName);
+    data->setVarNames(variableNames);
     data->setDepVarName(rjParams.depVarName);
     data->setDepVar(rjParams.depVarCol);
     data->initMatrix();
+    // load data frame
+    // TODO: do not load data frame every time-- use column mask mechanism?
+    cout << "\t\t\t\tLoading RJ DataFrame with double values: ";
+    cout.flush();
     for(unsigned int i = 0; i < numInstances; ++i) {
-      for(unsigned int j = 0; j < numericNames.size() - 1; ++j) {
-        data->set(i, j, dataset->GetNumeric(i, numericNames[j]));
+      unsigned int j = 0;
+      for(unsigned int a = 0; a < attributeNames.size(); ++a) {
+//        cout << "Loading instance " << i << ", attribute: " << a
+//                << " " << attributeNames[a] << endl;
+        data->set(i, j, (Numeric) dataset->GetAttribute(i, attributeNames[a]));
+        ++j;
       }
-      data->set(i, rjParams.depVarCol,
-                (double) dataset->GetInstance(i)->GetClass());
+      for(unsigned int n = 0; n < numericNames.size(); ++n) {
+        data->set(i, j, dataset->GetNumeric(i, numericNames[n]));
+        ++j;
+      }
+      if(dataset->HasContinuousPhenotypes()) {
+        data->set(i, j, dataset->GetInstance(i)->GetPredictedValueTau());
+      }
+      else {
+        data->set(i, j, (double) dataset->GetInstance(i)->GetClass());
+      }
       // happy lights
       if(i && ((i % 100) == 0)) {
         cout << i << "/" << numInstances << " ";
@@ -544,98 +639,81 @@ bool EvaporativeCooling::RunRandomJungle() {
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
-
-    RJungleGen<double> rjGen;
+//    cout << "DEBUG data frame:" << endl;
+//    data->print(cout);
+//    data->printSummary();
+    
+    RJungleGen<Numeric> rjGen;
     rjGen.init(rjParams, *data);
 
     startgrow = clock();
-    TIMEPROF_START("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
     // create controller
-    RJungleCtrl<double> rjCtrl;
+    RJungleCtrl<Numeric> rjCtrl;
     cout << "\t\t\t\tRunning Random Jungle" << endl;
     rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
-    TIMEPROF_STOP("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
     endgrow = clock();
 
-    // print info stuff
-    RJungleHelper<double>::printRJunglePar(rjParams, *io.outLog);
+    time(&end);
 
-    // clean up
-    if(data != NULL) {
-      delete data;
+    // print info stuff
+    RJungleHelper<Numeric>::printRJunglePar(rjParams, *io.outLog);
+    RJungleHelper<Numeric>::printFooter(rjParams, io, start, end,
+                                       startgrow, endgrow);
+    // delete data;
+  }
+  else {
+    cout << "\t\t\t\tPreparing SNP classification version of Random Jungle." << endl;
+    rjParams.memMode = 2;
+    rjParams.impMeasure = 1;
+    DataFrame<char>* data = new DataFrame<char>(rjParams);
+
+    data->setDim(rjParams.nrow, rjParams.ncol);
+    variableNames.push_back(rjParams.depVarName);
+    data->setVarNames(variableNames);
+    data->setDepVarName(rjParams.depVarName);
+    data->setDepVar(rjParams.depVarCol);
+    data->initMatrix();
+    // load data frame
+    // TODO: do not load data frame every time-- use column mask mechanism?
+    cout << "\t\t\t\tLoading RJ DataFrame with double values: ";
+    for(unsigned int i = 0; i < numInstances; ++i) {
+      for(unsigned int j = 0; j < attributeNames.size(); ++j) {
+        data->set(i, j, dataset->GetAttribute(i, attributeNames[j]));
+      }
+      data->set(i, rjParams.depVarCol, dataset->GetInstance(i)->GetClass());
+      // happy lights
+      if(i && ((i % 100) == 0)) {
+        cout << i << "/" << numInstances << " ";
+        cout.flush();
+      }
     }
-    if(colMaskVec != NULL) {
-      delete colMaskVec;
-    }
+    cout << numInstances << "/" << numInstances << endl;
+    data->storeCategories();
+    data->makeDepVecs();
+    data->getMissings();
+    RJungleGen<char> rjGen;
+    rjGen.init(rjParams, *data);
+
+    startgrow = clock();
+    // create controller
+    RJungleCtrl<char> rjCtrl;
+    cout << "\t\t\t\tRunning Random Jungle" << endl;
+    rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
+    endgrow = clock();
 
     time(&end);
-  } else {
-    // SNP data
-    if(dataset->HasGenotypes()) {
-      cout << "\t\t\tPreparing discrete version of Random Jungle" << endl;
-      time(&start);
 
-      // load data frame
-      cout << "\t\t\t\tLoading RJ DataFrame with SNP (character) values: ";
-      DataFrame<int>* data = new DataFrame<int>(rjParams);
-      data->setDim(rjParams.nrow, rjParams.ncol);
-      vector<string> attributeNames = dataset->GetAttributeNames();
-      attributeNames.push_back(rjParams.depVarName);
-      data->setVarNames(attributeNames);
-      data->setDepVarName(rjParams.depVarName);
-      data->setDepVar(rjParams.depVarCol);
-      data->initMatrix();
-      for(unsigned int i = 0; i < dataset->NumInstances(); ++i) {
-        for(unsigned int j = 0; j < attributeNames.size() - 1; ++j) {
-          data->set(i, j, (int) dataset->GetAttribute(i, attributeNames[j]));
-        }
-        data->set(i, rjParams.depVarCol, (int) dataset->GetInstance(i)->GetClass());
-        if(i && ((i % 100) == 0)) {
-          cout << i << "/" << numInstances << " ";
-          cout.flush();
-        }
-      }
-      cout << numInstances << "/" << numInstances << endl;
-      ;
-      data->storeCategories();
-      data->makeDepVecs();
-      data->getMissings();
-
-      RJungleGen<int> rjGen;
-      rjGen.init(rjParams, *data);
-
-      startgrow = clock();
-      TIMEPROF_START("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
-      // create controller
-      RJungleCtrl<int> rjCtrl;
-      cout << "\t\t\t\tRunning Random Jungle" << endl;
-      rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
-      TIMEPROF_STOP("RJungleCtrl~~RJungleCtrl::autoBuildInternal");
-      endgrow = clock();
-
-      // clean up
-      if(data != NULL) {
-        delete data;
-      }
-      if(colMaskVec != NULL) {
-        delete colMaskVec;
-      }
-
-      time(&end);
-    } else {
-      cerr << "ERROR: Dataset is not loaded or of unknown data type." << endl;
-      return false;
-    }
+    // print info stuff
+    RJungleHelper<char>::printRJunglePar(rjParams, *io.outLog);
+    RJungleHelper<char>::printFooter(rjParams, io, start, end,
+                                       startgrow, endgrow);
+    // delete data;
   }
 
-  // print info stuff
-  RJungleHelper<double>::printRJunglePar(rjParams, *io.outLog);
-  RJungleHelper<double>::printFooter(rjParams, io, start, end,
-                                     startgrow, endgrow);
-
-#ifdef HAVE_TIMEPROF
-  timeProf.writeToFile(*io.outTimeProf);
-#endif
+  // clean up
+  if(colMaskVec != NULL) {
+    delete colMaskVec;
+  }
 
   // clean up Random Jungle run
   io.close();
@@ -707,7 +785,7 @@ bool EvaporativeCooling::ReadRandomJungleScores(string importanceFilename) {
   // normalize map scores
   bool needsNormalization = true;
   if(minRJScore == maxRJScore) {
-    cerr << "WARNING: Random Jungle min and max scores are the same." << endl;
+    cerr << "\t\t\tWARNING: Random Jungle min and max scores are the same." << endl;
     needsNormalization = false;
   }
   double rjRange = maxRJScore - minRJScore;

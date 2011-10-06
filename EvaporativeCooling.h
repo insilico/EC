@@ -54,7 +54,8 @@ private:
   
   Dataset* dataset;
   po::variables_map paramsMap;
-
+  std::string outFilesPrefix;
+  
   AnalysisType analysisType;
   EcAlgorithmType algorithmType;
   RJunglePar rjParams;

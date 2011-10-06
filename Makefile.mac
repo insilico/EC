@@ -11,7 +11,12 @@ PROJECT_NAME = ec
 C++C = g++
 
 # Optimized parallel OpenMP
-C++C_COMPILE_FLAGS =-Wall -ansi -O2 -g -DNDEBUG -fopenmp \
+#C++C_COMPILE_FLAGS =-Wall -ansi -O2 -g -DNDEBUG -fopenmp \
+#	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
+#	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
+#	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
+#	-D__NOPLUGIN__
+C++C_COMPILE_FLAGS =-Wall -ansi -g -fopenmp \
 	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
@@ -28,7 +33,7 @@ EC_OBJS = EvaporativeCoolingCLI.o EvaporativeCooling.o ../cpprelieff/Dataset.o \
 	../cpprelieff/PlinkRawDataset.o ../cpprelieff/PlinkBinaryDataset.o \
 	../cpprelieff/DistanceMetrics.o ../cpprelieff/ChiSquared.o \
 	../cpprelieff/FilesystemUtils.o ../cpprelieff/ReliefF.o \
-  ../cpprelieff/CleanSnpDataset.o
+  ../cpprelieff/RReliefF.o ../cpprelieff/CleanSnpDataset.o
 
 # ----------------------------------------------------------------- BUILD RULES
 
