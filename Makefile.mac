@@ -16,7 +16,7 @@ C++C = g++
 #	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
 #	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
 #	-D__NOPLUGIN__
-C++C_COMPILE_FLAGS =-Wall -ansi -g -fopenmp \
+C++C_COMPILE_FLAGS =-Wall -ansi -O3 -fopenmp \
 	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/Cellar/libxml2/2.7.8/include/libxml2 \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \

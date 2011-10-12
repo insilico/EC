@@ -571,6 +571,8 @@ bool EvaporativeCooling::RunRandomJungle() {
     else {
       if(dataset->HasGenotypes()) {
         // nominal/nominal
+        // rjParams.treeType = 2;
+        // tree type 2 sucks at importance ranking
         rjParams.treeType = 2;
         treeTypeDesc = "Classification trees: discrete/discrete";
       }
@@ -589,6 +591,10 @@ bool EvaporativeCooling::RunRandomJungle() {
   io.open(rjParams);
   unsigned int numInstances = dataset->NumInstances();
   vector<string> variableNames = dataset->GetVariableNames();
+
+//  cout << "Variables names from the data set:" << endl;
+//  copy(variableNames.begin(), variableNames.end(), ostream_iterator<string>(cout, "\n"));
+
   vector<string> attributeNames = dataset->GetAttributeNames();
   vector<string> numericNames = dataset->GetNumericsNames();
   if((rjParams.treeType == 1) || 
@@ -659,28 +665,57 @@ bool EvaporativeCooling::RunRandomJungle() {
     RJungleHelper<Numeric>::printRJunglePar(rjParams, *io.outLog);
     RJungleHelper<Numeric>::printFooter(rjParams, io, start, end,
                                        startgrow, endgrow);
-    // delete data;
+    delete data;
   }
   else {
     cout << "\t\t\t\tPreparing SNP classification version of Random Jungle." << endl;
     rjParams.memMode = 2;
     rjParams.impMeasure = 1;
+    // set tree type to 1; works better with SNPs for some reason???
+    rjParams.treeType = 1;
     DataFrame<char>* data = new DataFrame<char>(rjParams);
-
     data->setDim(rjParams.nrow, rjParams.ncol);
     variableNames.push_back(rjParams.depVarName);
     data->setVarNames(variableNames);
     data->setDepVarName(rjParams.depVarName);
     data->setDepVar(rjParams.depVarCol);
     data->initMatrix();
-    // load data frame
     // TODO: do not load data frame every time-- use column mask mechanism?
-    cout << "\t\t\t\tLoading RJ DataFrame with double values: ";
-    for(unsigned int i = 0; i < numInstances; ++i) {
-      for(unsigned int j = 0; j < attributeNames.size(); ++j) {
-        data->set(i, j, dataset->GetAttribute(i, attributeNames[j]));
+    cout << "\t\t\t\tLoading RJ DataFrame values: ";
+    for(unsigned int i = 0; i < rjParams.nrow; ++i) {
+      // set attributes from data set
+      for(unsigned int j = 0; j < rjParams.ncol - 1; ++j) {
+        Attribute intAttr = dataset->GetAttribute(i, variableNames[j]);
+        char attr = ' ';
+        switch(intAttr) {
+          case 0:
+            attr = 0x0;
+            break;
+          case 1:
+            attr = 0x1;
+            break;
+          case 2:
+            attr = 0x2;
+            break;
+        }
+//        cout << "Setting (" << i << "," << j << ") => "
+//                << intAttr << ", " << attr << endl;
+        data->set(i, j, attr);
       }
-      data->set(i, rjParams.depVarCol, dataset->GetInstance(i)->GetClass());
+      
+      // set class from data set
+      unsigned int intClass = dataset->GetInstance(i)->GetClass();
+      char classVal = ' ';
+      if(intClass == 0) {
+        classVal = 0x0;
+      }
+      else {
+        classVal = 0x1;
+      }
+//      cout << "Setting class value (" << i << "," << (rjParams.ncol - 1)
+//              << ") => " << intClass << ", " << classVal << endl;
+      data->set(i, rjParams.ncol - 1, classVal);
+
       // happy lights
       if(i && ((i % 100) == 0)) {
         cout << i << "/" << numInstances << " ";
@@ -691,6 +726,8 @@ bool EvaporativeCooling::RunRandomJungle() {
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
+    // data->print(cout);
+
     RJungleGen<char> rjGen;
     rjGen.init(rjParams, *data);
 
@@ -707,7 +744,7 @@ bool EvaporativeCooling::RunRandomJungle() {
     RJungleHelper<char>::printRJunglePar(rjParams, *io.outLog);
     RJungleHelper<char>::printFooter(rjParams, io, start, end,
                                        startgrow, endgrow);
-    // delete data;
+    delete data;
   }
 
   // clean up
@@ -718,6 +755,7 @@ bool EvaporativeCooling::RunRandomJungle() {
   // clean up Random Jungle run
   io.close();
 
+  // loads rjScores map
   cout << "\t\t\t\tLoading RJ variable importance (VI) scores" << endl;
   if(!ReadRandomJungleScores(importanceFilename)) {
     cerr << "Could not read Random Jungle scores." << endl;
@@ -964,8 +1002,8 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
 
     // worst score and attribute name
     pair<double, string> worst = freeEnergyScores[i];
-    //    cout << "\t\t\t\tRemoving: " << worst.second
-    //            << " (" << worst.first << ")" << endl;
+    cout << "\t\t\t\tRemoving: " 
+            << worst.second << " (" << worst.first << ")" << endl;
 
     // save worst
     evaporatedAttributes.push_back(worst);

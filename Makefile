@@ -11,7 +11,7 @@ PROJECT_NAME = ec
 C++C = g++
 
 # Compile and link flags
-C++C_COMPILE_FLAGS =-Wall -ansi -O2 -g -DNDEBUG -fopenmp \
+C++C_COMPILE_FLAGS =-Wall -ansi -O3 -DNDEBUG -fopenmp \
 	-I../afni_src -Wno-long-long -I../cpprelieff -I. \
 	-I/usr/local/include/rjungle -I/usr/local/include -DHAVE__BOOL \
 	-D__NOPLUGIN__ -I/usr/include/libxml2
