@@ -91,12 +91,12 @@ int main(int argc, char** argv) {
   desc.add_options()
           ("help", "produce help message")
           (
-           "snp-data,d",
+           "snp-data",
            po::value<string>(&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
-           "snp-exclusion-file,x",
+           "snp-exclusion-file",
            po::value<string>(&snpExclusionFile),
            "file of SNP names to be excluded"
            )
@@ -106,22 +106,22 @@ int main(int argc, char** argv) {
            "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
-           "recode-a,r",
+           "recode-a",
            po::value<bool>(&doRecodeA)->default_value(doRecodeA),
            "do a plink recodeA encoding to insure genotype data values (0=no|1=yes)"
            )
           (
-           "numeric-data,n",
+           "numeric-data",
            po::value<string>(&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
-           "continuous-phenotype,w",
+           "continuous-phenotype",
            po::value<bool>(&continuousPhenotype)->default_value(continuousPhenotype),
            "phenotype is continuous? (0=no|1=yes)"
            )
           (
-           "alternate-pheno-file,a",
+           "alternate-pheno-file",
            po::value<string>(&altPhenotypeFilename),
            "specifies an alternative phenotype/class label file; one value per line"
            )
@@ -133,10 +133,10 @@ int main(int argc, char** argv) {
           (
            "out-files-prefix",
            po::value<string>(&outputFilesPrefix)->default_value(outputFilesPrefix),
-           "write a new tab-delimited data set with EC filtered attributes"
+           "use prefix for all output files"
            )
           (
-           "verbose,v",
+           "verbose",
            po::value<bool>(&verbose)->default_value(verbose),
            "verbose output to stdout (0=no|1=yes)"
            )
@@ -151,12 +151,12 @@ int main(int argc, char** argv) {
            "number of threads to use in Random Jungle, 0=all"
            )
           (
-           "k-nearest-neighbors,k",
+           "k-nearest-neighbors",
            po::value<unsigned int>(&k)->default_value(k),
            "set k nearest neighbors"
            )
           (
-           "number-random-samples,m",
+           "number-random-samples",
            po::value<unsigned int>(&m)->default_value(m),
            "number of random samples (0=all|1 <= n <= number of samples)"
            )
@@ -176,17 +176,17 @@ int main(int argc, char** argv) {
            "weight-by-distance method (equal|one_over_k|exponential)"
            )
           (
-           "weight-by-distance-sigma,s",
+           "weight-by-distance-sigma",
            po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
            "weight by distance sigma"
            )
           (
-           "iter-remove-n,i",
+           "iter-remove-n",
            po::value<unsigned int>(&iterNumToRemove),
            "iterative ReliefF number of attributes to remove per iteration"
            )
           (
-           "iter-remove-percent,p",
+           "iter-remove-percent",
            po::value<unsigned int>(&iterPercentToRemove),
            "iterative ReliefF precentage of attributes to remove per iteration"
            )
@@ -196,12 +196,12 @@ int main(int argc, char** argv) {
            "number of threads to use in Relief-F, 0=all"
            )
           (
-           "diagnostic-tests,g",
+           "diagnostic-tests",
            po::value<string> (&diagnosticLogFilename),
            "performs diagnostic tests and sends output to filename without running Relief-F"
            )
           (
-           "diagnostic-levels-file,l",
+           "diagnostic-levels-file",
            po::value<string > (&diagnosticLevelsCountsFilename),
            "write diagnostic attribute level counts to filename"
            )
@@ -221,7 +221,7 @@ int main(int argc, char** argv) {
            "Evaporative Cooling number of attributes to remove per iteration"
            )
           (
-           "ec-iter-remove-percent,p",
+           "ec-iter-remove-percent",
            po::value<unsigned int>(&ecIterPercentToRemove),
            "Evaporative Cooling precentage of attributes to remove per iteration"
            )
