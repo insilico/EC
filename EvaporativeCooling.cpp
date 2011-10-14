@@ -1002,8 +1002,8 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
 
     // worst score and attribute name
     pair<double, string> worst = freeEnergyScores[i];
-    cout << "\t\t\t\tRemoving: " 
-            << worst.second << " (" << worst.first << ")" << endl;
+//    cout << "\t\t\t\tRemoving: "
+//            << worst.second << " (" << worst.first << ")" << endl;
 
     // save worst
     evaporatedAttributes.push_back(worst);
