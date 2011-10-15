@@ -24,24 +24,13 @@
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
 
+#include "Insilico.h"
 #include "EvaporativeCooling.h"
-#include "ArffDataset.h"
-#include "StringUtils.h"
-#include "FilesystemUtils.h"
-#include "ArffDataset.h"
-#include "PlinkDataset.h"
-#include "PlinkRawDataset.h"
-#include "PlinkBinaryDataset.h"
-#include "CleanSnpDataset.h"
-#include "Debugging.h"
+#include "Dataset.h"
 
 using namespace std;
 using namespace insilico;
 namespace po = boost::program_options;
-
-// forward declarations of main program helper functions
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps=false);
-bool LoadIndividualIds(string filename, vector<string>& retIds, bool hasHeader);
 
 int main(int argc, char** argv) {
 
@@ -54,6 +43,8 @@ int main(int argc, char** argv) {
   cout << "\tProcessing command line arguments..." << endl;
 
   // command line processing variables: defaults and storage for boost
+  bool verbose = false;
+  // data set files
   string snpsFilename = "";
   string snpExclusionFile = "";
   bool doRecodeA = false;
@@ -63,8 +54,7 @@ int main(int argc, char** argv) {
   string altPhenotypeFilename = "";
   string outputDatasetFilename = "";
   string outputFilesPrefix = "ec_run";
-  bool verbose = false;
-  // Random Jungle
+ // Random Jungle
   uli_t rjNumTrees = 100;
   unsigned int rjNumThreads = 0;
   // ReliefF
@@ -501,120 +491,3 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-/*****************************************************************************
- * Function: ChooseSnpsDatasetByExtension
- *
- * IN:    SNP data set filename
- * OUT:   Pointer to a newly-instantiated dataset
- *        or NULL if could not find a matching data set type
- *
- * Determines the data set type to instantiate based on the
- * data set filenames's extension.
- ****************************************************************************/
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps) {
-  string fileExt = "";
-  fileExt = GetFileExtension(snpsFilename);
-  // cout << "File extension: " << fileExt << endl;
-  Dataset* ds = 0;
-  if(fileExt == "arff") {
-    cout << "\t\tARFF";
-    ds = new ArffDataset();
-  } else {
-    if(fileExt == "tab" || fileExt == "txt") {
-      cout << "\t\tWhitespace-delimited";
-      if(isCleanSnps) {
-        ds = new CleanSnpDataset();
-      }
-      else {
-        ds = new Dataset();
-      }
-    } else {
-      if(fileExt == "ped" || fileExt == "map") {
-        cout << "\t\tPlink map/ped";
-        ds = new PlinkDataset();
-      } else {
-        if(fileExt == "raw") {
-          cout << "\t\tPlink raw";
-          ds = new PlinkRawDataset();
-        } else {
-          if(fileExt == "bed" || fileExt == "bim" || fileExt == "fam") {
-            cout << "\t\tPlink binary";
-            ds = new PlinkBinaryDataset();
-          } else {
-            cerr << endl;
-            cerr << "ERROR: Cannot determine data set type by extension: "
-                    << fileExt << endl;
-            return 0;
-          }
-        }
-      }
-    }
-  }
-  cout << "." << endl;
-
-  return ds;
-}
-
-/*****************************************************************************
- * Function: LoadIndividualIds
- *
- * IN:    filename that contains ID in second column (covar or pheno file)
- * INOUT: vector of individual (instance) IDs (strings)
- * OUT:   success
- *
- * Loads the individual (instance) IDs from the numerics or alternate 
- * phenotype file. Returns the IDs through reference parameter retIds.
- ****************************************************************************/
-bool LoadIndividualIds(string filename, vector<string>& retIds,
-                       bool hasHeader) {
-  ifstream dataStream(filename.c_str());
-  if(!dataStream.is_open()) {
-    cerr << "ERROR: Could not open ID file: "
-            << filename << endl;
-    return false;
-  }
-
-  // temporary string for reading file lines
-  string line;
-
-  // strip the header if there is one and validate three tab-delimited fields
-  if(hasHeader) {
-    // read the header
-    getline(dataStream, line);
-    vector<string> numNames;
-    split(numNames, line);
-    if(numNames.size() < 3) {
-      cerr << "ERROR: ID file must have at least three columns: "
-              << "FID IID VAR1 . . . VARn" << endl;
-      return false;
-    }
-  }
-
-  // read each line of the file and get the first tab-delimited field as the
-  // individual's ID; insure each line has three tab-delimited fields
-  retIds.clear();
-  map<string, bool> idsSeen;
-  unsigned int lineNumber = 0;
-  retIds.clear();
-  while(getline(dataStream, line)) {
-    ++lineNumber;
-    vector<string> fieldsStringVector;
-    split(fieldsStringVector, line);
-    if(fieldsStringVector.size() < 3) {
-      cerr << "ERROR: ID file must have at least three columns: "
-              << "FID IID VAR1 ... VARn" << endl;
-      return false;
-    }
-    string ID = trim(fieldsStringVector[0]);
-    if(idsSeen.find(ID) == idsSeen.end()) {
-      idsSeen[ID] = true;
-      retIds.push_back(ID);
-    } else {
-      cerr << "\t\t\tWARNING: Duplicate ID [" << ID << "] detected and "
-              << "skipped on line [" << lineNumber << "]." << endl;
-    }
-  }
-  dataStream.close();
-
-  return true;
-}

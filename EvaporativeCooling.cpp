@@ -133,14 +133,17 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   rfNumToRemovePerIteration = 0;
   if(paramsMap.count("iter-remove-n")) {
     rfNumToRemovePerIteration = paramsMap["iter-remove-n"].as<unsigned int>();
+    cout << "\t\t\tRelief-F will remove " << rfNumToRemovePerIteration
+            << " attributes per iteration." << endl;
   }
   if(paramsMap.count("iter-remove-percent")) {
-    unsigned int iterPercentToRemove = paramsMap["iter-remove-percent"].as<unsigned int>();
+    unsigned int iterPercentToRemove =
+      paramsMap["iter-remove-percent"].as<unsigned int>();
     rfNumToRemovePerIteration = (int) (((double) iterPercentToRemove / 100.0) *
                                        dataset->NumAttributes());
+    cout << "\t\t\tRelief-F will remove " << rfNumToRemovePerIteration
+            << " attributes on the first iteration." << endl;
   }
-  cout << "\t\t\tRelief-F will remove " << rfNumToRemovePerIteration
-          << " attributes per iteration." << endl;
 
   // multithreading setup
   unsigned int maxThreads = omp_get_num_procs();
