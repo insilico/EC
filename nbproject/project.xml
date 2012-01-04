@@ -6,8 +6,8 @@
             <name>cppec</name>
             <make-project-type>0</make-project-type>
             <c-extensions/>
-            <cpp-extensions>C,cpp</cpp-extensions>
-            <header-extensions>h</header-extensions>
+            <cpp-extensions/>
+            <header-extensions/>
             <sourceEncoding>UTF-8</sourceEncoding>
             <make-dep-projects>
                 <make-dep-project>../randomjungle-1.2.362</make-dep-project>

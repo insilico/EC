@@ -53,7 +53,7 @@ LDLIBSOPTIONS=
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
-	cd . && $(MAKE) -f Makefile.mac -j2
+	cd . && $(MAKE) 
 
 # Subprojects
 .build-subprojects:
@@ -61,7 +61,7 @@ LDLIBSOPTIONS=
 
 # Clean Targets
 .clean-conf: ${CLEAN_SUBPROJECTS}
-	cd . && $(MAKE) -f Makefile.mac clean
+	cd . && $(MAKE) clean
 
 # Subprojects
 .clean-subprojects:
