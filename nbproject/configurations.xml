@@ -28,8 +28,6 @@
         <df name="library" kind="SOURCE_LOGICAL_FOLDER">
           <df name=".deps">
           </df>
-          <df name=".libs">
-          </df>
           <in>ArffDataset.cpp</in>
           <in>ArffDataset.h</in>
           <in>ChiSquared.cpp</in>

@@ -1,5 +1,7 @@
 ec
 *.o
+*.lo
+*.la
 .dep.inc
 config.log
 config.in

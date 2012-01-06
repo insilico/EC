@@ -16,6 +16,15 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* Define to 1 if you have the `gcc' library (-lgcc). */
+/* #undef HAVE_LIBGCC */
+
+/* Define to 1 if you have the `nsl' library (-lnsl). */
+/* #undef HAVE_LIBNSL */
+
+/* Define to 1 if you have the `socket' library (-lsocket). */
+/* #undef HAVE_LIBSOCKET */
+
 /* Define to 1 if you have the <math.h> header file. */
 #define HAVE_MATH_H 1
 
@@ -53,7 +62,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Define to 1 if the system has the type `_Bool'. */
-#define HAVE__BOOL 1
+/* #undef HAVE__BOOL */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -84,7 +93,7 @@
 #define SIZEOF_VOID_P 8
 
 /* Define to 1 if you have the ANSI C header files. */
-#define STDC_HEADERS 1
+/* #undef STDC_HEADERS */
 
 /* Version number of package */
 #define VERSION "1.0"
