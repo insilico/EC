@@ -1,8 +1,6 @@
 ec
 *.o
 .dep.inc
-config.h
-config.h.in
 config.log
 config.in
 config.status
