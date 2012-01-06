@@ -1,7 +1,11 @@
 ec
 *.o
 .dep.inc
-config.*
+config.h
+config.h.in
+config.log
+config.in
+config.status
 Makefile
 Makefile.in
 .deps
