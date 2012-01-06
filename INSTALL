@@ -1,14 +1,11 @@
 INSTALL - Bill White - bill-white@utulsa.edu - 1/5/12
 
-Mac OS X
-
-Using fink package manager:
-
-export CFLAGS="-I/sw/include/gsl -I/sw/include-Wall"
-export CPPFLAGS="-I/sw/include/gsl -I/sw/include-Wall"
-export LDFLAGS=-L/sw/lib
-
-
 All Systems
 
 ./configure && make && make install
+
+For Doxygen HTML and PDF:
+
+make doxygen-doc
+
+ec.pdf is made in the doxygen-doc subdirectory.
