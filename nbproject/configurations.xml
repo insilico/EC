@@ -2,6 +2,77 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="cppec" root=".">
+      <df name="autom4te.cache">
+        <in>requests</in>
+      </df>
+      <df name="build-aux">
+        <in>config.guess</in>
+        <in>config.sub</in>
+        <in>depcomp</in>
+        <in>install-sh</in>
+        <in>ltmain.sh</in>
+        <in>missing</in>
+      </df>
+      <df name="doc">
+      </df>
+      <df name="m4">
+        <in>libtool.m4</in>
+        <in>ltoptions.m4</in>
+        <in>ltsugar.m4</in>
+        <in>ltversion.m4</in>
+        <in>lt~obsolete.m4</in>
+      </df>
+      <df name="src">
+        <df name=".deps">
+        </df>
+        <df name="library" kind="SOURCE_LOGICAL_FOLDER">
+          <df name=".deps">
+          </df>
+          <df name=".libs">
+          </df>
+          <in>ArffDataset.cpp</in>
+          <in>ArffDataset.h</in>
+          <in>ChiSquared.cpp</in>
+          <in>ChiSquared.h</in>
+          <in>CleanSnpDataset.cpp</in>
+          <in>CleanSnpDataset.h</in>
+          <in>Dataset.cpp</in>
+          <in>Dataset.h</in>
+          <in>DatasetInstance.cpp</in>
+          <in>DatasetInstance.h</in>
+          <in>Debugging.h</in>
+          <in>DistanceMetrics.cpp</in>
+          <in>DistanceMetrics.h</in>
+          <in>EvaporativeCooling.cpp</in>
+          <in>EvaporativeCooling.h</in>
+          <in>FilesystemUtils.cpp</in>
+          <in>FilesystemUtils.h</in>
+          <in>GSLRandomBase.h</in>
+          <in>GSLRandomFlat.h</in>
+          <in>Insilico.cpp</in>
+          <in>Insilico.h</in>
+          <in>Makefile.am</in>
+          <in>PlinkBinaryDataset.cpp</in>
+          <in>PlinkBinaryDataset.h</in>
+          <in>PlinkDataset.cpp</in>
+          <in>PlinkDataset.h</in>
+          <in>PlinkRawDataset.cpp</in>
+          <in>PlinkRawDataset.h</in>
+          <in>RReliefF.cpp</in>
+          <in>RReliefF.h</in>
+          <in>RandomJungle.cpp</in>
+          <in>RandomJungle.h</in>
+          <in>ReliefF.cpp</in>
+          <in>ReliefF.h</in>
+          <in>Statistics.cpp</in>
+          <in>Statistics.h</in>
+          <in>StringUtils.h</in>
+          <in>best_n.h</in>
+        </df>
+        <in>EvaporativeCoolingCLI.cpp</in>
+        <in>Makefile.am</in>
+      </df>
+      <in>config.h</in>
     </df>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -89,7 +160,7 @@
               <pElem>../cpprelieff</pElem>
               <pElem>/usr/local/include</pElem>
               <pElem>/usr/local/include/rjungle</pElem>
-              <pElem>/usr/local/Cellar/libxml2/2.7.8/include/libxml2</pElem>
+              <pElem>/sw/include</pElem>
             </incDir>
             <preprocessorList>
               <Elem>HAVE__BOOL</Elem>

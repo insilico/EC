@@ -1,4 +1,9 @@
 ec
 *.o
 .dep.inc
-
+config.*
+Makefile
+Makefile.in
+.deps
+stamp-h1
+autom4te.cache
