@@ -1,5 +1,5 @@
 /*
- * Dataset.C - Bill White - 6/14/05
+ * Dataset.cpp - Bill White - 6/14/05
  *
  * Collection class holding DatasetInstances
  * Added interaction infomation week of 4/18-26/06

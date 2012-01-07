@@ -1,5 +1,5 @@
 /*
- * EvaporativeCoolingCLI.C - Bill White - 8/29/11
+ * EvaporativeCoolingCLI.cpp - Bill White - 8/29/11
  *
  * Evaporative Cooling (EC) Optimization of Information Free Energy -
  * Command Line Interface (CLI)

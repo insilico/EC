@@ -1,5 +1,5 @@
 /*
- * DatasetInstance.C - Bill White - 6/14/05
+ * DatasetInstance.cpp - Bill White - 6/14/05
  * 
  * Class to hold dataset instances (rows)
  * Reworked entirely for McKinney Lab work - 2/28/11

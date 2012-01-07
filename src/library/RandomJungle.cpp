@@ -1,6 +1,5 @@
 /* 
- * File:   RandomJungle.cpp
- * Author: billwhite
+ * RandomJungle.cpp
  * 
  * Created on October 16, 2011, 3:45 PM
  *

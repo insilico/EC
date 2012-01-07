@@ -1,5 +1,5 @@
 /*
- * PlinkBinaryDataset.C - Bill White - 3/10/11
+ * PlinkBinaryDataset.cpp - Bill White - 3/10/11
  *
  * Collection class holding DatasetInstance from Plink binary format
  */

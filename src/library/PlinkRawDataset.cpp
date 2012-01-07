@@ -1,5 +1,5 @@
 /*
- * PlinkRawDataset.C - Bill White - 2/24/11
+ * PlinkRawDataset.cpp - Bill White - 2/24/11
  *
  * Collection class holding DatasetInstance from an Plink 
  * .raw format file

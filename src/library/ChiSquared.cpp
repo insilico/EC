@@ -1,5 +1,5 @@
 /*
- * ChiSquared.C - Bill White - 6/15/05
+ * ChiSquared.cpp - Bill White - 6/15/05
  * 
  * ChiSquared algorithm implementation.
  * Reworked for McKinney Lab 2011.

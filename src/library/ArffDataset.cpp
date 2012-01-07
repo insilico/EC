@@ -1,16 +1,6 @@
-/**
- * \class ArffDataset
- *
- * \brief * Collection class holding DatasetInstance from an ARFF format file.
- * http://www.cs.waikato.ac.nz/ml/weka/arff.html
- *
- * \sa Dataset
- *
- * \author Bill White
- * \version 1.0
- *
- * Contact: bill.c.white@gmail.com
- * Created on: 2/24/11
+/*
+ * ArffDataset.cpp - Bill White
+ * see ArffDataset.h and http://www.cs.waikato.ac.nz/ml/weka/arff.html
  */
 
 #include <string>

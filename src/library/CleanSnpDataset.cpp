@@ -1,5 +1,5 @@
 /*
- * CleanSnpDataset.C - Bill White - 9/22/11
+ * CleanSnpDataset.cpp - Bill White - 9/22/11
  *
  * Minimalist data set assumes all-integer attributes and phenotypes.
  */

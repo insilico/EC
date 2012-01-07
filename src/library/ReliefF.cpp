@@ -1,5 +1,5 @@
 /*
- * ReliefF.C - Bill White - 7/16/05
+ * ReliefF.cpp - Bill White - 7/16/05
  * 
  * ReliefF algorithm implementation.
  *

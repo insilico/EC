@@ -1,5 +1,5 @@
 /*
-  Statistics.C - Bill White - 2/13/06
+  Statistics.cpp - Bill White - 2/13/06
 
   Statistical routines: implementations.
 */

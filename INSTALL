@@ -4,6 +4,13 @@ All Systems
 
 $ ./configure && make && make install
 
+For Linux systems either:
+
+1) Update ld.so.conf to include /usr/local/lib and run ldconfig
+   This requires root or sudo access to the system.
+2) export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+   If it is not already set in your environment by your startup scripts.
+
 For Doxygen HTML and PDF:
 
 $ make doxygen-doc

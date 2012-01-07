@@ -1,5 +1,5 @@
 /*
- * PlinkDataset.C - Bill White - 2/24/11
+ * PlinkDataset.cpp - Bill White - 2/24/11
  *
  * Collection class holding DatasetInstance from Plink format files
  * .map and .ped pairs
