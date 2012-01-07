@@ -1,7 +1,7 @@
 /**
  * \class ArffDataset
  *
- * \brief * Collection class holding DatasetInstance from an ARFF format file.
+ * \brief ARFF file format reader.
  * http://www.cs.waikato.ac.nz/ml/weka/arff.html
  *
  * \sa Dataset

@@ -1,7 +1,15 @@
-/*
- * CleanSnpDataset.h - Bill White - 9/22/11
- * 
-* Minimalist data set assumes all integer data.
+/**
+ * \class CleanSnpDataset
+ *
+ * \brief Experiemnetal data set reader for large/GWAS data.
+ *
+ * \sa Dataset
+ *
+ * \author Bill White
+ * \version 1.0
+ *
+ * Contact: bill.c.white@gmail.com
+ * Created on: 9/22/11
  */
 
 #ifndef CLEAN_SNP_DATASET_H
@@ -15,7 +23,7 @@ public:
   CleanSnpDataset();
   ~CleanSnpDataset() { ; }
 
-  bool LoadSnps(std::string filename, bool doRecodeA);
+  bool LoadSnps(std::string filename);
 };
 
 #endif

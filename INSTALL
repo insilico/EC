@@ -2,10 +2,10 @@ INSTALL - Bill White - bill-white@utulsa.edu - 1/5/12
 
 All Systems
 
-./configure && make && make install
+$ ./configure && make && make install
 
 For Doxygen HTML and PDF:
 
-make doxygen-doc
+$ make doxygen-doc
 
 ec.pdf is made in the doxygen-doc subdirectory.

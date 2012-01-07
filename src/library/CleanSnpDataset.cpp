@@ -1,5 +1,5 @@
 /*
- * CleanSnpDataset.C - Bill White - 6/14/05
+ * CleanSnpDataset.C - Bill White - 9/22/11
  *
  * Minimalist data set assumes all-integer attributes and phenotypes.
  */
@@ -36,7 +36,7 @@ CleanSnpDataset::CleanSnpDataset() : Dataset::Dataset() {
  *
  * Load SNPs assuming all tab-delimited integers 0/1/2 and binary 0/1 class.
  ****************************************************************************/
-bool CleanSnpDataset::LoadSnps(string filename, bool doRecodeA) {
+bool CleanSnpDataset::LoadSnps(string filename) {
   snpsFilename = filename;
   ifstream dataStream(snpsFilename.c_str());
   if(!dataStream.is_open()) {

@@ -1,5 +1,5 @@
 /**
- * \class PlnkBinaryDataset
+ * \class PlinkBinaryDataset
  *
  *
  * \brief Plink binary PED/BED file format reader.
