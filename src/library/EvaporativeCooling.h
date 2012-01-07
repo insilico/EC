@@ -69,6 +69,8 @@ public:
   EcScores& GetReliefFScores();
   /// Get the last computed EC scores.
   EcScores& GetECScores();
+  /// Return the algorithm type: EC_ALL, EC_RJ or EC_RF.
+  EcAlgorithmType GetAlgorithmType();
   /*************************************************************************//**
    * Write the scores and attribute names to file.
    * \param [in] baseFilename filename to write score-attribute name pairs

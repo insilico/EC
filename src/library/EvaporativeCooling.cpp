@@ -56,7 +56,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
     dataset = ds;
   } else {
     cerr << "ERROR: dataset is not initialized" << endl;
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
   paramsMap = vm;
   analysisType = anaType;
@@ -66,15 +66,13 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 
   // set the number of target attributes
   numTargetAttributes = vm["ec-num-target"].as<unsigned int>();
-  if(numTargetAttributes < 1) {
-    cerr << "Use --ec-num-target to the number of best attributes desired"
-            << endl;
-    exit(-1);
+  if(numTargetAttributes == 0) {
+    numTargetAttributes = ds->NumVariables();
   }
   if(numTargetAttributes > dataset->NumAttributes()) {
     cerr << "--ec-num-taget must be less than or equal to the "
             << "number of attributes in the data set" << endl;
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
   cout << Timestamp() << "EC is removing attributes until best "
           << numTargetAttributes << " remain" << endl;
@@ -83,7 +81,8 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
     string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
     if(ecAlgParam == "ALL") {
       algorithmType = EC_ALL;
-      cout << Timestamp() << "Running EC in standard mode: Random Jungle + Relief-F" << endl;
+      cout << Timestamp()
+              << "Running EC in standard mode: Random Jungle + Relief-F" << endl;
     }
     else {
       if(ecAlgParam == "RJ") {
@@ -96,8 +95,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
           cout << Timestamp() << "Running EC in Relief-F only mode" << endl;
         }
         else {
-          cerr << "ERROR: ec-algorithm-steps must be one of: all, rj or rf" << endl;
-          exit(1);
+          cerr << "ERROR: --ec-algorithm-steps must be one of: "
+                  << "all, rj or rf" << endl;
+          exit(EXIT_FAILURE);
         }
       }
     }
@@ -158,7 +158,7 @@ EvaporativeCooling::~EvaporativeCooling() {
 
 bool EvaporativeCooling::ComputeECScores() {
   unsigned int numWorkingAttributes = dataset->NumAttributes();
-  if(numWorkingAttributes <= numTargetAttributes) {
+  if(numWorkingAttributes < numTargetAttributes) {
     cerr << "ERROR: The number of attributes in the data set "
             << numWorkingAttributes
             << " is less than the number of target attributes "
@@ -172,7 +172,7 @@ bool EvaporativeCooling::ComputeECScores() {
   unsigned int iteration = 1;
   clock_t t;
   float elapsedTime = 0.0;
-  while(numWorkingAttributes > numTargetAttributes) {
+  while(numWorkingAttributes >= numTargetAttributes) {
     cout << Timestamp() << "----------------------------------------------------"
             << "-------------------------" << endl;
     cout << Timestamp() << "EC algorithm...iteration: " << iteration
@@ -196,6 +196,15 @@ bool EvaporativeCooling::ComputeECScores() {
       elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
       cout << Timestamp() << "Random Jungle finished in "
               << elapsedTime << " secs" << endl;
+      if((algorithmType == EC_RJ) &&
+         (numWorkingAttributes == numTargetAttributes)) {
+          sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
+          ecScores.resize(numTargetAttributes);
+          copy(rjScores.begin(),
+               rjScores.begin() + numTargetAttributes,
+               ecScores.begin());
+          return true;
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -210,6 +219,15 @@ bool EvaporativeCooling::ComputeECScores() {
       elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
       cout << Timestamp() << "ReliefF finished in "
               << elapsedTime << " secs" << endl;
+      if((algorithmType == EC_RF) &&
+         (numWorkingAttributes == numTargetAttributes)) {
+          sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+          ecScores.resize(numTargetAttributes);
+          copy(rfScores.begin(),
+               rfScores.begin() + numTargetAttributes,
+               ecScores.begin());
+          return true;
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -242,6 +260,8 @@ bool EvaporativeCooling::ComputeECScores() {
       numToRemove = numWorkingAttributes - numTargetAttributes;
     }
     if(numToRemove < 1) {
+//      cerr << "ERROR: Number of attributes to remove is less than one." << endl;
+//      return false;
       break;
     }
     cout << Timestamp() << "Removing the worst " << numToRemove
@@ -282,6 +302,10 @@ EcScores& EvaporativeCooling::GetReliefFScores() {
 
 EcScores& EvaporativeCooling::GetECScores() {
   return ecScores;
+}
+
+EcAlgorithmType EvaporativeCooling::GetAlgorithmType() {
+  return algorithmType;
 }
 
 void EvaporativeCooling::PrintAttributeScores(ofstream& outStream) {

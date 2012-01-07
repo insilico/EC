@@ -28,6 +28,7 @@
 #include "EvaporativeCooling.h"
 #include "Dataset.h"
 #include "FilesystemUtils.h"
+#include "library/EvaporativeCooling.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -52,7 +53,7 @@ int main(int argc, char** argv) {
   string altPhenotypeFilename = "";
   string outputDatasetFilename = "";
   string outputFilesPrefix = "ec_run";
- // Random Jungle
+  // Random Jungle
   uli_t rjNumTrees = 1000;
   // ReliefF
   unsigned int k = 10;
@@ -66,47 +67,47 @@ int main(int argc, char** argv) {
   string diagnosticLevelsCountsFilename = "";
   // EC parameters
   string ecAlgorithmSteps = "all";
-  unsigned int ecNumTarget = 1;
+  unsigned int ecNumTarget = 0;
   unsigned int ecIterNumToRemove = 1;
   unsigned int ecIterPercentToRemove = 0;
-  
+
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
           (
            "snp-data",
-           po::value<string>(&snpsFilename),
+           po::value<string > (&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
            "snp-exclusion-file",
-           po::value<string>(&snpExclusionFile),
+           po::value<string > (&snpExclusionFile),
            "file of SNP names to be excluded"
            )
           (
            "snp-data-clean",
-           po::value<string>(&cleanSnpsFilename),
+           po::value<string > (&cleanSnpsFilename),
            "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
            "numeric-data",
-           po::value<string>(&numericsFilename),
+           po::value<string > (&numericsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
            "alternate-pheno-file",
-           po::value<string>(&altPhenotypeFilename),
+           po::value<string > (&altPhenotypeFilename),
            "specifies an alternative phenotype/class label file; one value per line"
            )
           (
            "out-dataset-filename",
-           po::value<string>(&outputDatasetFilename),
+           po::value<string > (&outputDatasetFilename),
            "write a new tab-delimited data set with EC filtered attributes"
            )
           (
            "out-files-prefix",
-           po::value<string>(&outputFilesPrefix)->default_value(outputFilesPrefix),
+           po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
            "use prefix for all output files"
            )
           (
@@ -116,7 +117,7 @@ int main(int argc, char** argv) {
            )
           (
            "rj-num-trees",
-           po::value<uli_t>(&rjNumTrees)->default_value(rjNumTrees),
+           po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
            "Random Jungle number of trees to grow"
            )
           (
@@ -131,17 +132,17 @@ int main(int argc, char** argv) {
            )
           (
            "snp-metric",
-           po::value<string>(&snpMetric)->default_value(snpMetric),
+           po::value<string > (&snpMetric)->default_value(snpMetric),
            "metric for determining the difference between SNPs (gm|am)"
            )
-            (
+          (
            "numeric-metric",
-           po::value<string>(&numMetric)->default_value(numMetric),
+           po::value<string > (&numMetric)->default_value(numMetric),
            "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
            )
           (
            "weight-by-distance-method",
-           po::value<string>(&weightByDistanceMethod)->default_value(weightByDistanceMethod),
+           po::value<string > (&weightByDistanceMethod)->default_value(weightByDistanceMethod),
            "weight-by-distance method (equal|one_over_k|exponential)"
            )
           (
@@ -151,7 +152,7 @@ int main(int argc, char** argv) {
            )
           (
            "diagnostic-tests",
-           po::value<string> (&diagnosticLogFilename),
+           po::value<string > (&diagnosticLogFilename),
            "performs diagnostic tests and sends output to filename without running Relief-F"
            )
           (
@@ -161,7 +162,7 @@ int main(int argc, char** argv) {
            )
           (
            "ec-algorithm-steps",
-           po::value<string>(&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+           po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
            "EC steps to run (all|rj|rf)"
            )
           (
@@ -237,10 +238,9 @@ int main(int argc, char** argv) {
       if(vm.count("snp-data")) {
         cout << Timestamp() << "SNP-only analysis requested" << endl;
         analysisType = SNP_ONLY_ANALYSIS;
-      }
-      else {
+      } else {
         cout << Timestamp() << "Clean SNP analysis requested" << endl;
-        analysisType = SNP_CLEAN_ANALYSIS;     
+        analysisType = SNP_CLEAN_ANALYSIS;
       }
     } else {
       if(!vm.count("snp-data") && vm.count("numeric-data")) {
@@ -257,8 +257,7 @@ int main(int argc, char** argv) {
         if(vm.count("snp-data") && vm.count("numeric-data")) {
           cout << "\t\tIntegrated analysis requested" << endl;
           analysisType = INTEGRATED_ANALYSIS;
-        }
-        else {
+        } else {
           cerr << "ERROR: Could not determine the analysis to perform based on "
                   << "command line options: " << endl << desc << endl;
           exit(COMMAND_LINE_ERROR);
@@ -295,8 +294,7 @@ int main(int argc, char** argv) {
       }
       // copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
     }
-  }
-  else {
+  } else {
     cout << Timestamp() << "Covariate and alternate phenotype files not used for "
             << "this analysis type" << endl;
   }
@@ -354,8 +352,7 @@ int main(int argc, char** argv) {
       }
       if(cleanSnpsFilename == "") {
         ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      }
-      else {
+      } else {
         ds = ChooseSnpsDatasetByExtension(snpsFilename, true);
       }
       ds->LoadDataset(snpsFilename, numericsFilename,
@@ -384,9 +381,8 @@ int main(int argc, char** argv) {
   // happy lights
   if((analysisType == SNP_ONLY_ANALYSIS) ||
      (analysisType == SNP_CLEAN_ANALYSIS)) {
-    ds->PrintStats();  
-  }
-  else {
+    ds->PrintStats();
+  } else {
     if(analysisType == NUMERIC_ONLY_ANALYSIS ||
        analysisType == INTEGRATED_ANALYSIS) {
       ds->PrintNumericsStats();
@@ -406,7 +402,26 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   // write the scores to the same name as the dataset with
   // <metric>.relieff suffix
-  cout << Timestamp() << "Writing EC scores to [" + outputFilesPrefix << ".ec]" << endl;
+  string resultsFilename = outputFilesPrefix;
+  switch(ec.GetAlgorithmType()) {
+    case EC_ALL:
+      resultsFilename += ".ec";
+      break;
+    case EC_RJ:
+      resultsFilename += ".ec.rj";
+      break;
+    case EC_RF:
+      resultsFilename += ".ec.rf";
+      break;
+    default:
+      // we should not get here by the CLI front end but it is possible to call
+      // this from other programs in the future or when used as a library
+      cerr << "ERROR: Attempting to write attribute scores before the algorithm "
+              << "type was determined. " << endl;
+      return false;
+  }
+
+  cout << Timestamp() << "Writing EC scores to [" + resultsFilename + "]" << endl;
   ec.WriteAttributeScores(outputFilesPrefix);
 
   /// write the ReliefF filtered attributes as a new data set
@@ -429,7 +444,7 @@ int main(int argc, char** argv) {
   cout << Timestamp() << "Clean up and shutdown" << endl;
   // delete ds;
 
-  float elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
+  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
   cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
 
   cout << Timestamp() << argv[0] << " done" << endl;
