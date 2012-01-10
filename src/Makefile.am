@@ -19,7 +19,7 @@ ec_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) -lec-1.0 \
 -lrjungle-1.2.362 -llr-1.2.362
 
-# additional include pathes to support the library headers
+# additional include paths to support the library headers
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/$(LIBDIR)
 
 # the subdirectories of src to go into

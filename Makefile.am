@@ -3,7 +3,7 @@ LIBDIR=@LIBDIR@
 ACLOCAL_AMFLAGS = -I m4
 
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src
+SUBDIRS = src examples
 
 # DOXYGEN SUPPORT
 include $(top_srcdir)/aminclude.am

@@ -1,4 +1,5 @@
 ec
+*~
 *.o
 *.lo
 *.la
@@ -10,3 +11,6 @@ Makefile
 .deps
 stamp-h1
 autom4te.cache
+/examples/.libs/
+/src/.libs/
+src/library/.libs/

@@ -12,11 +12,11 @@
 #include <vector>
 
 /// Our Dataset class is in the parent directory.
-#include "../Dataset.h"
-#include "../DatasetInstance.h"
-#include "../PlinkDataset.h"
-#include "../PlinkBinaryDataset.h"
-#include "../Insilico.h"
+#include "ec/Dataset.h"
+#include "ec/DatasetInstance.h"
+#include "ec/PlinkDataset.h"
+#include "ec/PlinkBinaryDataset.h"
+#include "ec/Insilico.h"
 
 using namespace std;
 
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     /// to determine the data set class to use by its filename extension.
     Dataset* example4Dataset = ChooseSnpsDatasetByExtension(*fileIt);
     vector<string> ids;
-    if(!example4Dataset->LoadDataset(*fileIt, false, "", "", ids)) {
+    if(!example4Dataset->LoadDataset(*fileIt, "", "", ids)) {
       cerr << "ERROR: Could not load data set." << endl;
       exit(1);
     }
