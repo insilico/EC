@@ -19,6 +19,8 @@
 #include <sstream>
 #include <vector>
 #include <time.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -397,6 +399,11 @@ int main(int argc, char** argv) {
     cerr << "ERROR: Failed to calculate EC scores" << endl;
     exit(COMMAND_LINE_ERROR);
   }
+  struct rusage s;
+  struct rusage*p = &s;
+  getrusage(RUSAGE_SELF, p);
+  cout << Timestamp() << "EC RAM used: " << (p->ru_maxrss / 1024) 
+          << " MB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
   // ---------------------------------------------------------------------------

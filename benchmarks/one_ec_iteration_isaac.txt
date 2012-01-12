@@ -1,0 +1,20 @@
+billwhite@isaac~/src/cppec/benchmarks$ time python RunBenchmarks.py 
+Cases: 500, Controls: 500
+Attributes	Max RAM Used	Elapsed Time
+----------	------------	------------
+       100	 37.5 MB	 13.0 secs
+       200	 38.1 MB	 15.2 secs
+       400	 39.4 MB	 20.2 secs
+       800	 42.0 MB	 29.3 secs
+      1600	 49.3 MB	 47.0 secs
+      3200	 61.1 MB	 78.9 secs
+      6400	 80.9 MB	 143.7 secs
+     12800	 121.4 MB	 271.5 secs
+     25600	 200.6 MB	 533.9 secs
+     51200	 337.7 MB	 1345.7 secs
+    102400	 654.2 MB	 2972.5 secs
+
+real	70m4.525s
+user	100m53.249s
+sys	4m15.410s
+

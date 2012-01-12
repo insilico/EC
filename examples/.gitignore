@@ -1,5 +1,7 @@
+ec_run.*
 example1
 example2
 example3
+example4
 *.o
 
