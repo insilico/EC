@@ -29,8 +29,8 @@ def main(numIterations):
   numCases = 500
   numControls = 500
   print "Cases: %d, Controls: %d" % (numCases, numControls)
-  print "Attributes\tTarget\tMax RAM\tElapsed Time"
-  print "----------\t------------\t------------"
+  print "Attributes\tTarget\tMax RAM    \tElapsed Time"
+  print "----------\t------\t-----------\t------------"
   for iter in range(1, int(numIterations)+1):
     # make a new data set
     makeDataset(numAttributes, numCases, numControls)
@@ -52,7 +52,7 @@ def main(numIterations):
         ecSeconds = matchGroup.group().strip()        
         ecTimeMsg, ecTimeUsed = ecSeconds.split('time')
         ecTimeUsed.strip()
-    print "%10d\t%s\t%s" % (numAttributes, numTargetAttributes, ramUsed, ecTimeUsed)
+    print "%10d\t%7d\t%12s\t%s" % (numAttributes, numTargetAttributes, ramUsed, ecTimeUsed)
     numAttributes *= 2
   # remove data set
   os.unlink("testData.txt")
