@@ -29,13 +29,13 @@ def main(numIterations):
   numCases = 500
   numControls = 500
   print "Cases: %d, Controls: %d" % (numCases, numControls)
-  print "Attributes\tMax RAM Used\tElapsed Time"
+  print "Attributes\tTarget\tMax RAM\tElapsed Time"
   print "----------\t------------\t------------"
   for iter in range(1, int(numIterations)+1):
     # make a new data set
     makeDataset(numAttributes, numCases, numControls)
     # run the generated data set, gathering runtime stats
-    numTargetAttributes = numAttributes * 0.1
+    numTargetAttributes = numAttributes * 0.01
     runCommands = ["ec", "--snp-data",  "testData.txt", 
                    "--ec-iter-remove-percent", "50", 
                    "--ec-num-target",  str(int(numTargetAttributes))]
@@ -52,7 +52,7 @@ def main(numIterations):
         ecSeconds = matchGroup.group().strip()        
         ecTimeMsg, ecTimeUsed = ecSeconds.split('time')
         ecTimeUsed.strip()
-    print "%10d\t%s\t%s" % (numAttributes, ramUsed, ecTimeUsed)
+    print "%10d\t%s\t%s" % (numAttributes, numTargetAttributes, ramUsed, ecTimeUsed)
     numAttributes *= 2
   # remove data set
   os.unlink("testData.txt")
