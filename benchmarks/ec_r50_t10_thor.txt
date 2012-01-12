@@ -1,0 +1,18 @@
+Cases: 500, Controls: 500
+Attributes      Target  Max RAM         Elapsed Time
+----------      ------  -----------     ------------
+       100            1        39 MB     123.8 secs
+       200            2        40 MB     148.2 secs
+       400            4        42 MB     155.1 secs
+       800            8        43 MB     163.6 secs
+      1600           16        47 MB     209.2 secs
+      3200           32        58 MB     278.0 secs
+      6400           64        81 MB     422.8 secs
+     12800          128       123 MB     711.5 secs
+     25600          256       216 MB     1312.2 secs
+     51200          512       380 MB     2495.8 secs
+    102400         1024       736 MB     5822.0 secs
+    204800         2048      1443 MB     13271.3 secs
+    409600         4096      2847 MB     28759.2 secs
+    819200         8192      5678 MB     59861.4 secs
+
