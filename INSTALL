@@ -1,5 +1,16 @@
 INSTALL - Bill White - bill-white@utulsa.edu - 1/5/12
 
+Prerequsites:
+
+Boost
+	program_options
+GSL
+XML2
+Doxygen
+	graphviz
+	tex
+RandomJungle
+
 All Systems
 
 $ ./configure && make && make install

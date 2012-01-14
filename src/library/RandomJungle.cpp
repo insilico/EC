@@ -159,7 +159,8 @@ bool RandomJungle::ComputeAttributeScores() {
     data->initMatrix();
     // load data frame
     // TODO: do not load data frame every time-- use column mask mechanism?
-    cout << Timestamp() << "Loading RJ DataFrame with double values: ";
+    cout << Timestamp() << "Loading RJ DataFrame with double values: "
+            << endl << Timestamp();
     cout.flush();
     for(unsigned int i = 0; i < numInstances; ++i) {
       unsigned int instanceIndex;
@@ -232,7 +233,8 @@ bool RandomJungle::ComputeAttributeScores() {
     data->setDepVar(rjParams.depVarCol);
     data->initMatrix();
     // TODO: do not load data frame every time-- use column mask mechanism?
-    cout << Timestamp() << "Loading RJ DataFrame values: ";
+    cout << Timestamp() << "Loading RJ DataFrame with character values: "
+            << endl << Timestamp();
     for(unsigned int i = 0; i < rjParams.nrow; ++i) {
       unsigned int instanceIndex;
       dataset->GetInstanceIndexForID(instanceIds[i], instanceIndex);

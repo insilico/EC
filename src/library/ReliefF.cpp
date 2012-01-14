@@ -17,6 +17,7 @@
 
 #include <omp.h>
 #include <boost/program_options.hpp>
+#include <boost/unordered_map.hpp>
 
 #include "ReliefF.h"
 #include "Dataset.h"
@@ -275,7 +276,7 @@ ReliefF::~ReliefF() {
 bool ReliefF::ComputeAttributeScores() {
 
   // changed from matric to map for ID matching - November 2011
-  PreComputeDistancesByMap();
+  PreComputeDistances();
 
   // algorithm line 1
   W.resize(dataset->NumVariables(), 0.0);
@@ -655,7 +656,7 @@ bool ReliefF::ComputeAttributeScoresIteratively() {
 
 bool ReliefF::ResetForNextIteration() {
 
-  PreComputeDistancesByMap();
+  PreComputeDistances();
 
   return true;
 }
@@ -776,11 +777,10 @@ bool ReliefF::PreComputeDistances() {
       dataset->GetInstanceIndexForID(instanceIds[i], dsi1Index);
       unsigned int dsi2Index;
       dataset->GetInstanceIndexForID(instanceIds[j], dsi2Index);
-      distanceMatrix[i][j] =
+      distanceMatrix[i][j] = distanceMatrix[j][i] =
               ComputeInstanceToInstanceDistance(dataset->GetInstance(dsi1Index),
                                                 dataset->GetInstance(dsi2Index));
       // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
-      distanceMatrix[j][i] = distanceMatrix[i][j];
     }
     if(i % 100 == 0) {
       cout << i << "/" << numInstances << " ";
@@ -814,10 +814,14 @@ bool ReliefF::PreComputeDistances() {
   if(dataset->HasContinuousPhenotypes()) {
     cout << Timestamp() << "2) Calculating continuous phenotype nearest neighbors... ";
   } else {
-    cout << Timestamp() << "2) Calculating same and different class nearest neighbors... ";
+    // multiclass - 12/1/11
+    if(dataset->NumClasses() > 2) {
+      cout << Timestamp() << "2) Calculating same and different classes nearest neighbors... ";
+    } else {
+      cout << Timestamp() << "2) Calculating same and different class nearest neighbors... ";
+    }
   }
 
-  pair<string, string> key;
   DistancePair nnInfo;
   for(int i = 0; i < (int) numInstances; ++i) {
     unsigned int thisInstanceIndex = instanceMask[instanceIds[i]];
@@ -832,7 +836,7 @@ bool ReliefF::PreComputeDistances() {
         nearestNeighborInfo = make_pair(instanceToInstanceDistance, instanceIds[j]);
         instanceDistances.push_back(nearestNeighborInfo);
       }
-      dataset->GetInstance(i)->SetDistanceSums(k, instanceDistances);
+      thisInstance->SetDistanceSums(k, instanceDistances);
     } else {
       ClassLevel thisClass = thisInstance->GetClass();
       DistancePairs sameSums;
@@ -840,11 +844,6 @@ bool ReliefF::PreComputeDistances() {
       map<ClassLevel, DistancePairs> diffSums;
       for(int j = 0; j < numInstances; ++j) {
         if(i == j) continue;
-        if(j < i) {
-          key = make_pair(instanceIds[j], instanceIds[i]);
-        } else {
-          key = make_pair(instanceIds[i], instanceIds[j]);
-        }
         double instanceToInstanceDistance = distanceMatrix[i][j];
         unsigned int otherInstanceIndex = instanceMask[instanceIds[j]];
         DatasetInstance* otherInstance =
@@ -894,7 +893,7 @@ bool ReliefF::PreComputeDistancesByMap() {
 
   cout << Timestamp()
           << "1) Computing instance-to-instance distances in parallel... ";
-  map<pair<string, string>, double > distanceMatrix;
+  boost::unordered_map<pair<string, string>, double > distanceMatrix;
   //        ID1     ID2     dist
   int i = 0;
 #pragma omp parallel for schedule(dynamic, 1)

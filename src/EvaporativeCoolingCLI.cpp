@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
   struct rusage s;
   struct rusage*p = &s;
   getrusage(RUSAGE_SELF, p);
-  cout << Timestamp() << "EC RAM used: " << (p->ru_maxrss / 1024) 
+  cout << Timestamp() << "EC RAM used: " << (p->ru_maxrss / (1024 * 1024))
           << " MB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
