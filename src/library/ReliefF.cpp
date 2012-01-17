@@ -766,9 +766,9 @@ bool ReliefF::PreComputeDistances() {
 
   // populate the matrix - upper triangular
   // NOTE: make complete symmetric matrix for neighbor-to-neighbor sums
-  cout << Timestamp() << "1) Computing instance-to-instance distances... ";
+  cout << Timestamp() << "1) Computing instance-to-instance distances... " << endl << Timestamp();
   //  omp_set_nested(1);
-#pragma omp parallel for schedule(dynamic, 1)
+#pragma omp parallel for schedule(runtime)
   for(int i = 0; i < numInstances; ++i) {
     // cout << "Computing instance to instance distances. Row: " << i << endl;
     // #pragma omp parallel for
@@ -821,6 +821,7 @@ bool ReliefF::PreComputeDistances() {
       cout << Timestamp() << "2) Calculating same and different class nearest neighbors... ";
     }
   }
+  cout << endl << Timestamp();
 
   DistancePair nnInfo;
   for(int i = 0; i < (int) numInstances; ++i) {
