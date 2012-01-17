@@ -3,11 +3,11 @@
 ### Process this file with autoconf to produce a configure script.
 ###
 ### Evaporative Cooling (EC)
-### Daniel Schwarz (c) 2005-2012
+### Bill White (c) 2005-2012
 ### http://insilico.utulsa.edu/evaporative-cooling
 
 AC_PREREQ(2.61)
-AC_INIT([Evaporative Cooling], [1.0], [bill-whit@utulsa.edu], [ec], [http://insilico.utulsa.edu/evaporative-cooling])
+AC_INIT(ec, 1.0, bill-whit@utulsa.edu, http://insilico.utulsa.edu/evaporative-cooling)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR(src/library/EvaporativeCooling.cpp)
@@ -177,6 +177,10 @@ if test "$with_xml" != 'no'; then
         AC_MSG_RESULT([no])
     fi
 fi
+
+# check for RandomJungle dependency
+AC_CHECK_LIB([rjungle], [randomJungle])
+AC_CHECK_LIB([lr], [mk_lr_options])
 
 AM_CONDITIONAL(XML_DELEGATE,test "$have_xml" = 'yes')
 AC_SUBST(XML_LIBS)

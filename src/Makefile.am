@@ -16,8 +16,7 @@ bin_PROGRAMS = ec
 ec_SOURCES=EvaporativeCoolingCLI.cpp
 # libtool libraries
 ec_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec-1.0 \
--lrjungle-1.2.362 -llr-1.2.362
+-L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
 
 # additional include paths to support the library headers
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/$(LIBDIR)

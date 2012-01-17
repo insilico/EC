@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = src/library
-DIST_COMMON = $(libec_1_0_la_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(libec_la_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/boost.m4 \
@@ -72,16 +72,18 @@ am__nobase_list = $(am__nobase_strip_setup); \
 am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libec_1_0_ladir)"
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libec_ladir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libec_1_0_la_LIBADD =
-am_libec_1_0_la_OBJECTS = ArffDataset.lo ChiSquared.lo \
-	CleanSnpDataset.lo Dataset.lo DatasetInstance.lo \
-	DistanceMetrics.lo EvaporativeCooling.lo FilesystemUtils.lo \
-	Insilico.lo PlinkBinaryDataset.lo PlinkDataset.lo \
-	PlinkRawDataset.lo RReliefF.lo RandomJungle.lo ReliefF.lo \
-	Statistics.lo
-libec_1_0_la_OBJECTS = $(am_libec_1_0_la_OBJECTS)
+libec_la_LIBADD =
+am_libec_la_OBJECTS = ArffDataset.lo ChiSquared.lo CleanSnpDataset.lo \
+	Dataset.lo DatasetInstance.lo DistanceMetrics.lo \
+	EvaporativeCooling.lo FilesystemUtils.lo Insilico.lo \
+	PlinkBinaryDataset.lo PlinkDataset.lo PlinkRawDataset.lo \
+	RReliefF.lo RandomJungle.lo ReliefF.lo Statistics.lo
+libec_la_OBJECTS = $(am_libec_la_OBJECTS)
+libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(libec_la_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -95,9 +97,9 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(libec_1_0_la_SOURCES)
-DIST_SOURCES = $(libec_1_0_la_SOURCES)
-HEADERS = $(libec_1_0_la_HEADERS)
+SOURCES = $(libec_la_SOURCES)
+DIST_SOURCES = $(libec_la_SOURCES)
+HEADERS = $(libec_la_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -273,8 +275,8 @@ AM_CXXFLAGS = -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen @OS_CXX@ \
 LIBNAME = @LIBNAME@
 
 # shared library build
-lib_LTLIBRARIES = libec-1.0.la
-libec_1_0_la_SOURCES = \
+lib_LTLIBRARIES = libec.la
+libec_la_SOURCES = \
 ArffDataset.cpp ChiSquared.cpp CleanSnpDataset.cpp Dataset.cpp \
 DatasetInstance.cpp DistanceMetrics.cpp EvaporativeCooling.cpp \
 FilesystemUtils.cpp Insilico.cpp PlinkBinaryDataset.cpp \
@@ -283,15 +285,16 @@ ReliefF.cpp Statistics.cpp
 
 
 # the list of header files that belong to the library
-libec_1_0_la_HEADERS = \
+libec_la_HEADERS = \
 ArffDataset.h ChiSquared.h CleanSnpDataset.h Dataset.h DatasetInstance.h \
 Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h
 
+libec_la_LDFLAGS = -release 1.0.0
 
 # where to install the headers on the system
-libec_1_0_ladir = $(includedir)/ec
+libec_ladir = $(includedir)/ec
 all: all-am
 
 .SUFFIXES:
@@ -357,8 +360,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libec-1.0.la: $(libec_1_0_la_OBJECTS) $(libec_1_0_la_DEPENDENCIES) 
-	$(CXXLINK) -rpath $(libdir) $(libec_1_0_la_OBJECTS) $(libec_1_0_la_LIBADD) $(LIBS)
+libec.la: $(libec_la_OBJECTS) $(libec_la_DEPENDENCIES) 
+	$(libec_la_LINK) -rpath $(libdir) $(libec_la_OBJECTS) $(libec_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -409,26 +412,26 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-install-libec_1_0_laHEADERS: $(libec_1_0_la_HEADERS)
+install-libec_laHEADERS: $(libec_la_HEADERS)
 	@$(NORMAL_INSTALL)
-	test -z "$(libec_1_0_ladir)" || $(MKDIR_P) "$(DESTDIR)$(libec_1_0_ladir)"
-	@list='$(libec_1_0_la_HEADERS)'; test -n "$(libec_1_0_ladir)" || list=; \
+	test -z "$(libec_ladir)" || $(MKDIR_P) "$(DESTDIR)$(libec_ladir)"
+	@list='$(libec_la_HEADERS)'; test -n "$(libec_ladir)" || list=; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(libec_1_0_ladir)'"; \
-	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(libec_1_0_ladir)" || exit $$?; \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(libec_ladir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(libec_ladir)" || exit $$?; \
 	done
 
-uninstall-libec_1_0_laHEADERS:
+uninstall-libec_laHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(libec_1_0_la_HEADERS)'; test -n "$(libec_1_0_ladir)" || list=; \
+	@list='$(libec_la_HEADERS)'; test -n "$(libec_ladir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(libec_1_0_ladir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(libec_1_0_ladir)" && rm -f $$files
+	echo " ( cd '$(DESTDIR)$(libec_ladir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(libec_ladir)" && rm -f $$files
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -516,7 +519,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libec_1_0_ladir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libec_ladir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -567,7 +570,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-libec_1_0_laHEADERS
+install-data-am: install-libec_laHEADERS
 
 install-dvi: install-dvi-am
 
@@ -613,7 +616,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-libLTLIBRARIES uninstall-libec_1_0_laHEADERS
+uninstall-am: uninstall-libLTLIBRARIES uninstall-libec_laHEADERS
 
 .MAKE: install-am install-strip
 
@@ -624,13 +627,13 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-libec_1_0_laHEADERS
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-info install-info-am \
-	install-libLTLIBRARIES install-libec_1_0_laHEADERS install-man \
+	install-libLTLIBRARIES install-libec_laHEADERS install-man \
 	install-pdf install-pdf-am install-ps install-ps-am \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-libLTLIBRARIES uninstall-libec_1_0_laHEADERS
+	uninstall-libLTLIBRARIES uninstall-libec_laHEADERS
 
 
 #library_includedir=$(includedir)

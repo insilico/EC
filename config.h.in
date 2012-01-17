@@ -18,8 +18,14 @@
 /* Define to 1 if you have the `gcc' library (-lgcc). */
 #undef HAVE_LIBGCC
 
+/* Define to 1 if you have the `lr' library (-llr). */
+#undef HAVE_LIBLR
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
+
+/* Define to 1 if you have the `rjungle' library (-lrjungle). */
+#undef HAVE_LIBRJUNGLE
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET

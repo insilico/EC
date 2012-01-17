@@ -19,8 +19,14 @@
 /* Define to 1 if you have the `gcc' library (-lgcc). */
 /* #undef HAVE_LIBGCC */
 
+/* Define to 1 if you have the `lr' library (-llr). */
+#define HAVE_LIBLR 1
+
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 /* #undef HAVE_LIBNSL */
+
+/* Define to 1 if you have the `rjungle' library (-lrjungle). */
+#define HAVE_LIBRJUNGLE 1
 
 /* Define to 1 if you have the `socket' library (-lsocket). */
 /* #undef HAVE_LIBSOCKET */
@@ -75,16 +81,16 @@
 #define PACKAGE_BUGREPORT "bill-whit@utulsa.edu"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "Evaporative Cooling"
+#define PACKAGE_NAME "ec"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "Evaporative Cooling 1.0"
+#define PACKAGE_STRING "ec 1.0"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "ec"
+#define PACKAGE_TARNAME "http://insilico.utulsa.edu/evaporative-cooling"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL "http://insilico.utulsa.edu/evaporative-cooling"
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
