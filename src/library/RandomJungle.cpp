@@ -92,7 +92,7 @@ bool RandomJungle::ComputeAttributeScores() {
     else {
       if(dataset->HasGenotypes()) {
         // nominal/numeric
-        rjParams.treeType = 4;
+        rjParams.treeType = 1;
         treeTypeDesc = "Regression trees: discrete/continuous";
       }
       else {
@@ -108,27 +108,25 @@ bool RandomJungle::ComputeAttributeScores() {
     // classification
     if(dataset->HasNumerics() && dataset->HasGenotypes()) {
       // mixed/nominal
-      rjParams.treeType = 1;
+      rjParams.treeType = 5;
       treeTypeDesc = "Classification trees: integrated/discrete";
     }
     else {
       if(dataset->HasGenotypes()) {
         // nominal/nominal
-        // rjParams.treeType = 2;
-        // tree type 2 sucks at importance ranking
         rjParams.treeType = 2;
         treeTypeDesc = "Classification trees: discrete/discrete";
       }
       else {
-      // numeric/nominal
+    	// numeric/nominal
         if(dataset->HasNumerics()) {
-          rjParams.treeType = 1;
+          rjParams.treeType = 5;
           treeTypeDesc = "Classification trees: continuous/discrete";
         }
       }
     }
   }
-  cout << Timestamp() << treeTypeDesc << endl;
+  cout << Timestamp() << treeTypeDesc << ": " << rjParams.treeType << endl;
 
   RJungleIO io;
   io.open(rjParams);
@@ -146,8 +144,8 @@ bool RandomJungle::ComputeAttributeScores() {
      (rjParams.treeType == 4)) {
     // regression
     cout << Timestamp() << "Preparing regression trees Random Jungle" << endl;
-    rjParams.memMode = 0;
-    rjParams.impMeasure = 2;
+    //rjParams.memMode = 0;
+    //rjParams.impMeasure = 2;
 //    rjParams.backSel = 3;
 //    rjParams.numOfImpVar = 2;
     DataFrame<NumericLevel>* data = new DataFrame<NumericLevel>(rjParams);
@@ -204,6 +202,8 @@ bool RandomJungle::ComputeAttributeScores() {
     RJungleGen<NumericLevel> rjGen;
     rjGen.init(rjParams, *data);
 
+    RJungleHelper<NumericLevel>::printRJunglePar(rjParams, *io.outLog);
+
     startgrow = clock();
     // create controller
     RJungleCtrl<NumericLevel> rjCtrl;
@@ -214,7 +214,6 @@ bool RandomJungle::ComputeAttributeScores() {
     time(&end);
 
     // print info stuff
-    RJungleHelper<NumericLevel>::printRJunglePar(rjParams, *io.outLog);
     RJungleHelper<NumericLevel>::printFooter(rjParams, io, start, end,
                                        startgrow, endgrow);
     delete data;
@@ -295,6 +294,8 @@ bool RandomJungle::ComputeAttributeScores() {
     RJungleGen<char> rjGen;
     rjGen.init(rjParams, *data);
 
+    RJungleHelper<char>::printRJunglePar(rjParams, *io.outLog);
+
     startgrow = clock();
     // create controller
     RJungleCtrl<char> rjCtrl;
@@ -305,7 +306,6 @@ bool RandomJungle::ComputeAttributeScores() {
     time(&end);
 
     // print info stuff
-    RJungleHelper<char>::printRJunglePar(rjParams, *io.outLog);
     RJungleHelper<char>::printFooter(rjParams, io, start, end,
                                        startgrow, endgrow);
     delete data;
