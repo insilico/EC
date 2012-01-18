@@ -11,6 +11,6 @@ string GetFileBasename(string fileName) {
 }
 
 string GetFileExtension(string fileName) {
-  size_t pos = fileName.find('.');
+  size_t pos = fileName.rfind('.');
   return fileName.substr(pos + 1, fileName.size() - 1);
 }
