@@ -275,7 +275,7 @@ ReliefF::~ReliefF() {
 
 bool ReliefF::ComputeAttributeScores() {
 
-  // changed from matric to map for ID matching - November 2011
+  // changed from matrix to map for ID matching - November 2011
   PreComputeDistances();
 
   // algorithm line 1
@@ -880,7 +880,7 @@ bool ReliefF::PreComputeDistances() {
     delete [] distanceMatrix[i];
   }
   delete [] distanceMatrix;
-  cout << Timestamp() << "done" << endl;
+  cout << "done" << endl;
 
   return true;
 }

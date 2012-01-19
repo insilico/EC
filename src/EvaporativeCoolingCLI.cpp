@@ -30,7 +30,8 @@
 #include "EvaporativeCooling.h"
 #include "Dataset.h"
 #include "FilesystemUtils.h"
-#include "library/EvaporativeCooling.h"
+#include "EvaporativeCooling.h"
+#include "DgeData.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -52,6 +53,8 @@ int main(int argc, char** argv) {
   string snpExclusionFile = "";
   string cleanSnpsFilename = "";
   string numericsFilename = "";
+  string dgeCountsFilename = "";
+  string dgePhenosFilename = "";
   string altPhenotypeFilename = "";
   string outputDatasetFilename = "";
   string outputFilesPrefix = "ec_run";
@@ -95,8 +98,18 @@ int main(int argc, char** argv) {
           (
            "numeric-data",
            po::value<string > (&numericsFilename),
-           "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+           "read continuous attributes from PLINK-style covar file"
            )
+           (
+            "dge-counts-data",
+            po::value<string > (&dgeCountsFilename),
+            "read digital gene expression counts from text file"
+            )
+            (
+             "dge-phenos-data",
+             po::value<string > (&dgePhenosFilename),
+             "read digital gene expression phenotypes from text file"
+             )
           (
            "alternate-pheno-file",
            po::value<string > (&altPhenotypeFilename),
@@ -195,6 +208,18 @@ int main(int argc, char** argv) {
     exit(COMMAND_LINE_ERROR);
   }
 
+  if(vm.count("dge-counts-data") && vm.count("dge-phenos-data")) {
+  	DgeData dge;
+  	bool loadOk = dge.LoadData(dgeCountsFilename, dgePhenosFilename);
+  	if(!loadOk) {
+  		cerr << "ERROR: DGE LoadData() test failed" << endl;
+  	}
+  	else {
+  		cout << "DGE LoadData() test successful" << endl;
+  	}
+  	return 0;
+  }
+
   /// determine the output data set type
   OutputDatasetType outputDatasetType = NO_OUTPUT_DATASET;
   if(outputDatasetFilename != "") {
@@ -215,10 +240,10 @@ int main(int argc, char** argv) {
         }
       }
     }
+    cout << Timestamp() << "Writing ReliefF filtered data set to ["
+            << outputDatasetFilename
+            << "]" << endl;
   }
-  cout << Timestamp() << "Writing ReliefF filtered data set to ["
-          << outputDatasetFilename
-          << "]" << endl;
 
   /// determine the analysis type
   cout << Timestamp() << "Determining analysis type" << endl;
@@ -245,13 +270,15 @@ int main(int argc, char** argv) {
         analysisType = SNP_CLEAN_ANALYSIS;
       }
     } else {
-      if(!vm.count("snp-data") && vm.count("numeric-data")) {
+      if(!vm.count("snp-data") &&
+    		  ((vm.count("numeric-data") || (vm.count("dge-data"))))) {
         cout << Timestamp() << "Numeric-only analysis requested" << endl;
         analysisType = NUMERIC_ONLY_ANALYSIS;
         // must have an alternate phenotype file for numeric only
         if(!vm.count("alternate-pheno-file")) {
           cerr << "An alternate phenotype file must be specified with the "
-                  << "--alternate-pheno-file option for numeric only data"
+                  << "--alternate-pheno-file option for numeric-only or "
+                  << "digital gene expression data"
                   << endl;
           exit(COMMAND_LINE_ERROR);
         }

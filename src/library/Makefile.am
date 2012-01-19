@@ -18,14 +18,14 @@ ArffDataset.cpp ChiSquared.cpp CleanSnpDataset.cpp Dataset.cpp \
 DatasetInstance.cpp DistanceMetrics.cpp EvaporativeCooling.cpp \
 FilesystemUtils.cpp Insilico.cpp PlinkBinaryDataset.cpp \
 PlinkDataset.cpp PlinkRawDataset.cpp RReliefF.cpp RandomJungle.cpp \
-ReliefF.cpp Statistics.cpp
+ReliefF.cpp Statistics.cpp DgeData.cpp
 
 # the list of header files that belong to the library
 libec_la_HEADERS= \
 ArffDataset.h ChiSquared.h CleanSnpDataset.h Dataset.h DatasetInstance.h \
 Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
-PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h
+PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h
 
 libec_la_LDFLAGS = -release 1.0.0
 

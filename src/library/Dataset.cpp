@@ -1730,10 +1730,10 @@ bool Dataset::LoadSnps(std::string filename) {
   snpsFilename = filename;
   ifstream dataStream(snpsFilename.c_str());
   if(!dataStream.is_open()) {
-    cerr << "ERROR: Could not open SNP dataset: " << snpsFilename << endl;
+    cerr << "ERROR: Could not open SNP data set: " << snpsFilename << endl;
     exit(-1);
   }
-  cout << Timestamp() << "Reading whitespace-delimited SNP dataset lines from "
+  cout << Timestamp() << "Reading whitespace-delimited SNP data set lines from "
           << snpsFilename << ":" << endl;
 
   // temporary string for reading file lines

@@ -35,6 +35,7 @@ public:
    ****************************************************************************/
   RandomJungle(Dataset* ds, po::variables_map& vm);
   virtual ~RandomJungle();
+  /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScores();
   /*************************************************************************//**
    * Get the (importance) scores as a vector of pairs: score, attribute name

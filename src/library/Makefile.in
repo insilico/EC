@@ -79,7 +79,8 @@ am_libec_la_OBJECTS = ArffDataset.lo ChiSquared.lo CleanSnpDataset.lo \
 	Dataset.lo DatasetInstance.lo DistanceMetrics.lo \
 	EvaporativeCooling.lo FilesystemUtils.lo Insilico.lo \
 	PlinkBinaryDataset.lo PlinkDataset.lo PlinkRawDataset.lo \
-	RReliefF.lo RandomJungle.lo ReliefF.lo Statistics.lo
+	RReliefF.lo RandomJungle.lo ReliefF.lo Statistics.lo \
+	DgeData.lo
 libec_la_OBJECTS = $(am_libec_la_OBJECTS)
 libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -281,7 +282,7 @@ ArffDataset.cpp ChiSquared.cpp CleanSnpDataset.cpp Dataset.cpp \
 DatasetInstance.cpp DistanceMetrics.cpp EvaporativeCooling.cpp \
 FilesystemUtils.cpp Insilico.cpp PlinkBinaryDataset.cpp \
 PlinkDataset.cpp PlinkRawDataset.cpp RReliefF.cpp RandomJungle.cpp \
-ReliefF.cpp Statistics.cpp
+ReliefF.cpp Statistics.cpp DgeData.cpp
 
 
 # the list of header files that belong to the library
@@ -289,7 +290,7 @@ libec_la_HEADERS = \
 ArffDataset.h ChiSquared.h CleanSnpDataset.h Dataset.h DatasetInstance.h \
 Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
-PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h
+PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h
 
 libec_la_LDFLAGS = -release 1.0.0
 
@@ -374,6 +375,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CleanSnpDataset.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Dataset.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DatasetInstance.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DgeData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DistanceMetrics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EvaporativeCooling.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FilesystemUtils.Plo@am__quote@
