@@ -37,6 +37,7 @@
 #include "Statistics.h"
 #include "Debugging.h"
 #include "Insilico.h"
+#include "DgeData.h"
 
 using namespace std;
 using namespace insilico;
@@ -156,6 +157,51 @@ bool Dataset::LoadDataset(string snpsFilename,
       return false;
     }
   }
+
+  // create and seed a random number generator for random sampling
+  rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
+
+  return true;
+}
+
+bool Dataset::LoadDataset(DgeData* dgeData) {
+  	// TODO: check for genotypes already loaded; assume DGE only for now
+
+	numericsFilename = "DGE CLASS";
+
+	cout << Timestamp() << "Reading numerics from " << numericsFilename << endl;
+
+	// populate numericNames, numericsMinMax and numericsMask
+	vector<string> geneNames = dgeData->GetGeneNames();
+	for(int i=0; i < geneNames.size(); ++i) {
+		numericsNames.push_back(geneNames[i]);
+		numericsMinMax.push_back(dgeData->GetGeneMinMax(i));
+		numericsMask[geneNames[i]] = i;
+	}
+
+	// load the data set instances: set the instance numerics,
+	// instance IDs, instance mask and phenotype
+	vector<string> sampleNames = dgeData->GetSampleNames();
+	for(int instanceIndex = 0; instanceIndex < sampleNames.size(); ++instanceIndex) {
+		vector<double> sampleValues = dgeData->GetSampleCounts(instanceIndex);
+		DatasetInstance* dsi = new DatasetInstance(this);
+		for(int numericIndex=0; numericIndex < geneNames.size(); ++numericIndex) {
+			dsi->AddNumeric(sampleValues[numericIndex]);
+		}
+		instances.push_back(dsi);
+		string ID = sampleNames[instanceIndex];
+		instanceIds.push_back(ID);
+		numericsIds.push_back(ID);
+		instancesMask[ID] = instanceIndex;
+		ClassLevel thisClass = dgeData->GetSamplePhenotype(instanceIndex);
+		dsi->SetClass(thisClass);
+    classIndexes[thisClass].push_back(instanceIndex);
+	}
+
+	cout << Timestamp() << "Read " << NumNumerics() << " numeric attributes"
+			<< " from DGE counts data" << endl;
+
+	hasNumerics = true;
 
   // create and seed a random number generator for random sampling
   rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
@@ -412,10 +458,10 @@ bool Dataset::ExtractAttributes(string scoresFilename,
     for(rankIt = rankMap.end() - 1;
         rankIt != rankMap.end() - topN - 1;
         rankIt--) {
-      if(MaskSearchAttribute(rankIt->second, DISCRETE_TYPE)) {
+      if(MaskSearchVariableType(rankIt->second, DISCRETE_TYPE)) {
         newDatasetStream << (*dsiIt)->GetAttribute(GetAttributeIndexFromName(rankIt->second)) << "\t";
       } else {
-        if(MaskSearchAttribute(rankIt->second, NUMERIC_TYPE)) {
+        if(MaskSearchVariableType(rankIt->second, NUMERIC_TYPE)) {
           newDatasetStream << (*dsiIt)->GetNumeric(GetNumericIndexFromName(rankIt->second)) << "\t";
         } else {
           cerr << "ERROR: Dataset::ExtractAttributes: requested variable name ["
@@ -538,7 +584,7 @@ bool Dataset::GetAttributeValues(unsigned int attributeIndex,
 
 bool Dataset::GetAttributeValues(string attributeName,
                                  vector<AttributeLevel>& attributeValues) {
-  if(MaskSearchAttribute(attributeName, DISCRETE_TYPE)) {
+  if(MaskSearchVariableType(attributeName, DISCRETE_TYPE)) {
     GetAttributeValues(GetAttributeIndexFromName(attributeName), attributeValues);
   } else {
     cerr << "ERROR: Dataset::GetAttributeValues cannot get attribute values for: "
@@ -669,7 +715,7 @@ NumericLevel Dataset::GetNumeric(unsigned instanceIndex, string name) {
 
 bool Dataset::GetNumericValues(string numericName,
                                vector<NumericLevel>& numericValues) {
-  if(MaskSearchAttribute(numericName, NUMERIC_TYPE)) {
+  if(MaskSearchVariableType(numericName, NUMERIC_TYPE)) {
     GetNumericValues(GetNumericIndexFromName(numericName), numericValues);
   } else {
     cerr << "ERROR: Dataset::GetNumericValues cannot get numeric values for: "
@@ -789,13 +835,13 @@ void Dataset::PrintNumericsStats() {
   if(hasNumerics) {
     cout << Timestamp() << "numerics:       " << numNumerics << endl;
   }
-  vector< pair<double, double> >::const_iterator minMaxIt = numericsMinMax.begin();
-  for(unsigned int i = 0; minMaxIt != numericsMinMax.end(); ++minMaxIt, ++i) {
-    cout << Timestamp()
-            << (*minMaxIt).first << " <= "
-            << numericsNames[i] << " <= "
-            << (*minMaxIt).second << endl;
-  }
+//  vector< pair<double, double> >::const_iterator minMaxIt = numericsMinMax.begin();
+//  for(unsigned int i = 0; minMaxIt != numericsMinMax.end(); ++minMaxIt, ++i) {
+//    cout << Timestamp()
+//            << (*minMaxIt).first << " <= "
+//            << numericsNames[i] << " <= "
+//            << (*minMaxIt).second << endl;
+//  }
   if(hasContinuousPhenotypes) {
     cout << Timestamp() << "continuous phenotype, min: "
             << continuousPhenotypeMinMax.first
@@ -946,26 +992,37 @@ void Dataset::PrintAttributeLevelsSeen() {
   }
 }
 
-bool Dataset::MaskRemoveAttribute(std::string attributeName,
-                                  AttributeType attrType) {
+bool Dataset::MaskRemoveVariable(string variableName) {
+	if(MaskSearchVariableType(variableName, DISCRETE_TYPE)) {
+		MaskRemoveVariableType(variableName, DISCRETE_TYPE);
+		return true;
+	}
+	if(MaskSearchVariableType(variableName, NUMERIC_TYPE)) {
+		MaskRemoveVariableType(variableName, NUMERIC_TYPE);
+		return true;
+	}
+	return false;
+}
+
+bool Dataset::MaskRemoveVariableType(string variableName,
+                                     AttributeType varType) {
   map<string, unsigned int>::iterator pos;
-  if(attrType == DISCRETE_TYPE) {
-    pos = attributesMask.find(attributeName);
+  if(varType == DISCRETE_TYPE) {
+    pos = attributesMask.find(variableName);
     if(pos != attributesMask.end()) {
       attributesMask.erase(pos);
     } else {
-      cerr << "ERROR: Dataset::RemoveAttribute failed for SNP attribute name: "
-              << attributeName << ". name not found" << endl;
+      cerr << "ERROR: Dataset::MaskRemoveVariable failed for SNP attribute name: "
+              << variableName << ". name not found" << endl;
       return false;
     }
   } else {
-    pos = numericsMask.find(attributeName);
-    pos = numericsMask.find(attributeName);
+    pos = numericsMask.find(variableName);
     if(pos != numericsMask.end()) {
       numericsMask.erase(pos);
     } else {
-      cerr << "ERROR: Dataset::RemoveAttribute failed for numerics"
-              << " attribute name: " << attributeName << ". name not found"
+      cerr << "ERROR: Dataset::MaskRemoveVariable failed for numerics"
+              << " attribute name: " << variableName << ". name not found"
               << endl;
       return false;
     }
@@ -973,18 +1030,18 @@ bool Dataset::MaskRemoveAttribute(std::string attributeName,
   return true;
 }
 
-bool Dataset::MaskSearchAttribute(string attributeName,
-                                  AttributeType attrType) {
+bool Dataset::MaskSearchVariableType(string variableName,
+                                 AttributeType varType) {
   map<string, unsigned int>::iterator pos;
-  if(attrType == DISCRETE_TYPE) {
-    pos = attributesMask.find(attributeName);
+  if(varType == DISCRETE_TYPE) {
+    pos = attributesMask.find(variableName);
     if(pos != attributesMask.end()) {
       return true;
     } else {
       return false;
     }
   } else {
-    pos = numericsMask.find(attributeName);
+    pos = numericsMask.find(variableName);
     if(pos != numericsMask.end()) {
       return true;
     } else {
@@ -1627,10 +1684,11 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
 
   /// for all possible (unique) interactions, ie nCk
   cout << Timestamp() << "Constructing attribute interaction matrix in parallel:"
-          << endl << "\t";
+          << endl << Timestamp();
+  int numAttributes = NumAttributes();
 #pragma omp parallel for schedule(dynamic, 1)
-  for(int i = 0; i < (int) NumAttributes(); i++) {
-    for(int j = i; j < (int) NumAttributes(); j++) {
+  for(int i = 0; i < numAttributes; i++) {
+    for(int j = i; j < (int) numAttributes; j++) {
 
       vector<AttributeLevel> a;
       vector<AttributeLevel> b;
@@ -1692,8 +1750,8 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
       // of Interaction Effects in Genetic Association Studies by Simulated
       // Evaporative Cooling Network Analysis. PLoS Genet 5(3): e1000432.
       // doi:10.1371/journal.pgen.1000432
-      //      double I_3_pygain = r["H(AB)"] + r["H(B|C)"] + r["H(A|C)"] -
-      //        r["H(A)"] - r["H(B)"] - r["H(C)"] - r["H(AB|C)"];
+//      double I_3_pygain = r["H(AB)"] + r["H(B|C)"] + r["H(A|C)"] -
+//              r["H(A)"] - r["H(B)"] - r["H(C)"] - r["H(AB|C)"];
       double I_3_paper = r["I(AB;C)"] - r["I(A;C)"] - r["I(B;C)"];
       // are the two I_3 values not close?
       //      if(fabs(I_3_pygain - I_3_paper) > 1e-6) {
@@ -1708,8 +1766,7 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
       if(i == j) {
         gainMatrix[i][j] = I_2;
       } else {
-        gainMatrix[i][j] = I_3;
-        gainMatrix[j][i] = I_3;
+        gainMatrix[i][j] = gainMatrix[j][i] = I_3;
       }
 
       // DEBUG
@@ -1717,11 +1774,15 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
       //              << "\t" << r["I(A;B|C)"] << "\t" << r["I(A;C)"] << endl;
     }
     // happy lights
-    if((i % 100) == 0) {
-      cout << i << "/" << NumAttributes() << " ";
-    }
-  }
-  cout << endl;
+    if(i && (i % 100 == 0)) {
+       cout << i << "/" << numAttributes << " ";
+       cout.flush();
+     }
+     if(i && ((i % 1000) == 0)) {
+       cout << endl << Timestamp();
+     }
+   }
+   cout << numAttributes << "/" << numAttributes << " done" << endl;
 
   return true;
 }
@@ -2155,7 +2216,7 @@ bool Dataset::LoadNumerics(string filename) {
       return false;
     }
 
-    // first column is the ID for matching dat set rows - bcw - 8/3/11
+    // first column is the ID for matching data set rows - bcw - 8/3/11
     string ID = numericsStringVector[0];
     if(!IsLoadableInstanceID(ID)) {
       cout << Timestamp() << "WARNING: Skipping Numeric ID [" << ID << "]. "

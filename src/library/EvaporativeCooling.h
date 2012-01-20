@@ -28,6 +28,7 @@
 #include "Dataset.h"
 #include "RandomJungle.h"
 #include "ReliefF.h"
+#include "Insilico.h"
 
 namespace po = boost::program_options;
 
@@ -137,5 +138,11 @@ private:
   /// current set of ec scores
   EcScores ecScores;
 };
+
+/// HACK FOR AUTOTOOLS LIBRARY DETECTION
+extern "C"
+{
+  void libec_is_present(void);
+}
 
 #endif	/* EVAPORATIVECOOLING_H */

@@ -19,6 +19,20 @@ public:
 	virtual ~DgeData();
 	/// Create a new set of DGE data with a counts file and a phenotype file
 	bool LoadData(std::string countsFile, std::string phenoFile);
+	/// Get the sample names/IDs
+	std::vector<std::string> GetSampleNames();
+	/// Get the gene names/IDs
+	std::vector<std::string> GetGeneNames();
+	/// Get the min and max values for gene at index
+	std::pair<double, double> GetGeneMinMax(int geneIndex);
+	/// Get the number of samples
+	int GetNumSamples();
+	/// Get the number of genes
+	int GetNumGenes();
+	/// Get sample counts for sample at index
+	std::vector<double> GetSampleCounts(int sampleIndex);
+	/// Get the phenotype at sample index
+	int GetSamplePhenotype(int sampleIndex);
 private:
 	/// Filename containing DGE counts
 	std::string countsFilename;
@@ -32,6 +46,12 @@ private:
 	std::vector<std::string> sampleNames;
 	/// Sample phenotypes
 	std::vector<int> phenotypes;
+	/// Min and max count for genes
+	std::vector<std::pair<double, double> > minMaxGeneCounts;
+	/// Min and max values for samples
+	std::vector<std::pair<double, double> > minMaxSampleCounts;
+	/// Zero count sample indices
+	std::vector<std::vector<int> > sampleZeroes;
 };
 
 #endif /* DGEDATA_H_ */

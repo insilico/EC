@@ -141,7 +141,8 @@ bool RandomJungle::ComputeAttributeScores() {
   vector<string> numericNames = dataset->GetNumericsNames();
   if((rjParams.treeType == 1) ||
      (rjParams.treeType == 3) ||
-     (rjParams.treeType == 4)) {
+     (rjParams.treeType == 4) ||
+     (rjParams.treeType == 5)) {
     // regression
     cout << Timestamp() << "Preparing regression trees Random Jungle" << endl;
     //rjParams.memMode = 0;
@@ -195,7 +196,7 @@ bool RandomJungle::ComputeAttributeScores() {
     data->storeCategories();
     data->makeDepVecs();
     data->getMissings();
-//    cout << "DEBUG data frame:" << endl;
+//   cout << "DEBUG data frame:" << endl;
 //    data->print(cout);
 //    data->printSummary();
 

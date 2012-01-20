@@ -29,6 +29,8 @@
 // GSL random number generator base class
 #include "GSLRandomFlat.h"
 
+class DgeData;
+
 /// return value for invalid distance
 const static int INVALID_DISTANCE = INT_MAX;
 /// return value for invalid index into attributes
@@ -106,8 +108,7 @@ public:
   /// Destruct all dynamically allocated memory.
   ~Dataset();
   /*************************************************************************//**
-   * Load the dataset from file set in the constructor.
-   * This is a virtual function overridden by subclasses.
+   * Load the dataset from files passed as parameters.
    * \param [in] snpFilename discrete values (SNPs) filename
    * \param [in] doRecodeA perform recodeA encoding after reading
    * \param [in] numericsFilename continuous values (numerics) filename or empty string
@@ -119,6 +120,12 @@ public:
                    std::string numericsFilename,
                    std::string altPhenoFilename,
                    std::vector<std::string> ids);
+  /*************************************************************************//**
+   * Load the dataset from DGE data.
+   * \param [in] dgeData pointer to a digital gene expression (DGE) data object
+   * \return success
+   ****************************************************************************/
+  bool LoadDataset(DgeData* dgeData);
   /*************************************************************************//**
    * Get the attribute value at row, column.
    * Same as instance index, attribute index.
@@ -372,19 +379,25 @@ public:
   /// Print unique attribute levels seen.
   void PrintAttributeLevelsSeen();
   /*************************************************************************//**
+   * Removes the variable name from consideration in any data set operations.
+   * \param [in] variableName variable name
+   * \return success
+   ****************************************************************************/
+  bool MaskRemoveVariable(std::string variableName);
+  /*************************************************************************//**
    * Removes the attribute name from consideration in any data set operations.
    * \param [in] attributeName attribute name
    * \param [in] attrType attribute type
    * \return success
    ****************************************************************************/
-  bool MaskRemoveAttribute(std::string attributeName, AttributeType attrType);
+  bool MaskRemoveVariableType(std::string variableName, AttributeType varType);
   /*************************************************************************//**
-   * Determines if the names attribute is in the current masked dataaset.
+   * Determines if the named variable is in the current masked data set.
    * \param [in] attributeName attribute name
    * \param [in] attributeType attribute type
-   * \return true if discrete atribute name is being considered in operations.
+   * \return true if discrete attribute name is being considered in operations.
    ****************************************************************************/
-  bool MaskSearchAttribute(std::string attributeName, AttributeType attrType);
+  bool MaskSearchVariableType(std::string variableName, AttributeType attrType);
   /*************************************************************************//**
    * Mark all attributes for inclusion in data set operations.
    * \param [in] attrType attribute type

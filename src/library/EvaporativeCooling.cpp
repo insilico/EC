@@ -68,8 +68,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
   numTargetAttributes = vm["ec-num-target"].as<unsigned int>();
   if(numTargetAttributes == 0) {
     numTargetAttributes = ds->NumVariables();
+    numToRemovePerIteration = 0;
   }
-  if(numTargetAttributes > dataset->NumAttributes()) {
+  if(numTargetAttributes > dataset->NumVariables()) {
     cerr << "--ec-num-taget must be less than or equal to the "
             << "number of attributes in the data set" << endl;
     exit(EXIT_FAILURE);
@@ -157,7 +158,7 @@ EvaporativeCooling::~EvaporativeCooling() {
 }
 
 bool EvaporativeCooling::ComputeECScores() {
-  unsigned int numWorkingAttributes = dataset->NumAttributes();
+  unsigned int numWorkingAttributes = dataset->NumVariables();
   if(numWorkingAttributes < numTargetAttributes) {
     cerr << "ERROR: The number of attributes in the data set "
             << numWorkingAttributes
@@ -216,6 +217,7 @@ bool EvaporativeCooling::ComputeECScores() {
         cerr << "ERROR: In EC algorithm: ReliefF failed" << endl;
         return false;
       }
+      cout << setprecision(1);
       elapsedTime = (float)(clock() - t) / CLOCKS_PER_SEC;
       cout << Timestamp() << "ReliefF finished in "
               << elapsedTime << " secs" << endl;
@@ -254,7 +256,7 @@ bool EvaporativeCooling::ComputeECScores() {
       unsigned int iterPercentToRemove =
         paramsMap["ec-iter-remove-percent"].as<unsigned int>();
       numToRemove = (int) (((double) iterPercentToRemove / 100.0) *
-                                       dataset->NumAttributes());
+                                       dataset->NumVariables());
     }
     if((numWorkingAttributes - numToRemove) < numTargetAttributes) {
       numToRemove = numWorkingAttributes - numTargetAttributes;
@@ -427,13 +429,13 @@ bool EvaporativeCooling::PrintKendallTaus() {
 
 bool EvaporativeCooling::RunReliefF() {
 
-  if(analysisType == SNP_ONLY_ANALYSIS) {
-    cout << Timestamp() << "Running standard ReliefF" << endl;
+//  if(analysisType == SNP_ONLY_ANALYSIS) {
+    cout << Timestamp() << "Running ReliefF" << endl;
     reliefF->ComputeAttributeScores();
-  } else {
-    cout << Timestamp() << "Running CLEAN SNPS ReliefF" << endl;
-    reliefF->ComputeAttributeScoresCleanSnps();
-  }
+//  } else {
+//    cout << Timestamp() << "Running CLEAN SNPS ReliefF" << endl;
+//    reliefF->ComputeAttributeScoresCleanSnps();
+//  }
   rfScores = reliefF->GetScores();
 
   cout << Timestamp() << "Normalizing ReliefF scores to 0-1" << endl;
@@ -539,7 +541,11 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
     // save worst
     evaporatedAttributes.push_back(worst);
     // remove the attribute from those under consideration
-    dataset->MaskRemoveAttribute(worst.second, DISCRETE_TYPE);
+    if(!dataset->MaskRemoveVariable(worst.second)) {
+    	cerr << "ERROR: Could not remove worst attribute: " << worst.second
+    			<< endl;
+    	return false;
+    }
   }
 
   return true;

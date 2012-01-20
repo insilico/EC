@@ -292,7 +292,7 @@ Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h
 
-libec_la_LDFLAGS = -release 1.0.0
+libec_la_LDFLAGS = -release 1.0.0 $(BOOST_PROGRAM_OPTIONS_LIBS)
 
 # where to install the headers on the system
 libec_ladir = $(includedir)/ec

@@ -219,7 +219,7 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
   // spread differences and thus weight updates
   // over (m x k) iterations
   one_over_m_times_k =
-          1.0 / ((double) m * (double) k);
+          1.0 / (((double) m) * ((double) k));
   //                                  m           *                  k
 
   if(to_upper(snpMetric) == "GM") {
@@ -285,7 +285,8 @@ bool ReliefF::ComputeAttributeScores() {
   DatasetInstance* R_i;
   int i = 0;
   cout << Timestamp() << "Running Relief-F algorithm" << endl;
-  cout << Timestamp() << "Averaging factor 1/(m*k): " << one_over_m_times_k << endl;
+  cout << Timestamp() << "Averaging factor 1/(m*k): "
+  		<< setprecision(6) << one_over_m_times_k << endl;
 
   vector<string> instanceIds = dataset->GetInstanceIds();
   cout << Timestamp();
@@ -603,23 +604,13 @@ bool ReliefF::ComputeAttributeScoresIteratively() {
     for(unsigned int i = 0; i < removeThisIteration; ++i) {
       string attributeToDelete = attributeScores[i].second;
       //      cout << "\t\t\tremoving attribute: " << attributeToDelete << endl;
-      if(dataset->MaskSearchAttribute(attributeToDelete, DISCRETE_TYPE)) {
-        dataset->MaskRemoveAttribute(attributeToDelete, DISCRETE_TYPE);
-        //        scores[dataset->GetAttributeIndexFromName(attributeToDelete)] =
-        //                attributeScores[i].first;
-      } else {
-        if(dataset->MaskSearchAttribute(attributeToDelete, NUMERIC_TYPE)) {
-          dataset->MaskRemoveAttribute(attributeToDelete, NUMERIC_TYPE);
-          //          scores[dataset->NumAttributes() +
-          //                 dataset->GetNumericIndexFromName(attributeToDelete)] =
-          //                attributeScores[i].first;
-        } else {
-          cerr << "ERROR: ReliefF::ComputeAttributeScoresIteratively: "
-                  << "could not find attribute name in data set: "
-                  << attributeToDelete << endl;
-          return false;
-        }
-      }
+
+			if(!dataset->MaskRemoveVariable(attributeToDelete)) {
+				cerr << "ERROR: ReliefF::ComputeAttributeScoresIteratively: "
+								<< "could not find attribute name in data set: "
+								<< attributeToDelete << endl;
+				return false;
+			}
       finalScores[attributeToDelete] = attributeScores[i].first;
     }
 
@@ -705,7 +696,7 @@ bool ReliefF::ProcessExclusionFile(string exclusionFilename) {
   while(getline(dataStream, line)) {
     ++lineNumber;
     string attributeName = trim(line);
-    if(!dataset->MaskRemoveAttribute(attributeName, DISCRETE_TYPE)) {
+    if(!dataset->MaskRemoveVariable(attributeName)) {
       cerr << "ERROR: attribute to exclude [" << attributeName
               << "] on line [" << lineNumber
               << "] in the exclusion file. It is not in the data set" << endl;
@@ -766,7 +757,8 @@ bool ReliefF::PreComputeDistances() {
 
   // populate the matrix - upper triangular
   // NOTE: make complete symmetric matrix for neighbor-to-neighbor sums
-  cout << Timestamp() << "1) Computing instance-to-instance distances... " << endl << Timestamp();
+  cout << Timestamp() << "1) Computing instance-to-instance distances... "
+  		<< endl << Timestamp();
   //  omp_set_nested(1);
 #pragma omp parallel for schedule(runtime)
   for(int i = 0; i < numInstances; ++i) {
@@ -782,14 +774,13 @@ bool ReliefF::PreComputeDistances() {
                                                 dataset->GetInstance(dsi2Index));
       // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
     }
-    if(i % 100 == 0) {
+    if(i && (i % 100 == 0)) {
       cout << i << "/" << numInstances << " ";
       cout.flush();
     }
     if(i && ((i % 1000) == 0)) {
       cout << endl << Timestamp();
     }
-
   }
   cout << numInstances << "/" << numInstances << " done" << endl;
 
@@ -824,13 +815,13 @@ bool ReliefF::PreComputeDistances() {
   cout << endl << Timestamp();
 
   DistancePair nnInfo;
-  for(int i = 0; i < (int) numInstances; ++i) {
+  for(int i = 0; i < numInstances; ++i) {
     unsigned int thisInstanceIndex = instanceMask[instanceIds[i]];
     DatasetInstance* thisInstance = dataset->GetInstance(thisInstanceIndex);
 
     if(dataset->HasContinuousPhenotypes()) {
       DistancePairs instanceDistances;
-      for(int j = 0; j < (int) numInstances; ++j) {
+      for(int j = 0; j < numInstances; ++j) {
         if(i == j) continue;
         double instanceToInstanceDistance = distanceMatrix[i][j];
         DistancePair nearestNeighborInfo;
@@ -860,7 +851,7 @@ bool ReliefF::PreComputeDistances() {
       thisInstance->SetDistanceSums(k, sameSums, diffSums);
     }
 
-    if(i % 100 == 0) {
+    if(i && (i % 100 == 0)) {
       cout << i << "/" << numInstances << " ";
       cout.flush();
     }
@@ -868,7 +859,7 @@ bool ReliefF::PreComputeDistances() {
       cout << endl << Timestamp();
     }
   }
-  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
+  cout << numInstances << "/" << numInstances << " done" << endl;
 
   cout << Timestamp() << "3) Calculating weight by distance factors for "
           << "nearest neighbors... " << endl;
@@ -880,7 +871,7 @@ bool ReliefF::PreComputeDistances() {
     delete [] distanceMatrix[i];
   }
   delete [] distanceMatrix;
-  cout << "done" << endl;
+  cout << " done" << endl;
 
   return true;
 }

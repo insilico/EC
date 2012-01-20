@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include <boost/lexical_cast.hpp>
@@ -63,7 +64,10 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 					<< lineNumber << endl;
 			continue;
 		}
-		string geneID = "GENE" + zeroPadNumber(lineNumber, 8);
+//		string geneID = "GENE" + zeroPadNumber(lineNumber, 8);
+		stringstream ssGeneID;
+		ssGeneID << "GENE" << lineNumber;
+		string geneID = ssGeneID.str();
 		// split the line into counts vector
 		vector<string> countsStringVector;
 		split(countsStringVector, trimmedLine, ",");
@@ -80,11 +84,26 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 		geneNames.push_back(geneID);
 		vector<string>::const_iterator it = countsStringVector.begin();
 		vector<double> geneCounts;
-		for (; it != countsStringVector.end(); ++it) {
+		double minCount = 0;
+		double maxCount = 0;
+		int geneIndex = 0;
+		for (; it != countsStringVector.end(); ++it, ++geneIndex) {
 			string thisStringCount = *it;
 			double thisDoubleCount = boost::lexical_cast<double>(thisStringCount);
+			if(geneIndex == 0)  {
+				minCount = maxCount = thisDoubleCount;
+			}
+			else {
+				if(thisDoubleCount < minCount) {
+					minCount = thisDoubleCount;
+				}
+				if(thisDoubleCount > maxCount) {
+					maxCount = thisDoubleCount;
+				}
+			}
 			geneCounts.push_back(thisDoubleCount);
 		}
+		minMaxGeneCounts.push_back(make_pair(minCount, maxCount));
 
 		/// save this gene's counts to the counts class member variable
 		counts.push_back(geneCounts);
@@ -97,6 +116,31 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 	}
 	else {
 		cout << Timestamp() << counts.size() << " genes read" << endl;
+	}
+
+	/// get min and max sample counts, and sample zeroes
+	minMaxSampleCounts.resize(numSamples);
+	sampleZeroes.resize(numSamples);
+	for(int geneIndex=0; geneIndex < counts.size(); ++geneIndex) {
+		vector<double> thisGeneCounts = counts[geneIndex];
+		for(int sampleIndex=0; sampleIndex < thisGeneCounts.size(); ++sampleIndex) {
+			double thisCount = thisGeneCounts[sampleIndex];
+			if(geneIndex==0) {
+				minMaxSampleCounts[sampleIndex].first = thisCount;
+				minMaxSampleCounts[sampleIndex].second = thisCount;
+			}
+			else {
+				if(thisCount < minMaxSampleCounts[sampleIndex].first) {
+					minMaxSampleCounts[sampleIndex].first = thisCount;
+				}
+				if(thisCount > minMaxSampleCounts[sampleIndex].second) {
+					minMaxSampleCounts[sampleIndex].second = thisCount;
+				}
+			}
+			if(thisCount == 0) {
+				sampleZeroes[sampleIndex].push_back(geneIndex);
+			}
+		}
 	}
 
 	/// read phenotypes
@@ -138,4 +182,56 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 			<< counts.size() << " genes" << endl;
 
 	return true;
+}
+
+vector<string> DgeData::GetSampleNames() {
+	return sampleNames;
+}
+
+vector<string> DgeData::GetGeneNames() {
+	return geneNames;
+}
+
+pair<double, double> DgeData::GetGeneMinMax(int geneIndex) {
+	if((geneIndex >= 0) && (geneIndex < counts.size())) {
+		return minMaxGeneCounts[geneIndex];
+	}
+	else {
+		cerr << "ERROR: DgeData::GetGeneMinMax, index out of range: "
+				<< geneIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+int DgeData::GetNumSamples() {
+	return sampleNames.size();
+}
+
+int DgeData::GetNumGenes() {
+	return geneNames.size();
+}
+
+vector<double> DgeData::GetSampleCounts(int sampleIndex) {
+	if((sampleIndex < 0) || (sampleIndex >= sampleNames.size())) {
+		cerr << "ERROR: DgeData::GetSampleCounts, index out of range: "
+				<< sampleIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	vector<double> returnVector;
+	for(int i=0; i < geneNames.size(); ++i) {
+		returnVector.push_back(counts[i][sampleIndex]);
+	}
+
+	return returnVector;
+}
+
+int DgeData::GetSamplePhenotype(int sampleIndex) {
+	if((sampleIndex < 0) || (sampleIndex >= sampleNames.size())) {
+		cerr << "ERROR: DgeData::GetSamplePhenotype, index out of range: "
+				<< sampleIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	return phenotypes[sampleIndex];
 }

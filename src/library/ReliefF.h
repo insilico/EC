@@ -25,23 +25,9 @@
 #include <boost/program_options.hpp>
 
 #include "Dataset.h"
+#include "Insilico.h"
 
 namespace po = boost::program_options;
-
-/**
- * \enum AnalysisType.
- * Type of analysis to perform.
- */
-typedef enum
-{
-  SNP_ONLY_ANALYSIS, /**< discrete analysis */
-  SNP_CLEAN_ANALYSIS, /**< discrete analysis - no filtering */
-  NUMERIC_ONLY_ANALYSIS, /**< continuous attributes */
-  INTEGRATED_ANALYSIS, /**< discrete and continuous analysis  */
-  DIAGNOSTIC_ANALYSIS, /**< diagnostic mode - no ReliefF analysis */
-  REGRESSION_ANALYSIS, /**< regression ReliefF analysis */
-  NO_ANALYSIS /**< no analysis specified */
-} AnalysisType;
 
 class ReliefF
 {
@@ -161,11 +147,5 @@ protected:
   /// final scores after all iterations
   std::map<std::string, double> finalScores;
 };
-
-/// HACK FOR AUTOTOOLS LIBRARY DETECTION
-extern "C"
-{
-  void librelieff_is_present(void);
-}
 
 #endif

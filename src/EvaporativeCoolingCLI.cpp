@@ -30,7 +30,6 @@
 #include "EvaporativeCooling.h"
 #include "Dataset.h"
 #include "FilesystemUtils.h"
-#include "EvaporativeCooling.h"
 #include "DgeData.h"
 
 using namespace std;
@@ -73,7 +72,7 @@ int main(int argc, char** argv) {
   // EC parameters
   string ecAlgorithmSteps = "all";
   unsigned int ecNumTarget = 0;
-  unsigned int ecIterNumToRemove = 1;
+  unsigned int ecIterNumToRemove = 0;
   unsigned int ecIterPercentToRemove = 0;
 
   // declare the supported options
@@ -208,18 +207,6 @@ int main(int argc, char** argv) {
     exit(COMMAND_LINE_ERROR);
   }
 
-  if(vm.count("dge-counts-data") && vm.count("dge-phenos-data")) {
-  	DgeData dge;
-  	bool loadOk = dge.LoadData(dgeCountsFilename, dgePhenosFilename);
-  	if(!loadOk) {
-  		cerr << "ERROR: DGE LoadData() test failed" << endl;
-  	}
-  	else {
-  		cout << "DGE LoadData() test successful" << endl;
-  	}
-  	return 0;
-  }
-
   /// determine the output data set type
   OutputDatasetType outputDatasetType = NO_OUTPUT_DATASET;
   if(outputDatasetFilename != "") {
@@ -270,8 +257,7 @@ int main(int argc, char** argv) {
         analysisType = SNP_CLEAN_ANALYSIS;
       }
     } else {
-      if(!vm.count("snp-data") &&
-    		  ((vm.count("numeric-data") || (vm.count("dge-data"))))) {
+      if(!vm.count("snp-data") && (vm.count("numeric-data"))) {
         cout << Timestamp() << "Numeric-only analysis requested" << endl;
         analysisType = NUMERIC_ONLY_ANALYSIS;
         // must have an alternate phenotype file for numeric only
@@ -284,12 +270,18 @@ int main(int argc, char** argv) {
         }
       } else {
         if(vm.count("snp-data") && vm.count("numeric-data")) {
-          cout << "\t\tIntegrated analysis requested" << endl;
+          cout << Timestamp() << "Integrated analysis requested" << endl;
           analysisType = INTEGRATED_ANALYSIS;
         } else {
-          cerr << "ERROR: Could not determine the analysis to perform based on "
-                  << "command line options: " << endl << desc << endl;
-          exit(COMMAND_LINE_ERROR);
+          if(vm.count("dge-counts-data") && vm.count("dge-phenos-data")) {
+            cout << Timestamp() << "DGE analysis requested" << endl;
+            analysisType = DGE_ANALYSIS;
+          }
+          else {
+						cerr << "ERROR: Could not determine the analysis to perform based on "
+										<< "command line options: " << endl << desc << endl;
+						exit(COMMAND_LINE_ERROR);
+          }
         }
       }
     }
@@ -346,6 +338,7 @@ int main(int argc, char** argv) {
   // prepare data for running EC
   cout << Timestamp() << "Preparing data set for EC analysis" << endl;
   Dataset* ds = 0;
+	DgeData* dge;
   bool datasetLoaded = false;
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
@@ -372,6 +365,15 @@ int main(int argc, char** argv) {
       datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
                                       altPhenotypeFilename, indIds);
       break;
+    case DGE_ANALYSIS:
+      cout << Timestamp() << "Reading numerics data set from digital gene "
+      << "expression (DGE) data" << endl;
+    	dge = new DgeData();
+    	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename)) {
+    		ds = new Dataset();
+    		datasetLoaded = ds->LoadDataset(dge);
+    	}
+    	break;
     case DIAGNOSTIC_ANALYSIS:
       cout << Timestamp() << "Performing SNP diagnostics on the data set" << endl;
       if(snpsFilename == "" || cleanSnpsFilename == "") {
@@ -413,7 +415,8 @@ int main(int argc, char** argv) {
     ds->PrintStats();
   } else {
     if(analysisType == NUMERIC_ONLY_ANALYSIS ||
-       analysisType == INTEGRATED_ANALYSIS) {
+       analysisType == INTEGRATED_ANALYSIS ||
+       analysisType == DGE_ANALYSIS) {
       ds->PrintNumericsStats();
     }
   }

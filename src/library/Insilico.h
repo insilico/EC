@@ -20,6 +20,22 @@
 /// Forward reference to Dataset class.
 class Dataset;
 
+/**
+ * \enum AnalysisType.
+ * Type of analysis to perform.
+ */
+typedef enum
+{
+  SNP_ONLY_ANALYSIS, /**< discrete analysis */
+  SNP_CLEAN_ANALYSIS, /**< discrete analysis - no filtering */
+  NUMERIC_ONLY_ANALYSIS, /**< continuous attributes */
+  INTEGRATED_ANALYSIS, /**< discrete and continuous analysis  */
+  DIAGNOSTIC_ANALYSIS, /**< diagnostic mode - no ReliefF analysis */
+  REGRESSION_ANALYSIS, /**< regression ReliefF analysis */
+  DGE_ANALYSIS, /**< digital gene expression (DGE) analysis */
+  NO_ANALYSIS /**< no analysis specified */
+} AnalysisType;
+
 /// Error codes.
 const static int COMMAND_LINE_ERROR = EXIT_FAILURE;
 
