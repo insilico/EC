@@ -187,7 +187,7 @@ AC_SUBST(XML_LIBS)
 
 dnl ===========================================================================
 
-if test -z "$OPENMP_CFLAGS" ; then
+if test -z "$OPENMP_CXXFLAGS" ; then
   AC_MSG_WARN([Could not detect OpenMP support.])
   AC_MSG_NOTICE([If you have got multiple CPUs in your computer the speed of the program will drastically increase with OpenMP.])
   AC_MSG_NOTICE([Install a compiler with OpenMP support for better performance.])

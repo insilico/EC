@@ -17024,7 +17024,7 @@ fi
 
 
 
-if test -z "$OPENMP_CFLAGS" ; then
+if test -z "$OPENMP_CXXFLAGS" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not detect OpenMP support." >&5
 $as_echo "$as_me: WARNING: Could not detect OpenMP support." >&2;}
   { $as_echo "$as_me:${as_lineno-$LINENO}: If you have got multiple CPUs in your computer the speed of the program will drastically increase with OpenMP." >&5
