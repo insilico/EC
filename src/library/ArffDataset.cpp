@@ -41,9 +41,10 @@ bool ArffDataset::LoadSnps(string filename) {
   int firstSpace = -1, secondSpace = -1;
   string attributeName = "";
   int attributeIndex = 0;
+  int numericsIndex = 0;
   string attributeType = "";
   string classTypeString = "";
-  ValueType classType = NO_VALUE;
+  ClassType classType = NO_CLASS_TYPE;
   unsigned int lineNumber = 0;
   double minPheno = 0.0, maxPheno = 0.0;
   while(getline(dataStream, line)) {
@@ -70,25 +71,23 @@ bool ArffDataset::LoadSnps(string filename) {
           secondSpace = trimmedLine.find(" ", firstSpace + 1);
           attributeName = trimmedLine.substr(firstSpace + 1,
                                              secondSpace - firstSpace - 1);
-          // cout << "\tname: [" << attributeName << "]" << endl;
+          // cout << "DEBUG attribute name: [" << attributeName << "]" << endl;
           if(to_upper(attributeName) == "CLASS") {
             classColumn = attributeIndex;
+            cout << Timestamp() << "Class column detect: " << classColumn << endl;
             classTypeString = to_upper(trimmedLine.substr(secondSpace + 1));
-            if(attributeType == "NUMERIC") {
+            if(classTypeString == "NUMERIC") {
               hasContinuousPhenotypes = true;
-              classType = NUMERIC_VALUE;
+              classType = CONTINUOUS_CLASS_TYPE;
+              cout << Timestamp() << "Detected continuous phenotype" << endl;
             } else {
               hasContinuousPhenotypes = false;
-              classType = DISCRETE_VALUE;
+              classType = CASE_CONTROL_CLASS_TYPE;
+              cout << Timestamp() << "Detected case-control phenotype" << endl;
             }
           } else {
             attributeNames.push_back(attributeName);
             attributeType = to_upper(trimmedLine.substr(secondSpace + 1));
-            if(attributeType == "NUMERIC") {
-              cerr << "ERROR: NUMERIC attributes are not yet supported" << endl;
-              return false;
-              attributeTypes.push_back(ARFF_NUMERIC_TYPE);
-            }
             if(attributeType == "STRING") {
               cerr << "ERROR: STRING attributes are not yet supported" << endl;
               return false;
@@ -99,65 +98,80 @@ bool ArffDataset::LoadSnps(string filename) {
               return false;
               attributeTypes.push_back(ARFF_DATE_TYPE);
             }
-            // must be nominal type - add nominal values to map
-            attributeTypes.push_back(ARFF_NOMINAL_TYPE);
-            vector<string> tokens;
-            split(tokens, trimmedLine, "{");
-            vector<string>::const_iterator it = tokens.end() - 1;
-            string nominalsListWithCurly = *it;
-            string nominalsList = trim(nominalsListWithCurly.
-                                       substr(0, nominalsListWithCurly.size() - 1));
-            vector<string> nominals;
-            split(nominals, nominalsList, ",");
-            // GENETICS CHECK HERE for plink recodeA encoding
-            if(nominals.size() != 3) {
-              cerr << "ERROR: This dataset is currently unsupported. SNP data "
-                      << "must be encoded with {0, 1, 2} for {homozygous1, "
-                      << "heterzygote, homozygous2} respectively. The following "
-                      << "attributes were read successfully" << endl;
-              PrintNominalsMapping();
-              return false;
+            if(attributeType == "NUMERIC") {
+              attributeTypes.push_back(ARFF_NUMERIC_TYPE);
+              numericsMask[attributeName] = numericsIndex;
+              numericsNames.push_back(attributeName);
+              ++numericsIndex;
             }
-            // GENETICS CHECK HERE
-            if((nominals[0] == "0") &&
-               (nominals[1] == "1") &&
-               (nominals[2] == "2")) {
-              nominalValues[attributeName] = nominals;
-              attributesMask[attributeName] = attributeIndex;
-              ++attributeIndex;
-            } else {
-              cerr << "ERROR: This dataset is currently unsupported. SNP data "
-                      << "must be encoded with {0, 1, 2} for {homozygous1, "
-                      << "heterzygote, homozygous2} respectively. The following "
-                      << "attributes were read successfully" << endl;
-              PrintNominalsMapping();
-              return false;
-            }
-          }
-        }
+            else {
+							// must be nominal type - add nominal values to map
+							attributeTypes.push_back(ARFF_NOMINAL_TYPE);
+							vector<string> tokens;
+							split(tokens, trimmedLine, "{");
+							vector<string>::const_iterator it = tokens.end() - 1;
+							string nominalsListWithCurly = *it;
+							string nominalsList = trim(nominalsListWithCurly.
+																				 substr(0, nominalsListWithCurly.size() - 1));
+							vector<string> nominals;
+							split(nominals, nominalsList, ",");
+							// GENETICS CHECK HERE for plink recodeA encoding
+							if(nominals.size() != 3) {
+								cerr << "ERROR: This dataset is currently unsupported. SNP data "
+												<< "must be encoded with {0, 1, 2} for {homozygous1, "
+												<< "heterzygote, homozygous2} respectively. The following "
+												<< "attributes were read successfully" << endl;
+								PrintNominalsMapping();
+								return false;
+							}
+							// GENETICS CHECK HERE
+							if((nominals[0] == "0") &&
+								 (nominals[1] == "1") &&
+								 (nominals[2] == "2")) {
+								nominalValues[attributeName] = nominals;
+								attributesMask[attributeName] = attributeIndex;
+							} else {
+								cerr << "ERROR: This dataset is currently unsupported. SNP data "
+												<< "must be encoded with {0, 1, 2} for {homozygous1, "
+												<< "heterzygote, homozygous2} respectively. The following "
+												<< "attributes were read successfully" << endl;
+								PrintNominalsMapping();
+								return false;
+							} // end genetics check
+            } // end nominal
+          } // end class or attribute
+          ++attributeIndex;
+        } // keyword = attribute
+
         // the rest of the file is instances
         if(keyword == "DATA") {
-          if(attributeNames.size() != attributeTypes.size()) {
-            cerr << "ERROR: The number of attribute names: "
-                    << attributeNames.size()
-                    << " is not equal to the number ot attribute types: "
-                    << attributeTypes.size() << endl;
-            exit(0);
+          int numAttributes = attributesMask.size();
+          if(numAttributes) {
+          	hasGenotypes = true;
+            levelCounts.resize(numAttributes);
+            levelCountsByClass.resize(numAttributes);
+            attributeLevelsSeen.resize(numAttributes);
+
+            attributeAlleleCounts.resize(numAttributes);
+            attributeMinorAllele.resize(numAttributes);
+            genotypeCounts.resize(numAttributes);
+            attributeMutationTypes.resize(numAttributes);
           }
-          unsigned int numAttributes = attributeNames.size();
-
-          levelCounts.resize(numAttributes);
-          levelCountsByClass.resize(numAttributes);
-          attributeLevelsSeen.resize(numAttributes);
-
-          attributeAlleleCounts.resize(numAttributes);
-          attributeMinorAllele.resize(numAttributes);
-          genotypeCounts.resize(numAttributes);
-          attributeMutationTypes.resize(numAttributes);
+          else {
+          	hasGenotypes = false;
+          }
+          int numNumerics = numericsMask.size();
+					if(numNumerics) {
+						hasNumerics = true;
+					}
+					else {
+						hasNumerics = false;
+					}
 
           lineNumber = 0;
           bool makeLineIntoInstance = true;
           unsigned int instanceIndex = 0;
+          int numericsAdded = 0;
           cout << Timestamp();
 
           while(getline(dataStream, line)) {
@@ -184,113 +198,67 @@ bool ArffDataset::LoadSnps(string filename) {
             vector<string> attributesStringVector;
             split(attributesStringVector, trimmedLine, ",");
             vector<AttributeLevel> attributeVector;
+            vector<NumericLevel> numericsVector;
             unsigned int attrIdx = 0;
             unsigned int vectorIdx = 0;
             makeLineIntoInstance = true;
             vector<string>::const_iterator it = attributesStringVector.begin();
             ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
             NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-            for(; it != attributesStringVector.end(); ++it, ++vectorIdx) {
+            for(; it != attributesStringVector.end();
+            		++it, ++vectorIdx, ++attrIdx) {
               string thisAttr = *it;
-              if(vectorIdx == classColumn) {
-                string thisClassString = *it;
-                if(lineNumber == 1) {
-                  classType = GetClassValueType(thisClassString,
-                                                missingClassValuesToCheck);
-                  switch(classType) {
-                    case DISCRETE_VALUE:
-                      hasContinuousPhenotypes = false;
-                      // cout << Timestamp() << "Detected DISCRETE phenotype" << endl;
-                      break;
-                    case NUMERIC_VALUE:
-                      hasContinuousPhenotypes = true;
-                      // cout << Timestamp() << "Detected NUMERIC phenotype" << endl;
-                      break;
-                    case MISSING_VALUE:
-                      cout << Timestamp()
-                              << "WARNING: missing phenotype - skipping line: "
-                              << lineNumber << endl;
-                      continue;
-                    default:
-                      cerr << "Could not determine class type on line 1" << endl;
-                      return false;
-                  }
-                }
-                /// assign class level
-                discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-                numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-                switch(classType) {
-                  case DISCRETE_VALUE:
-                    discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-                    if(!GetDiscreteClassLevel(thisClassString,
-                                              missingClassValuesToCheck,
-                                              discreteClassLevel)) {
-                      cerr << "ERROR: Could not get discrete class level on line: "
-                              << lineNumber << endl;
-                      return false;
-                    } else {
-                      if(discreteClassLevel == MISSING_DISCRETE_CLASS_VALUE) {
-                        cout << Timestamp()
-                                << "WARNING: missing phenotype skipped on line: "
-                                << lineNumber << endl;
-                        makeLineIntoInstance = false;
-                        continue;
-                      }
-                    }
-                    break;
-                  case NUMERIC_VALUE:
-                    numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-                    if(!GetNumericClassLevel(thisClassString,
-                                             missingClassValuesToCheck,
-                                             numericClassLevel)) {
-                      cerr << "ERROR: Could not get numeric class level on line: "
-                              << lineNumber << endl;
-                      return false;
-                    } else {
-                      if(numericClassLevel == MISSING_NUMERIC_CLASS_VALUE) {
-                        cout << Timestamp()
-                                << "WARNING: missing phenotype skipped on line: "
-                                << lineNumber << endl;
-                        makeLineIntoInstance = false;
-                        continue;
-                      }
-                      numericClassLevel = numericClassLevel;
-                      if(lineNumber == 1) {
-                        minPheno = maxPheno = numericClassLevel;
-                      } else {
-                        if(numericClassLevel < minPheno) {
-                          minPheno = numericClassLevel;
-                        }
-                        if(numericClassLevel > maxPheno) {
-                          maxPheno = numericClassLevel;
-                        }
-                      }
-                    }
-                    break;
-                  case NO_VALUE:
-                    cerr << "ERROR: class type could not be determined on line: "
-                            << lineNumber << endl;
-                    return false;
-                    break;
-                  case MISSING_VALUE:
-                    cout << "WARNING: missing phenotype - skipping line: "
-                            << lineNumber << endl;
-                    continue;
-                }
-              } else {
-                AttributeLevel thisAttrLevel = MISSING_ATTRIBUTE_VALUE;
-                if(!GetAttributeLevel(thisAttr, missingAttributeValuesToCheck,
-                                      thisAttrLevel)) {
-                  cout << "ERROR: reading SNP on line: "
-                          << lineNumber << endl;
-                  return false;
-                }
-                if(thisAttrLevel == MISSING_ATTRIBUTE_VALUE) {
-                  missingValues[ID].push_back(attrIdx);
-                }
-                attributeLevelsSeen[attrIdx].insert(thisAttr);
-                attributeVector.push_back(thisAttrLevel);
-                ++attrIdx;
+//              cout << "DEBUG: attribute value: " << thisAttr << ", type: "
+//              		<< attributeTypes[attrIdx] << endl;
+              if(attrIdx == classColumn) {
+              	if(thisAttr == "?") {
+              		makeLineIntoInstance = false;
+              		cout << Timestamp()
+              				<< "WARNING: Missing phenotype detected on line: "
+              				<< lineNumber << ". Skipping this line" << endl;
+              		continue;
+              	}
+              	if(hasContinuousPhenotypes) {
+              		numericClassLevel = lexical_cast<NumericLevel>(thisAttr);
+              	}
+              	else {
+              		discreteClassLevel = lexical_cast<ClassLevel>(thisAttr);
+              	}
+              }
+              else {
+              	if(attributeTypes[attrIdx] == ARFF_NUMERIC_TYPE) {
+              		if(thisAttr == "?") {
+              			numericsVector.push_back(MISSING_NUMERIC_VALUE);
+              			missingNumericValues[ID].push_back(attrIdx);
+              		}
+              		else {
+              			// cout << "DEBUG numeric from string: " << thisAttr << endl;
+              			double thisNumericValue = lexical_cast<NumericLevel>(thisAttr);
+                		numericsVector.push_back(thisNumericValue);
+              		}
+              		++numericsAdded;
+              	}
+              	else {
+              		if(attributeTypes[attrIdx] == ARFF_NOMINAL_TYPE) {
+                    AttributeLevel thisAttrLevel = MISSING_ATTRIBUTE_VALUE;
+      							if(!GetAttributeLevel(thisAttr, missingAttributeValuesToCheck,
+      																		thisAttrLevel)) {
+      								cout << "ERROR: reading SNP on line: "
+      												<< lineNumber << endl;
+      								return false;
+      							}
+      							if(thisAttrLevel == MISSING_ATTRIBUTE_VALUE) {
+      								missingValues[ID].push_back(attrIdx);
+      							}
+      							attributeLevelsSeen[attrIdx].insert(thisAttr);
+      							attributeVector.push_back(thisAttrLevel);
+              		}
+              		else {
+              			cout << Timestamp() << "Unrecognized attribute type!"
+              					<< endl;
+              			return false;
+              		}
+              	}
               }
             }
 
@@ -305,6 +273,14 @@ bool ArffDataset::LoadSnps(string filename) {
                         << endl;
                 return false;
               }
+              if(numericsVector.size() != numNumerics) {
+                cerr << "ERROR: Number of numerics parsed on line " << lineNumber
+                        << ": " << numericsVector.size()
+                        << " is not equal to the number of attributes "
+                        << " read from the data file header: " << numNumerics
+                        << endl;
+                return false;
+              }
               newInst = new DatasetInstance(this);
               if(newInst) {
                 if(hasContinuousPhenotypes) {
@@ -313,7 +289,14 @@ bool ArffDataset::LoadSnps(string filename) {
                   newInst->SetClass(discreteClassLevel);
                   classIndexes[discreteClassLevel].push_back(instanceIndex);
                 }
-                newInst->LoadInstanceFromVector(attributeVector);
+                if(hasGenotypes) {
+                	newInst->LoadInstanceFromVector(attributeVector);
+                }
+                if(hasNumerics) {
+                	for(int i=0; i < numericsVector.size(); ++i) {
+                		newInst->AddNumeric(numericsVector[i]);
+                	}
+                }
                 instances.push_back(newInst);
                 instanceIds.push_back(ID);
                 // instanceIdsToLoad.push_back(ID);
@@ -325,7 +308,7 @@ bool ArffDataset::LoadSnps(string filename) {
                 return false;
               }
               ++instanceIndex;
-            }
+            } // make new instance
 
             // happy lights
             if((lineNumber - 1) && ((lineNumber % 100) == 0)) {
@@ -335,12 +318,13 @@ bool ArffDataset::LoadSnps(string filename) {
             if((lineNumber - 1) && ((lineNumber % 1000) == 0)) {
               cout << endl << Timestamp();
             }
-          }
-        }
+          } // while reading file lines
+
+        } // keyword = data
         break;
     } // end switch
 
-  }// end while
+  } // end while
   cout << endl;
 
   dataStream.close();
@@ -362,7 +346,30 @@ bool ArffDataset::LoadSnps(string filename) {
             << " classes in the data set" << endl;
   }
 
-  UpdateAllLevelCounts();
+  if(hasNumerics) {
+  	// find the min and max values for each numeric attribute
+  	// used in diff/distance calculation metrics
+  	vector<NumericLevel> numericColumn;
+  	for (unsigned int i = 0; i < NumNumerics(); ++i) {
+  		GetNumericValues(i, numericColumn);
+  		double minElement = *numericColumn.begin();
+  		double maxElement = *numericColumn.begin();
+  		for (vector<NumericLevel>::const_iterator it = numericColumn.begin();
+  				it != numericColumn.end(); ++it) {
+  			if ((*it != MISSING_NUMERIC_VALUE) && (*it < minElement)) {
+  				minElement = *it;
+  			}
+  			if ((*it != MISSING_NUMERIC_VALUE) && (*it > maxElement)) {
+  				maxElement = *it;
+  			}
+  		}
+  		numericsMinMax.push_back(make_pair<double, double>(minElement, maxElement));
+  	}
+  }
+
+  if(hasGenotypes) {
+  	UpdateAllLevelCounts();
+  }
 
   return true;
 }
