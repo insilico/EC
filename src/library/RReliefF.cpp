@@ -42,7 +42,7 @@ RReliefF::~RReliefF() {
 bool RReliefF::ComputeAttributeScores() {
 
 	// precompute all instance-to-instance distances and get nearest neighbors
-	PreComputeDistancesByMap();
+	PreComputeDistances();
 
 	// results are stored in scores
 	W.resize(dataset->NumVariables(), 0.0);
