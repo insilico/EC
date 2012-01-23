@@ -710,8 +710,9 @@ bool ReliefF::ProcessExclusionFile(string exclusionFilename) {
 
 double
 ReliefF::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
-                                           DatasetInstance * dsi2) {
+                                           DatasetInstance* dsi2) {
   double distance = 0;
+  //cout << "ComputeInstanceToInstanceDistance: " << dsi1 << ", " << dsi2 << endl;
 
   if(dataset->HasGenotypes()) {
     vector<unsigned int> attributeIndices = 
@@ -725,11 +726,14 @@ ReliefF::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
   // added 6/16/11
   // compute numeric distances
   if(dataset->HasNumerics()) {
+  	//cout << "Computing numeric instance-to-instance distance..." << endl;
     vector<unsigned int> numericIndices = 
       dataset->MaskGetAttributeIndices(NUMERIC_TYPE);
+    //cout << "\tNumber of numerics: " << numericIndices.size() << endl;
     for(unsigned int i = 0; i < numericIndices.size(); ++i) {
+    	//cout << "\t\tNumeric index: " << numericIndices[i] << endl;
       double numDistance = numDiff(numericIndices[i], dsi1, dsi2);
-      // cout << "Numeric distance " << i << " => " << numDistance << endl;
+      //cout << "Numeric distance " << i << " => " << numDistance << endl;
       distance += numDistance;
     }
   }
