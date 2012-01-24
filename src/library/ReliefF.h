@@ -54,8 +54,6 @@ public:
    * http://lkm.fri.uni-lj.si/rmarko/papers/robnik03-mlj.pdf
    */
   virtual bool ComputeAttributeScores();
-  /// Compute the ReliefF scores for the current set of attributes 0/1/2 encoded.
-  bool ComputeAttributeScoresCleanSnps();
   /// Compute the ReliefF scores by iteratively removing worst attributes.
   bool ComputeAttributeScoresIteratively();
   /// Resets some data structures for the next iteration of ReliefF

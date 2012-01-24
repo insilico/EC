@@ -14,7 +14,7 @@ AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
 # shared library build
 lib_LTLIBRARIES=libec.la
 libec_la_SOURCES=\
-ArffDataset.cpp ChiSquared.cpp CleanSnpDataset.cpp Dataset.cpp \
+ArffDataset.cpp ChiSquared.cpp Dataset.cpp \
 DatasetInstance.cpp DistanceMetrics.cpp EvaporativeCooling.cpp \
 FilesystemUtils.cpp Insilico.cpp PlinkBinaryDataset.cpp \
 PlinkDataset.cpp PlinkRawDataset.cpp RReliefF.cpp RandomJungle.cpp \
@@ -22,7 +22,7 @@ ReliefF.cpp Statistics.cpp DgeData.cpp
 
 # the list of header files that belong to the library
 libec_la_HEADERS= \
-ArffDataset.h ChiSquared.h CleanSnpDataset.h Dataset.h DatasetInstance.h \
+ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h \
 Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \

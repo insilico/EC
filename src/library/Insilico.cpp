@@ -20,7 +20,6 @@
 #include "PlinkDataset.h"
 #include "PlinkRawDataset.h"
 #include "PlinkBinaryDataset.h"
-#include "CleanSnpDataset.h"
 #include "StringUtils.h"
 #include "FilesystemUtils.h"
 #include "Insilico.h"
@@ -40,7 +39,7 @@ string Timestamp() {
   return ts;
 }
 
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps) {
+Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
   string fileExt = "";
   fileExt = GetFileExtension(snpsFilename);
   // cout << "File extension: " << fileExt << endl;
@@ -52,11 +51,7 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps) {
   } else {
     if(fileExt == "tab" || fileExt == "txt") {
       cout << "Whitespace-delimited";
-      if(isCleanSnps) {
-        ds = new CleanSnpDataset();
-      } else {
-        ds = new Dataset();
-      }
+      ds = new Dataset();
     } else {
       if(fileExt == "ped" || fileExt == "map") {
         cout << "Plink map/ped";

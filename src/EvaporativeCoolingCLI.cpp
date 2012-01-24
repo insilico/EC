@@ -50,7 +50,6 @@ int main(int argc, char** argv) {
   // data set files
   string snpsFilename = "";
   string snpExclusionFile = "";
-  string cleanSnpsFilename = "";
   string numericsFilename = "";
   string dgeCountsFilename = "";
   string dgePhenosFilename = "";
@@ -88,11 +87,6 @@ int main(int argc, char** argv) {
            "snp-exclusion-file",
            po::value<string > (&snpExclusionFile),
            "file of SNP names to be excluded"
-           )
-          (
-           "snp-data-clean",
-           po::value<string > (&cleanSnpsFilename),
-           "read SNP attributes from genotype filename - assumes no missing data, recodeA encoding"
            )
           (
            "numeric-data",
@@ -247,15 +241,9 @@ int main(int argc, char** argv) {
       cout << Timestamp() << "Integrated analysis requested" << endl;
       analysisType = INTEGRATED_ANALYSIS;
     }
-    if((vm.count("snp-data") || vm.count("snp-data-clean")) &&
-       !vm.count("numeric-data")) {
-      if(vm.count("snp-data")) {
-        cout << Timestamp() << "SNP-only analysis requested" << endl;
-        analysisType = SNP_ONLY_ANALYSIS;
-      } else {
-        cout << Timestamp() << "Clean SNP analysis requested" << endl;
-        analysisType = SNP_CLEAN_ANALYSIS;
-      }
+    if(vm.count("snp-data") && !vm.count("numeric-data")) {
+			cout << Timestamp() << "SNP-only analysis requested" << endl;
+			analysisType = SNP_ONLY_ANALYSIS;
     } else {
       if(!vm.count("snp-data") && (vm.count("numeric-data"))) {
         cout << Timestamp() << "Numeric-only analysis requested" << endl;
@@ -302,7 +290,7 @@ int main(int argc, char** argv) {
     if(numericsFilename != "") {
       cout << Timestamp() << "Loading individual IDs from covar file: "
               << numericsFilename << endl;
-      if(!LoadIndividualIds(numericsFilename, numericsIds, true)) {
+      if(!LoadNumericIds(numericsFilename, numericsIds)) {
         exit(COMMAND_LINE_ERROR);
       }
       // copy (numericsIds.begin(), numericsIds.end(), ostream_iterator<string> (cout, "\n"));
@@ -310,7 +298,7 @@ int main(int argc, char** argv) {
     if(altPhenotypeFilename != "") {
       cout << Timestamp() << "Loading individual IDs from alternate phenotype file: "
               << altPhenotypeFilename << endl;
-      if(!LoadIndividualIds(altPhenotypeFilename, phenoIds, false)) {
+      if(!LoadPhenoIds(altPhenotypeFilename, phenoIds)) {
         exit(COMMAND_LINE_ERROR);
       }
       // copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
@@ -347,12 +335,6 @@ int main(int argc, char** argv) {
       datasetLoaded = ds->LoadDataset(snpsFilename, "",
                                       altPhenotypeFilename, indIds);
       break;
-    case SNP_CLEAN_ANALYSIS:
-      cout << Timestamp() << "Reading CLEAN SNPs data set" << endl;
-      ds = ChooseSnpsDatasetByExtension(cleanSnpsFilename, true);
-      datasetLoaded = ds->LoadDataset(cleanSnpsFilename, "",
-                                      "", indIds);
-      break;
     case NUMERIC_ONLY_ANALYSIS:
       cout << Timestamp() << "Reading numerics only data set" << endl;
       ds = new Dataset();
@@ -376,16 +358,12 @@ int main(int argc, char** argv) {
     	break;
     case DIAGNOSTIC_ANALYSIS:
       cout << Timestamp() << "Performing SNP diagnostics on the data set" << endl;
-      if(snpsFilename == "" || cleanSnpsFilename == "") {
+      if(snpsFilename == "") {
         cerr << "Cannot run diagnostics without a SNP file specified with "
                 << "--snp-data or --snp-data-clean flag" << endl;
         exit(COMMAND_LINE_ERROR);
       }
-      if(cleanSnpsFilename == "") {
-        ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      } else {
-        ds = ChooseSnpsDatasetByExtension(snpsFilename, true);
-      }
+      ds = ChooseSnpsDatasetByExtension(snpsFilename);
       ds->LoadDataset(snpsFilename, numericsFilename,
                       altPhenotypeFilename, indIds);
       ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
@@ -410,8 +388,7 @@ int main(int argc, char** argv) {
   }
 
   // happy lights
-  if((analysisType == SNP_ONLY_ANALYSIS) ||
-     (analysisType == SNP_CLEAN_ANALYSIS)) {
+  if(analysisType == SNP_ONLY_ANALYSIS) {
     ds->PrintStats();
   } else {
     if(analysisType == NUMERIC_ONLY_ANALYSIS ||
@@ -432,8 +409,8 @@ int main(int argc, char** argv) {
   struct rusage s;
   struct rusage*p = &s;
   getrusage(RUSAGE_SELF, p);
-  cout << Timestamp() << "EC RAM used: " << (p->ru_maxrss / (1024 * 1024))
-          << " MB" << endl;
+  cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
+          << " GB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
   // ---------------------------------------------------------------------------

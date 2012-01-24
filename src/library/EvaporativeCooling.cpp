@@ -429,13 +429,7 @@ bool EvaporativeCooling::PrintKendallTaus() {
 
 bool EvaporativeCooling::RunReliefF() {
 
-//  if(analysisType == SNP_ONLY_ANALYSIS) {
-    cout << Timestamp() << "Running ReliefF" << endl;
-    reliefF->ComputeAttributeScores();
-//  } else {
-//    cout << Timestamp() << "Running CLEAN SNPS ReliefF" << endl;
-//    reliefF->ComputeAttributeScoresCleanSnps();
-//  }
+	reliefF->ComputeAttributeScores();
   rfScores = reliefF->GetScores();
 
   cout << Timestamp() << "Normalizing ReliefF scores to 0-1" << endl;
@@ -471,8 +465,6 @@ bool EvaporativeCooling::RunReliefF() {
 
   rfScores.clear();
   rfScores = newRFScores;
-
-  // omp_set_num_threads(saveThreads);
 
   return true;
 }

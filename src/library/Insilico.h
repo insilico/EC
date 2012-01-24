@@ -48,11 +48,9 @@ std::string Timestamp();
  * Determines the data set type to instantiate based on the
  * data set filenames's extension.
  * \param [in] snpsFilename SNP data set filename
- * \param isCleanSnps is this a CleanSnpsDataset
  * \return pointer to new dataset or NULL if could not match filename extension
  ******************************************************************************/
-Dataset* ChooseSnpsDatasetByExtension(std::string snpsFilename,
-                                      bool isCleanSnps = false);
+Dataset* ChooseSnpsDatasetByExtension(std::string snpsFilename);
 /***************************************************************************//**
  * Loads the individual (instance) IDs from the numerics file.
  * Returns the IDs through reference parameter retIds.
