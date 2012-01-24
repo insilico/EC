@@ -15,7 +15,7 @@
 using namespace std;
 
 #define DEBUG_Z 0
-#define DEBUG_E 0
+#define DEBUG_E 1
 
 bool ZTransform(const VectorDouble& inputValues, 
 								VectorDouble& outputValues)
@@ -96,15 +96,25 @@ double Entropy(const vector<AttributeLevel>& sequenceValues)
 			cblItKey++)	{
 		unsigned int thisCount = (*cblItKey).second;
 		double p = ((double) thisCount) / ((double) sequenceSize);
-		entropy -= p * log(p) / log(2.0);
+		entropy -= (p * (log(p) / log(2.0)));
 	}
 
 	return entropy;
 }
 
+double condentropy(const vector<AttributeLevel>& X,
+									 const vector<AttributeLevel>& Y)
+{
+	vector<AttributeLevel> YX;
+	ConstructAttributeCart(Y, X, YX);
+	return Entropy(YX) - Entropy(Y);
+}
+
 double ConditionalEntropy(const vector<AttributeLevel>& sequenceValues,
 													const vector<AttributeLevel>& givenValues)
 {
+	return condentropy(sequenceValues, givenValues);
+
 	// check sequences for proper format
 	unsigned int sequenceSize = sequenceValues.size();
 	unsigned int givensSize   = givenValues.size();
@@ -139,7 +149,8 @@ double ConditionalEntropy(const vector<AttributeLevel>& sequenceValues,
 #if DEBUG_E
 	cout << "Counts matrix:" << endl << endl;
 	map<unsigned int, Histogram*>::const_iterator printCountsIt;
-	for(printCountsIt=counts.begin(); printCountsIt != counts.end(); printCountsIt++) {
+	for(printCountsIt=counts.begin(); printCountsIt != counts.end();
+			printCountsIt++) {
 		cout << (*printCountsIt).first << ":" << endl;
 		Histogram* levels =(*printCountsIt).second;
 		for(HistogramIt hIt = levels->begin(); hIt != levels->end(); hIt++) {
@@ -157,16 +168,25 @@ double ConditionalEntropy(const vector<AttributeLevel>& sequenceValues,
 	for(countsIt=counts.begin(); countsIt != counts.end(); countsIt++) {
 		Histogram* subCounts = (*countsIt).second;
 		HistogramIt subCountsIt;
-		unsigned int subTotal = 0;
-		for(subCountsIt = subCounts->begin(); subCountsIt != subCounts->end(); subCountsIt++) {
-			subTotal += (*subCountsIt).second;
+		unsigned int givenCountTotal = 0;
+		for(subCountsIt = subCounts->begin(); subCountsIt != subCounts->end();
+				subCountsIt++) {
+			givenCountTotal += (*subCountsIt).second;
 		}
-		for(subCountsIt = subCounts->begin(); subCountsIt != subCounts->end(); subCountsIt++) {
-			double p = (double) (*subCountsIt).second / (double) subTotal;;
-			subEntropy -= p * log(p) / log(2.0);
+		double probThisGiven = (double) givenCountTotal / (double) givensSize;
+		cout << "P(x): " << probThisGiven << endl;
+		for(subCountsIt = subCounts->begin(); subCountsIt != subCounts->end();
+				subCountsIt++) {
+			double probSeqAndGiven = ((double) (*subCountsIt).second) / ((double) givensSize);
+			cout << "\tP(y,x): " << probSeqAndGiven << endl;
+			subEntropy += (probSeqAndGiven * -log(probSeqAndGiven / probThisGiven));
 		}
-		entropy += subTotal * subEntropy / givensSize;
+		cout << "P(y,x) * log (P(y,x) / P(x): " << (subEntropy*1.442695) << endl;
+		/// convert from base e to base 2
+		entropy += (subEntropy * 1.442695);
+		cout << "Entropy sum after this given: " << entropy << endl;
 	}
+	cout << endl;
 
 	return entropy;
 }

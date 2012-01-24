@@ -54,6 +54,8 @@ double Entropy(const std::vector<AttributeLevel>& attributeValues);
  ******************************************************************************/
 double ConditionalEntropy(const std::vector<AttributeLevel>& attributeValues,
                           const std::vector<AttributeLevel>& givenValues);
+double condentropy(const std::vector<AttributeLevel>& X,
+									 const std::vector<AttributeLevel>& Y);
 /***************************************************************************//**
  * Create a new attribute that is the cartesian product of a and b.
  * NOTE: works for genotypes; need to verify for missign data levels, etc.
