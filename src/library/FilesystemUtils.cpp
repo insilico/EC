@@ -6,7 +6,7 @@
 using namespace std;
 
 string GetFileBasename(string fileName) {
-  size_t pos = fileName.find('.');
+  size_t pos = fileName.rfind('.');
   return fileName.substr(0, pos);
 }
 
