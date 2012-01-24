@@ -78,6 +78,18 @@ typedef enum
 } AttributeType;
 
 /**
+ * \enum ClassType.
+ * Type of classes that are stored in data set instances.
+ */
+typedef enum
+{
+  CONTINUOUS_CLASS_TYPE, /**< continuous numeric type */
+  CASE_CONTROL_CLASS_TYPE, /**< discrete case-control type */
+  MULTI_CLASS_TYPE, /**< multiclass type */
+  NO_CLASS_TYPE /**< default no type */
+} ClassType;
+
+/**
  * \enum AttributeMutationType.
  * Type of attribute mutation.
  */
@@ -298,8 +310,9 @@ public:
    * \return average value of numeric attribute at index
    ****************************************************************************/
   double GetMeanForNumeric(unsigned int numericIdx);
-  /// Does the data set have numeric variables?
+  /// Does the data set have numeric variables? setter/getter
   bool HasNumerics();
+  void HasNumerics(bool setHasNumerics);
   /*************************************************************************//**
    * Get numeric value for numeric name at instance index.
    * \param [in] instanceIndex instance index
@@ -341,6 +354,7 @@ public:
   const std::map<ClassLevel, std::vector<unsigned int> >& GetClassIndexes();
   /// Does the data set have alternate phenotypes loaded?
   bool HasAlternatePhenotypes();
+  void HasAlternatePhenotypes(bool setHasAlternatePhenotypes);
   /// Get the alternate phenotype filename.
   std::string GetAlternatePhenotypesFilename();
   // Does the data set have continuous phenotypes?
@@ -521,15 +535,15 @@ public:
    * Calculate all the information needed to construct the interaction diagram.
    * \param [out] results map of attribute combinations to results
    ****************************************************************************/
-  void CalculateInteractionInformation(
-                                       std::map<std::pair<unsigned int, unsigned int>,
-                                       std::map<std::string, double> > & results);
+  void
+  CalculateInteractionInformation(std::map<std::pair<int, int>,
+  		std::map<std::string, double> > & results);
   /*************************************************************************//**
    * Calculate the GAIN matrix to run snprank on this data set.
    * Uses OpenMP to calculate matrix entries in parallel threads.
    * \param [out] gainMatrix pointer to an allocated n x n matrix,
    *                         n = number of attributes
-   * \return Ïsuccess
+   * \return success
    ****************************************************************************/
   bool CalculateGainMatrix(double** gainMatrix);
 protected:
