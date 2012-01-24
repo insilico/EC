@@ -84,8 +84,7 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename, bool isCleanSnps) {
   return ds;
 }
 
-bool LoadIndividualIds(string filename, vector<string>& retIds,
-                       bool hasHeader) {
+bool LoadNumericIds(string filename, vector<string>& retIds) {
   ifstream dataStream(filename.c_str());
   if(!dataStream.is_open()) {
     cerr << "ERROR: Could not open ID file: "
@@ -96,21 +95,18 @@ bool LoadIndividualIds(string filename, vector<string>& retIds,
   // temporary string for reading file lines
   string line;
 
-  // strip the header if there is one and validate three tab-delimited fields
-  if(hasHeader) {
-    // read the header
-    getline(dataStream, line);
-    vector<string> numNames;
-    split(numNames, line);
-    if(numNames.size() < 3) {
-      cerr << "ERROR: ID file must have at least three columns: "
-              << "FID IID VAR1 . . . VARn" << endl;
-      return false;
-    }
-  }
+	// read the header
+	getline(dataStream, line);
+	vector<string> numNames;
+	split(numNames, line);
+	if(numNames.size() < 3) {
+		cerr << "ERROR: ID file must have at least three columns: "
+						<< "FID IID VAR1 . . . VARn" << endl;
+		return false;
+	}
 
   // read each line of the file and get the first tab-delimited field as the
-  // individual's ID; insure each line has three tab-delimited fields
+  // individual's ID; insure each line has at least three tab-delimited fields
   retIds.clear();
   map<string, bool> idsSeen;
   unsigned int lineNumber = 0;
@@ -134,6 +130,57 @@ bool LoadIndividualIds(string filename, vector<string>& retIds,
     }
   }
   dataStream.close();
+
+  cout << Timestamp() << retIds.size() << " numeric IDs read" << endl;
+
+  return true;
+}
+
+bool LoadPhenoIds(string filename, vector<string>& retIds) {
+  ifstream dataStream(filename.c_str());
+  if(!dataStream.is_open()) {
+    cerr << "ERROR: Could not open ID file: "
+            << filename << endl;
+    return false;
+  }
+
+  // temporary string for reading file lines
+  string line;
+
+  // read each line of the file and get the first tab-delimited field as the
+  // individual's ID; insure each line has three tab-delimited fields
+  retIds.clear();
+  map<string, bool> idsSeen;
+  unsigned int lineNumber = 0;
+  retIds.clear();
+  int numPhenosAccepted = 0;
+  while(getline(dataStream, line)) {
+    ++lineNumber;
+    vector<string> fieldsStringVector;
+    split(fieldsStringVector, line);
+    if(fieldsStringVector.size() != 3) {
+      cerr << "ERROR: ID file must have three columns: "
+              << "FID IID PHENO" << endl;
+      return false;
+    }
+    string ID = trim(fieldsStringVector[0]);
+    string pheno = trim(fieldsStringVector[2]);
+    if(pheno == "-9") {
+    	continue;
+    }
+    if(idsSeen.find(ID) == idsSeen.end()) {
+      idsSeen[ID] = true;
+      retIds.push_back(ID);
+      ++numPhenosAccepted;
+    } else {
+      cout << Timestamp() << "WARNING: Duplicate ID [" << ID << "] detected and "
+              << "skipped on line [" << lineNumber << "]" << endl;
+    }
+  }
+  dataStream.close();
+
+  cout << Timestamp() << numPhenosAccepted
+  		<< " non-missing phenotype IDs read" << endl;
 
   return true;
 }
@@ -193,4 +240,72 @@ bool GetMatchingIds(string numericsFilename,
   }
 
   return true;
+}
+
+ClassType DetectClassType(std::string filename, int classColumn) {
+	ClassType detectedClass = NO_CLASS_TYPE;
+
+	/// Open the file for reading
+	ifstream phenoDataStream(filename.c_str());
+	pair < map<string, unsigned int>::iterator, bool> retClassInsert;
+	if(!phenoDataStream.is_open()) {
+		cerr << "ERROR: DetectClassType: Could not open file: " << filename << endl;
+		return detectedClass;
+	}
+	cout << Timestamp() << "Detecting class type from file: "
+					<< filename << endl;
+
+	/// Determine the phenotype type
+	int lineNumber = 0;
+	string line;
+	bool decimalFound = false;
+	map<string, int> histogram;
+	while(getline(phenoDataStream, line)) {
+		++lineNumber;
+		string trimmedLine = trim(line);
+		if(trimmedLine[0] == '#') {
+			continue;
+		}
+		if(trimmedLine.size() == 0) {
+			continue;
+		}
+		vector<string> tokens;
+		split(tokens, trimmedLine);
+		int numColumns = tokens.size();
+		if((classColumn < 0) || (classColumn > numColumns)) {
+			cerr << "ERROR: DetectClassType: reading file line "
+							<< lineNumber << ". "
+							<< "Class column out of range: " << classColumn
+							<< endl;
+			return detectedClass;
+		}
+		string thisClassString = tokens[classColumn - 1];
+		if(thisClassString == "-9") {
+			continue;
+		}
+		if(thisClassString.find('.') != string::npos) {
+			decimalFound = true;
+		}
+		++histogram[thisClassString];
+	}
+	phenoDataStream.close();
+
+	if(decimalFound) {
+		detectedClass = CONTINUOUS_CLASS_TYPE;
+	}
+	else {
+		if(histogram.size() == 2) {
+			if((histogram.find("1") != histogram.end()) &&
+				 (histogram.find("2") != histogram.end())) {
+				detectedClass = CASE_CONTROL_CLASS_TYPE;
+			}
+		}
+		else {
+			if(histogram.size() > 2) {
+				detectedClass = MULTI_CLASS_TYPE;
+			}
+		}
+	}
+
+	return detectedClass;
 }

@@ -18,7 +18,7 @@
 #include <vector>
 
 /// Forward reference to Dataset class.
-class Dataset;
+#include "Dataset.h";
 
 /**
  * \enum AnalysisType.
@@ -54,20 +54,27 @@ std::string Timestamp();
 Dataset* ChooseSnpsDatasetByExtension(std::string snpsFilename,
                                       bool isCleanSnps = false);
 /***************************************************************************//**
- * Loads the individual (instance) IDs from the numerics or alternate
- * phenotype file. Returns the IDs through reference parameter retIds.
- * \param [in] filename filename that contains covar or pheno file IDs
+ * Loads the individual (instance) IDs from the numerics file.
+ * Returns the IDs through reference parameter retIds.
+ * \param [in] filename filename that contains numerics IDs
  * \param [out] vector of individual (instance) IDs (strings)
- * \param [in] does the file have a header row?
  * \return success
  ******************************************************************************/
-bool LoadIndividualIds(std::string filename,
-                       std::vector<std::string>& retIds,
-                       bool hasHeader);
+bool LoadNumericIds(std::string filename,
+                    std::vector<std::string>& retIds);
+/***************************************************************************//**
+ * Loads the individual (instance) IDs from the numerics file.
+ * Returns the IDs through reference parameter retIds.
+ * \param [in] filename filename that contains numerics IDs
+ * \param [out] vector of individual (instance) IDs (strings)
+ * \return success
+ ******************************************************************************/
+bool LoadPhenoIds(std::string filename,
+                  std::vector<std::string>& retIds);
 /***************************************************************************//**
  * Return matching IDs from numeric and/or phenotype file IDs
- * \param [in] numericsFilename
- * \param [in] altPhenotypeFilename
+ * \param [in] numericsFilename name of the PLINK covar format file
+ * \param [in] altPhenotypeFilename name of the alternate pheno file PLINK
  * \param [in] numericsIds covar format file ids
  * \param [in] phenoIds alternate phenotype file ids
  * \param [out] matchingIds ids that match between numerics and phenotypes
@@ -78,5 +85,13 @@ bool GetMatchingIds(std::string numericsFilename,
                     std::vector<std::string> numericsIds,
                     std::vector<std::string> phenoIds,
                     std::vector<std::string>& matchingIds);
+/***************************************************************************//**
+ * Detect the class type by reading the specified column from a whitespace-
+ * delimited text file.
+ * \param [in] filename whitespace-delimited text file name
+ * \param [in] classColumn the column containing the class values
+ * \return ClassType defined in Dataset.h
+ ******************************************************************************/
+ClassType DetectClassType(std::string filename, int classColumn);
 
 #endif	/* INSILICO_H */
