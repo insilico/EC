@@ -57,6 +57,9 @@ private:
   unsigned int numAttributesRead;
   unsigned int numClassesRead;
 
+  std::vector<int> instanceIndicesToKeep;
+  std::vector<int> missingPhenoLines;
+
   std::string filenameBase;
 
   /// for checking attribute values

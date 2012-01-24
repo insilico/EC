@@ -219,9 +219,10 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
 //                << "bi:" << byteIndex << " " << genotypeByte << ", "
 //                << ", " << binGenotype << " -> " << attributeLevel << endl;
 
-        // finally, we can set the attribute value
-        instances[instanceIndex]->attributes[attributeColumn] = attributeLevel;
-        attributeLevelsSeen[attributeColumn].insert(stringGenotype);
+        // finally, we can set the attribute value - if this instance is
+        // to be included
+				instances[instanceIndex]->attributes[attributeColumn] = attributeLevel;
+				attributeLevelsSeen[attributeColumn].insert(stringGenotype);
         ++attributesRead;
         ++instanceIndex;
 
@@ -253,37 +254,62 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   }
   bedDataStream.close();
 
-  // remove instances that are not in instanceIdsToLoad
-  // or marked as missing phenotype - 11/1/11
+  /// Remove instances that are not in instanceIdsToLoad
+  /// or marked as missing phenotype - 11/1/11
+  /// Only remove missing phenotypes if no alt pheno file - 1/23/12
   vector<DatasetInstance*> newInstances;
   vector<DatasetInstance*> delInstances;
+  map<string, unsigned int> keepIds;
   map<string, unsigned int>::iterator it = instancesMask.begin();
   for(; it != instancesMask.end(); ++it) {
     string instanceID = it->first;
     DatasetInstance* dsi = instances[it->second];
+    bool keepInstance = true;
     if(IsLoadableInstanceID(instanceID)) {
-      // cout << "Loading instance ID " << instanceID << endl;
-      newInstances.push_back(dsi);
+    	if(!hasAlternatePhenotypes) {
+    		if(hasContinuousPhenotypes &&
+					dsi->GetPredictedValueTau() == MISSING_NUMERIC_CLASS_VALUE) {
+          cout << Timestamp() << "Instance ID " << instanceID
+          		<< " filtered out by missing value" << endl;
+					delInstances.push_back(dsi);
+					keepInstance = false;
+    		}
+    		if(!hasContinuousPhenotypes &&
+    				dsi->GetClass() == MISSING_DISCRETE_CLASS_VALUE) {
+          cout << Timestamp() << "Instance ID " << instanceID
+          		<< " filtered out by missing value" << endl;
+					delInstances.push_back(dsi);
+					keepInstance = false;
+    		}
+    	}
     } else {
-      cout << "Deleting instance ID " << instanceID << endl;
+      cout << Timestamp() << "Instance ID " << instanceID
+      		<< " filtered out by numeric or alt pheno file" << endl;
       delInstances.push_back(dsi);
-      if(MaskSearchInstance(instanceID)) {
-        MaskRemoveInstance(instanceID);
-      }
+      keepInstance = false;
     }
+  	/// Passed all tests, so add this instance to the data set
+  	if(keepInstance) {
+  		keepIds[instanceID] = newInstances.size();
+  		newInstances.push_back(dsi);
+  	}
   }
   instances = newInstances;
+  instancesMask.clear();
+  instancesMask = keepIds;
 
-  // release memory used by filtered out instances
+  /// Release memory used by filtered out instances
   vector<DatasetInstance*>::iterator delIt = delInstances.begin();
   for(; delIt != delInstances.end(); ++delIt) {
     delete *delIt;
   }
 
   // refresh any instance-based data
-  classIndexes.clear();
-  for(unsigned int instanceIdx = 0; instanceIdx < instances.size(); ++instanceIdx) {
-    classIndexes[instances[instanceIdx]->GetClass()].push_back(instanceIdx);
+  if(!hasContinuousPhenotypes) {
+		classIndexes.clear();
+		for(unsigned int instanceIdx = 0; instanceIdx < instances.size(); ++instanceIdx) {
+			classIndexes[instances[instanceIdx]->GetClass()].push_back(instanceIdx);
+		}
   }
   numClassesRead = classIndexes.size();
   numInstancesRead = instances.size();
@@ -319,6 +345,16 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
     //            << ", MAF: " << attributeMaf
     //            << endl;
     attributeMinorAllele[attrIdx] = make_pair(minorAllele[0], attributeMaf);
+  }
+
+  cout << Timestamp() << "There are " << NumInstances()
+          << " instances in the data set" << endl;
+  cout << Timestamp() << "There are " << instancesMask.size()
+          << " instances in the instance mask" << endl;
+
+  if(!hasContinuousPhenotypes) {
+    cout << Timestamp() << "There are " << classIndexes.size()
+            << " classes in the data set" << endl;
   }
 
   UpdateAllLevelCounts();
@@ -400,22 +436,49 @@ bool PlinkBinaryDataset::ReadBimFile(string bimFilename) {
 // -----------------------------------------------------------------------------
 
 bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
-  // read attribute information from the fam file
+
+	/// Detect the class type
+	bool classDetected = false;
+	switch(DetectClassType(famFilename, 6)) {
+	case CASE_CONTROL_CLASS_TYPE:
+		cout << Timestamp() << "Case-control phenotypes detected" << endl;
+		hasContinuousPhenotypes = false;
+		classDetected = true;
+		break;
+	case CONTINUOUS_CLASS_TYPE:
+		cout << Timestamp() << "Continuous phenotypes detected" << endl;
+		hasContinuousPhenotypes = true;
+		classDetected = true;
+		break;
+	case MULTI_CLASS_TYPE:
+		cout << "ERROR: more than two discrete phenotypes detected" << endl;
+		break;
+	case NO_CLASS_TYPE:
+		cout << "ERROR: phenotypes could not be detected" << endl;
+		break;
+	}
+	if(!classDetected) {
+		return false;
+	}
+
+	/// Read attribute information from the fam file
   ifstream famDataStream(famFilename.c_str());
   pair < map<string, unsigned int>::iterator, bool> retClassInsert;
   if(!famDataStream.is_open()) {
     cerr << "ERROR: Could not open plink binary fam file: " << famFilename << endl;
     return false;
   }
-  cout << Timestamp() << "Reading plink fam/attribute metadata from "
+  cout << Timestamp() << "Reading plink binary fam file from "
           << famFilename << endl;
-  unsigned int famLineNumber = 0;
+
   string line;
+  int famLineNumber = 0;
   numInstancesRead = 0;
-  ValueType classType = NO_VALUE;
   double minPheno = 0.0, maxPheno = 0.0;
+  unsigned int instanceIndex = 0;
   while(getline(famDataStream, line)) {
     ++famLineNumber;
+
     string trimmedLine = trim(line);
     if(trimmedLine[0] == '#') {
       continue;
@@ -423,125 +486,61 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
     if(trimmedLine.size() == 0) {
       continue;
     }
+    ++numInstancesRead;
+
     vector<string> tokens;
     split(tokens, trimmedLine);
-    if(tokens.size() != 6) {
-      cerr << "ERROR: reading plink fam file line "
-              << famLineNumber << ". "
-              << "Each row should have six whitespace-separated columns"
-              << endl;
-      return false;
-    }
-
     string ID = tokens[0];
-
     string thisClassString = tokens[5];
-    if(famLineNumber == 1) {
-      /// determine class data type
-      classType = GetClassValueType(thisClassString, missingClassValuesToCheck);
-      switch(classType) {
-        case DISCRETE_VALUE:
-          hasContinuousPhenotypes = false;
-          // cout << Timestamp() << "Detected DISCRETE phenotype" << endl;
-          break;
-        case NUMERIC_VALUE:
-          hasContinuousPhenotypes = true;
-          // cout << Timestamp() << "Detected NUMERIC phenotype" << endl;
-          break;
-        case MISSING_VALUE:
-          cout << Timestamp()
-                  << "WARNING: missing phenotype - skipping line: "
-                  << famLineNumber << endl;
-          continue;
-        default:
-          cerr << "Could not determine class type on line 1" << endl;
-          return false;
-      }
-    }
+
     /// assign class level
     ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
     NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-    switch(classType) {
-      case DISCRETE_VALUE:
-        discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-        if(!GetDiscreteClassLevel(thisClassString, missingClassValuesToCheck,
-                                  discreteClassLevel)) {
-          cerr << "ERROR: Could not get class level on line: "
-                  << famLineNumber << endl;
-          return false;
-        } else {
-          if(discreteClassLevel == MISSING_DISCRETE_CLASS_VALUE) {
-            cout << Timestamp()
-                    << "WARNING: missing phenotype skipped on line: "
-                    << famLineNumber << endl;
-            continue;
-          }
-        }
-        break;
-      case NUMERIC_VALUE:
-        numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-        if(!GetNumericClassLevel(thisClassString, missingClassValuesToCheck,
-                                 numericClassLevel)) {
-          cerr << "ERROR: Could not get class level on line: "
-                  << famLineNumber << endl;
-          return false;
-        } else {
-          if(numericClassLevel == MISSING_NUMERIC_CLASS_VALUE) {
-            cout << Timestamp()
-                    << "WARNING: missing phenotype skipped on line: "
-                    << famLineNumber << endl;
-            continue;
-          }
-          if(famLineNumber == 1) {
-            minPheno = maxPheno = numericClassLevel;
-          } else {
-            if(numericClassLevel < minPheno) {
-              minPheno = numericClassLevel;
-            }
-            if(numericClassLevel > maxPheno) {
-              maxPheno = numericClassLevel;
-            }
-          }
-        }
-        break;
-      case NO_VALUE:
-        cerr << "ERROR: class type could not be determined on line: "
-                << famLineNumber << endl;
-        return false;
-        break;
-      case MISSING_VALUE:
-        cout << "WARNING: missing phenotype - skipping line: "
-                << famLineNumber << endl;
-        continue;
-    }
-
-    DatasetInstance* newInst = new DatasetInstance(this);
     if(hasContinuousPhenotypes) {
-      newInst->SetPredictedValueTau(numericClassLevel);
-    } else {
-      newInst->SetClass(discreteClassLevel);
-      classIndexes[discreteClassLevel].push_back(famLineNumber - 1);
+    	if(thisClassString != "-9") {
+    		numericClassLevel = lexical_cast<NumericLevel>(thisClassString);
+				if(famLineNumber == 1) {
+					minPheno = maxPheno = numericClassLevel;
+				} else {
+					if(numericClassLevel < minPheno) {
+						minPheno = numericClassLevel;
+					}
+					if(numericClassLevel > maxPheno) {
+						maxPheno = numericClassLevel;
+					}
+				}
+    	}
     }
-    instances.push_back(newInst);
-    instanceIds.push_back(ID);
-    instanceIdsToLoad.push_back(ID);
-    instancesMask[ID] = numInstancesRead;
+    else {
+    	if(thisClassString != "-9") {
+    		discreteClassLevel = lexical_cast<ClassLevel>(thisClassString);
+    	}
+    }
 
-    ++numInstancesRead;
+		/// Create a new instance for this individual
+    DatasetInstance* newInst = new DatasetInstance(this);
+		if(hasContinuousPhenotypes) {
+			newInst->SetPredictedValueTau(numericClassLevel);
+		} else {
+			newInst->SetClass(discreteClassLevel);
+    	if(thisClassString != "-9") {
+    		classIndexes[discreteClassLevel].push_back(famLineNumber - 1);
+    	}
+		}
+		instances.push_back(newInst);
+		instanceIds.push_back(ID);
+		instancesMask[ID] = instanceIndex;
+
+		++instanceIndex;
   }
   famDataStream.close();
 
-  cout << Timestamp() << "There are " << NumInstances()
-          << " instances in the data set" << endl;
-  cout << Timestamp() << "There are " << instancesMask.size()
-          << " instances in the instance mask" << endl;
   if(hasContinuousPhenotypes) {
     continuousPhenotypeMinMax = make_pair(minPheno, maxPheno);
-    cout << Timestamp() << "Continuous phenotypes." << endl;
-  } else {
-    cout << Timestamp() << "There are " << classIndexes.size()
-            << " classes in the data set" << endl;
   }
+
+  cout << Timestamp() << numInstancesRead << " individuals read from the "
+  		<< "fam file." << endl;
 
   return true;
 }
