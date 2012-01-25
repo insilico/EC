@@ -17,6 +17,13 @@ using namespace std;
 #define DEBUG_Z 0
 #define DEBUG_E 1
 
+void PrintHistogram(Histogram histogram) {
+	HistogramIt it = histogram.begin();
+	for(; it != histogram.end(); ++it) {
+		cout << it->first << " => " << it->second << endl;
+	}
+}
+
 bool ZTransform(const VectorDouble& inputValues, 
 								VectorDouble& outputValues)
 {
@@ -77,6 +84,12 @@ bool ZTransform(const VectorDouble& inputValues,
 	return true;
 }
 
+double SelfEntropy(const vector<AttributeLevel>& a,
+		const vector<AttributeLevel>& c) {
+	double entropy = Entropy(c) - ConditionalEntropy(c, a);
+	return entropy;
+}
+
 double Entropy(const vector<AttributeLevel>& sequenceValues)
 {
 	// get the counts for each level in the sequence 
@@ -107,6 +120,7 @@ double condentropy(const vector<AttributeLevel>& X,
 {
 	vector<AttributeLevel> YX;
 	ConstructAttributeCart(Y, X, YX);
+	// cout << Entropy(YX) << "\t" << Entropy(Y) << endl;
 	return Entropy(YX) - Entropy(Y);
 }
 
@@ -196,11 +210,38 @@ bool ConstructAttributeCart(const vector<AttributeLevel>& a,
 														vector<AttributeLevel>& ab)
 {
 	ab.clear();
+
+	/// Get the number of levels in a for a multiplier
+	Histogram aLevels;
+	vector<AttributeLevel>::const_iterator aLevelIt = a.begin();
+	for(; aLevelIt != a.end(); ++aLevelIt) {
+		++aLevels[*aLevelIt];
+	}
+//	cout << "ConstructAttributeCart, a # levels = " << aLevels.size() << endl;
+//	PrintHistogram(aLevels);
+
+	Histogram bLevels;
+	vector<AttributeLevel>::const_iterator bLevelIt = b.begin();
+	for(; bLevelIt != b.end(); ++bLevelIt) {
+		++bLevels[*bLevelIt];
+	}
+//	cout << "ConstructAttributeCart, b # levels = " << bLevels.size() << endl;
+//	PrintHistogram(bLevels);
+
+	AttributeLevel multiplier =
+			aLevels.size() > bLevels.size()? aLevels.size(): bLevels.size();
+
 	vector<AttributeLevel>::const_iterator aIt;
 	vector<AttributeLevel>::const_iterator bIt;
+	Histogram abLevels;
 	for(aIt = a.begin(),bIt  = b.begin(); aIt != a.end(); aIt++, bIt++) {
-		ab.push_back((*aIt) * 3 + (*bIt));
+//		cout << "ConstructAttributeCart, a = " << *aIt << ", b = " << *bIt << endl;
+		AttributeLevel newLevel = (*aIt) * multiplier + (*bIt);
+		ab.push_back(newLevel);
+		++abLevels[newLevel];
 	}
+//	cout << "ConstructAttributeCart, ab # levels = " << abLevels.size() << endl;
+//	PrintHistogram(abLevels);
 	return true;
 }
 

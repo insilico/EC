@@ -95,12 +95,12 @@ bool Dataset::LoadDataset(string snpsFilename, string numericsFilename,
 	if (ids.size()) {
 		instanceIdsToLoad.resize(ids.size());
 		copy(ids.begin(), ids.end(), instanceIdsToLoad.begin());
-	  if(numericsFilename != "") {
-	  	hasNumerics = true;
-	  }
-	  if(altPhenoFilename != "") {
-	  	hasAlternatePhenotypes = true;
-	  }
+		if (numericsFilename != "") {
+			hasNumerics = true;
+		}
+		if (altPhenoFilename != "") {
+			hasAlternatePhenotypes = true;
+		}
 	}
 
 	// load SNPs
@@ -117,10 +117,10 @@ bool Dataset::LoadDataset(string snpsFilename, string numericsFilename,
 			cerr << "ERROR: No variables for analysis" << endl;
 			return false;
 		}
-		if(attributesMask.size()) {
+		if (attributesMask.size()) {
 			hasGenotypes = true;
 		}
-		if(numericsMask.size()) {
+		if (numericsMask.size()) {
 			hasNumerics = true;
 		}
 
@@ -1656,17 +1656,15 @@ map<string, double> >& results) {
 			<< "Constructing attribute interaction matrix in parallel:" << endl
 			<< Timestamp();
 	int numAttributes = NumAttributes();
+	vector<string> attrNames = GetAttributeNames();
 #pragma omp for schedule(dynamic, 1)
 	for (int i = 0; i < numAttributes; i++) {
-		for (int j = i; j < numAttributes; j++) {
+		for (int j = i+1; j < numAttributes; j++) {
 
 			// cout << "Calculating attributes: " << i << "," << j << endl;
 			/// load attribute values (columns) into vectors for Statistics routines
-			a.clear();
-			b.clear();
-			ab.clear();
-			GetAttributeValues(attributeNames[i], a);
-			GetAttributeValues(attributeNames[j], b);
+			GetAttributeValues(attrNames[i], a);
+			GetAttributeValues(attrNames[j], b);
 			//      cout << "A:" << endl;
 			//      copy(a.begin(), a.end(), ostream_iterator<Attribute>(cout, "\n"));
 			//      cout << "B:" << endl;
@@ -1711,8 +1709,9 @@ map<string, double> >& results) {
 			//        H_B     = self.entropy(attrB)
 			//        H_C     = self.entropy(self.class_idx)
 			//        return H_AB + H_BC + H_AC - H_A - H_B - H_C - H_ABC
+
 			r["I_3_pgain"] = r["H(AB)"] + r["H(B|C)"] + r["H(A|C)"] - r["H(A)"]
-					- r["H(B)"] - r["H(C)"] - r["H(AB|C)"];
+			                 - r["H(B)"] - r["H(C)"] - r["H(AB|C)"];
 			// I_3_paper from:
 			// McKinney BA, Crowe JE Jr, Guo J, Tian D (2009) Capturing the Spectrum
 			// of Interaction Effects in Genetic Association Studies by Simulated
@@ -1725,9 +1724,6 @@ map<string, double> >& results) {
 			//								<< "I_3 from pygain: " << I_3_pygain
 			//								<< " I_3 from paper:  " << I_3_paper << endl;
 			//			}
-
-			// I_2 is "self entropy" - the diagonal of the GAIN matrix
-			r["I_2"] = r["H(A|C)"] - r["H(A)"] - r["H(C)"];
 
 			//			cout << "Adding pair: " << i << ", " << j << endl;
 			//      cout << attributeNames[i] << "\t" << attributeNames[j]
@@ -1764,16 +1760,17 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
 	/// Calculate the interaction information from entropies
 	map<pair<int, int> , map<string, double> > results;
 	CalculateInteractionInformation(results);
-
+	vector<string> attrNames = GetAttributeNames();
 	/// Populate the GAIN matrix
+	vector<AttributeLevel> c;
+	vector<AttributeLevel> a;
+	GetClassValues(c);
 	for (int i = 0; i < NumAttributes(); i++) {
-		for (int j = i; j < NumAttributes(); j++) {
+		GetAttributeValues(attrNames[i], a);
+		gainMatrix[i][i] = SelfEntropy(a, c);
+		for (int j = i + 1; j < NumAttributes(); j++) {
 			map<string, double> r = results[make_pair(i, j)];
-			if (i == j) {
-				gainMatrix[i][j] = r["I_2"];
-			} else {
-				gainMatrix[i][j] = gainMatrix[j][i] = r["I_3_pgain"];
-			}
+			gainMatrix[i][j] = gainMatrix[j][i] = r["I_3_paper"];
 		}
 	}
 
@@ -1783,6 +1780,8 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
 /// ------------ Beginning of private methods ------------------
 
 bool Dataset::LoadSnps(std::string filename) {
+
+	/// Open the data file and read line-by-line
 	snpsFilename = filename;
 	ifstream dataStream(snpsFilename.c_str());
 	if (!dataStream.is_open()) {
@@ -1816,10 +1815,28 @@ bool Dataset::LoadSnps(std::string filename) {
 		++classIndex;
 	}
 
-	// determine the phenotype
-	unsigned int lineNumber = 0;
-	while (getline(dataStream, line)) {
-		++lineNumber;
+	/// Detect the class type
+	bool classDetected = false;
+	switch (DetectClassType(filename, classColumn+1, true)) {
+	case CASE_CONTROL_CLASS_TYPE:
+		cout << Timestamp() << "Case-control phenotypes detected" << endl;
+		hasContinuousPhenotypes = false;
+		classDetected = true;
+		break;
+	case CONTINUOUS_CLASS_TYPE:
+		cout << Timestamp() << "Continuous phenotypes detected" << endl;
+		hasContinuousPhenotypes = true;
+		classDetected = true;
+		break;
+	case MULTI_CLASS_TYPE:
+		cout << "ERROR: more than two discrete phenotypes detected" << endl;
+		break;
+	case NO_CLASS_TYPE:
+		cout << "ERROR: phenotypes could not be detected" << endl;
+		break;
+	}
+	if (!classDetected) {
+		return false;
 	}
 
 	levelCounts.resize(numAttributes);
@@ -1834,8 +1851,8 @@ bool Dataset::LoadSnps(std::string filename) {
 	// read instance attributes from whitespace-delimited lines
 	unsigned int instanceIndex = 0;
 	cout << Timestamp();
-	ValueType classType = NO_VALUE;
 	double minPheno = 0.0, maxPheno = 0.0;
+	unsigned int lineNumber = 0;
 	while (getline(dataStream, line)) {
 		++lineNumber;
 		// only load matching IDs from numerics and phenotype files
@@ -1873,60 +1890,11 @@ bool Dataset::LoadSnps(std::string filename) {
 		for (; it != attributesStringVector.end(); ++it, ++thisCol) {
 			string thisAttr = *it;
 			if (thisCol == classColumn) {
-				if (lineNumber == 1) {
-					classType = GetClassValueType(thisAttr, missingValuesToCheck);
-					switch (classType) {
-					case DISCRETE_VALUE:
-						hasContinuousPhenotypes = false;
-						// cout << Timestamp() << "Detected DISCRETE phenotype" << endl;
-						break;
-					case NUMERIC_VALUE:
-						hasContinuousPhenotypes = true;
-						// cout << Timestamp() << "Detected NUMERIC phenotype" << endl;
-						break;
-					case MISSING_VALUE:
-						cout << Timestamp()
-								<< "WARNING: missing phenotype - skipping line: " << lineNumber
-								<< endl;
-						continue;
-					default:
-						cerr << "Could not determine class type on line 1" << endl;
-						return false;
-					}
-				}
 				discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
 				numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-				switch (classType) {
-				case DISCRETE_VALUE:
-					discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-					if (!GetDiscreteClassLevel(thisAttr, missingValuesToCheck,
-							discreteClassLevel)) {
-						cerr << "ERROR: Could not get class discrete level on line: "
-								<< lineNumber << endl;
-						return false;
-					} else {
-						if (discreteClassLevel == MISSING_DISCRETE_CLASS_VALUE) {
-							cout << Timestamp()
-									<< "WARNING: missing discrete phenotype skipped on line: "
-									<< lineNumber << endl;
-							continue;
-						}
-					}
-					break;
-				case NUMERIC_VALUE:
-					numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-					if (!GetNumericClassLevel(thisAttr, missingValuesToCheck,
-							numericClassLevel)) {
-						cerr << "ERROR: Could not get numeric class level on line: "
-								<< lineNumber << endl;
-						return false;
-					} else {
-						if (numericClassLevel == MISSING_NUMERIC_CLASS_VALUE) {
-							cout << Timestamp()
-									<< "WARNING: missing numeric phenotype skipped on line: "
-									<< lineNumber << endl;
-							continue;
-						}
+				if (hasContinuousPhenotypes) {
+					if (thisAttr != "-9") {
+						numericClassLevel = lexical_cast<NumericLevel>(thisAttr);
 						if (lineNumber == 1) {
 							minPheno = maxPheno = numericClassLevel;
 						} else {
@@ -1937,29 +1905,28 @@ bool Dataset::LoadSnps(std::string filename) {
 								maxPheno = numericClassLevel;
 							}
 						}
-
+					} else {
+						if (!hasAlternatePhenotypes) {
+							cout << Timestamp() << "Instance ID " << ID
+									<< " filtered out by missing value" << endl;
+							continue;
+						}
 					}
-					break;
-				case NO_VALUE:
-					cerr << "ERROR: class type could not be determined on line: "
-							<< lineNumber << endl;
-					return false;
-					break;
-				case MISSING_VALUE:
-					cout << "WARNING: missing phenotype - skipping line: " << lineNumber
-							<< endl;
-					continue;
-				}
-			} else {
-				AttributeLevel thisAttrLevel = MISSING_ATTRIBUTE_VALUE;
-				if (!GetAttributeLevel(thisAttr, missingValuesToCheck, thisAttrLevel)) {
-					missingValues[ID].push_back(attrIdx);
 				} else {
-					attributeLevelsSeen[attrIdx].insert(thisAttr);
-					++genotypeCounts[attrIdx][thisAttr];
+					if (thisAttr != "-9") {
+						discreteClassLevel = lexical_cast<ClassLevel>(thisAttr);
+					} else {
+						if (!hasAlternatePhenotypes) {
+							cout << Timestamp() << "Instance ID " << ID
+									<< " filtered out by missing value" << endl;
+							continue;
+						}
+					}
 				}
-				attributeVector.push_back(thisAttrLevel);
 				++attrIdx;
+			} else {
+				// attributes
+				attributeVector.push_back(lexical_cast<AttributeLevel>(thisAttr));
 			}
 		}
 
@@ -1971,10 +1938,7 @@ bool Dataset::LoadSnps(std::string filename) {
 					<< " read from the data file header: " << numAttributes << endl;
 			return false;
 		}
-		if (classType == NO_VALUE) {
-			cerr << "Could not determine class type on line 1" << endl;
-			return false;
-		}
+
 		DatasetInstance* newInst = new DatasetInstance(this);
 		if (newInst) {
 			if (hasContinuousPhenotypes) {
@@ -2324,7 +2288,7 @@ bool Dataset::LoadAlternatePhenotypes(string phenotypesFilename) {
 
 	/// Detect the class type
 	bool classDetected = false;
-	switch(DetectClassType(phenotypesFilename, 3)) {
+	switch (DetectClassType(phenotypesFilename, 3, false)) {
 	case CASE_CONTROL_CLASS_TYPE:
 		cout << Timestamp() << "Case-control phenotypes detected" << endl;
 		hasContinuousPhenotypes = false;
@@ -2342,7 +2306,7 @@ bool Dataset::LoadAlternatePhenotypes(string phenotypesFilename) {
 		cout << "ERROR: phenotypes could not be detected" << endl;
 		break;
 	}
-	if(!classDetected) {
+	if (!classDetected) {
 		return false;
 	}
 
@@ -2366,7 +2330,7 @@ bool Dataset::LoadAlternatePhenotypes(string phenotypesFilename) {
 
 	// clear any existing class info for reading alternate phenotype file
 	// PrintClassIndexInfo();
-	if(!hasContinuousPhenotypes) {
+	if (!hasContinuousPhenotypes) {
 		classIndexes.clear();
 	}
 

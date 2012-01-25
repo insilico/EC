@@ -27,10 +27,15 @@ typedef std::vector<double> VectorDouble;
 /// vector of doubles iterator
 typedef std::vector<double>::const_iterator VectorDoubleIt;
 /// histogram type is a map: value->count
-typedef std::map<unsigned int, unsigned int> Histogram;
+typedef std::map<AttributeLevel, unsigned int> Histogram;
 /// historgram iterator
-typedef std::map<unsigned int, unsigned int>::const_iterator HistogramIt;
+typedef std::map<AttributeLevel, unsigned int>::const_iterator HistogramIt;
 
+/***************************************************************************//**
+ * Print a Histogram to cout
+ * \param [in] histogram Histogram to print
+ ******************************************************************************/
+void PrintHistogram(Histogram histogram);
 /***************************************************************************//**
  * ZTransform input values.
  * \param [in] inputValues const vector of double input values
@@ -38,6 +43,14 @@ typedef std::map<unsigned int, unsigned int>::const_iterator HistogramIt;
  * \return success
  ******************************************************************************/
 bool ZTransform(const VectorDouble& inputValues, VectorDouble& outputValues);
+/***************************************************************************//**
+ * Calculates the entropy of a sequence with itself and the class.
+ * \param [in] a vector of values
+ * \param [in] c vector of class levels
+ * \return entropy as a double-precision float
+ ******************************************************************************/
+double SelfEntropy(const std::vector<AttributeLevel>& a,
+		               const std::vector<AttributeLevel>& c);
 /***************************************************************************//**
  * Calculates the entropy of a sequence of unsigned integers.
  * \param [in] attributeValues vector of sequence values - unsigned ints - positive categorical
@@ -50,7 +63,7 @@ double Entropy(const std::vector<AttributeLevel>& attributeValues);
  * P(sequenceValues | givenValues)
  * \param [in] attributeValues vector of values
  * \param [in] givenValues vector of givens
- * \return conditiional entropy as a double-precision float
+ * \return conditional entropy as a double-precision float
  ******************************************************************************/
 double ConditionalEntropy(const std::vector<AttributeLevel>& attributeValues,
                           const std::vector<AttributeLevel>& givenValues);
