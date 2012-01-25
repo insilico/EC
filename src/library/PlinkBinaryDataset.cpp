@@ -439,7 +439,7 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
 
 	/// Detect the class type
 	bool classDetected = false;
-	switch(DetectClassType(famFilename, 6)) {
+	switch(DetectClassType(famFilename, 6, false)) {
 	case CASE_CONTROL_CLASS_TYPE:
 		cout << Timestamp() << "Case-control phenotypes detected" << endl;
 		hasContinuousPhenotypes = false;

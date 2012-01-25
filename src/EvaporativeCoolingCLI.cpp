@@ -410,7 +410,7 @@ int main(int argc, char** argv) {
   struct rusage*p = &s;
   getrusage(RUSAGE_SELF, p);
   cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
-          << " GB" << endl;
+          << " MB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
   // ---------------------------------------------------------------------------

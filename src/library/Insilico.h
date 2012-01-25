@@ -88,8 +88,9 @@ bool GetMatchingIds(std::string numericsFilename,
  * delimited text file.
  * \param [in] filename whitespace-delimited text file name
  * \param [in] classColumn the column containing the class values
+ * \param [in] heasHeader does the file have a header line?
  * \return ClassType defined in Dataset.h
  ******************************************************************************/
-ClassType DetectClassType(std::string filename, int classColumn);
+ClassType DetectClassType(std::string filename, int classColumn, bool hasHeader);
 
 #endif	/* INSILICO_H */
