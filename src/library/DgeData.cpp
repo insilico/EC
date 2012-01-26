@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 #include <boost/lexical_cast.hpp>
 
@@ -21,13 +22,43 @@ using namespace std;
 using namespace insilico;
 
 DgeData::DgeData() {
-
+	hasNormFactors = false;
 }
 
 DgeData::~DgeData() {
 }
 
-bool DgeData::LoadData(string countsFile, string phenoFile) {
+bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
+
+	// temporary string for reading file lines
+	string line;
+
+	if(normsFile != "") {
+		normsFilename = normsFile;
+		ifstream normsStream(normsFilename.c_str());
+		if (!normsStream.is_open()) {
+			cerr << "ERROR: Could not open normalization factors file: "
+					<< normsFilename << endl;
+			return false;
+		}
+		cout << Timestamp() << "Reading normalization factors from ["
+				<< normsFilename << "]" << endl;
+		int lineNumber = 0;
+		while (getline(normsStream, line)) {
+			++lineNumber;
+			string trimmedLine = trim(line);
+			if (!trimmedLine.size()) {
+				cout << "WARNING: Blank line skipped at line number: "
+						<< lineNumber << endl;
+				continue;
+			}
+			double thisFactor = boost::lexical_cast<double>(trimmedLine);
+			normFactors.push_back(thisFactor);
+		}
+		normsStream.close();
+		hasNormFactors = true;
+	}
+
 	countsFilename = countsFile;
 	ifstream countsStream(countsFilename.c_str());
 	if (!countsStream.is_open()) {
@@ -37,8 +68,6 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 	cout << Timestamp() << "Reading CSV counts from [" << countsFilename << "]"
 			<< endl;
 
-	// temporary string for reading file lines
-	string line;
 
 	// read the header row - comma delimited sample names
 	getline(countsStream, line);
@@ -47,11 +76,20 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 	vector<string>::const_iterator it;
 	unsigned int numSamples = 0;
 	for (it = tokens.begin(); it != tokens.end(); ++it) {
-		// TODO: remove quotes from sample names
-		sampleNames.push_back(*it);
+		// Remove quotes from sample names
+		string sampleName = *it;
+		sampleName.erase(remove(sampleName.begin(), sampleName.end(), '"'), sampleName.end());
+		sampleNames.push_back(sampleName);
 		++numSamples;
 	}
 	cout << Timestamp() << numSamples << " samples read" << endl;
+
+	if(hasNormFactors && (normFactors.size() != sampleNames.size())) {
+		cerr << "Number of samples: " << sampleNames.size()
+				<< " is not equal to the number of normalization factors"
+				<< normFactors.size() << endl;
+		return false;
+	}
 
 	/// read gene counts, create dummy name for each gene
 	unsigned int lineNumber = 0;
@@ -90,6 +128,9 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 		for (; it != countsStringVector.end(); ++it, ++geneIndex) {
 			string thisStringCount = *it;
 			double thisDoubleCount = boost::lexical_cast<double>(thisStringCount);
+			if(hasNormFactors) {
+				thisDoubleCount *= normFactors[geneIndex];
+			}
 			if(geneIndex == 0)  {
 				minCount = maxCount = thisDoubleCount;
 			}
@@ -179,7 +220,11 @@ bool DgeData::LoadData(string countsFile, string phenoFile) {
 	}
 
 	cout << Timestamp() << "Read " << numSamples << " samples with counts for "
-			<< counts.size() << " genes" << endl;
+			<< counts.size() << " genes";
+	if(hasNormFactors) {
+		cout << " (normalized)";
+	}
+	cout << endl;
 
 	return true;
 }
@@ -234,4 +279,8 @@ int DgeData::GetSamplePhenotype(int sampleIndex) {
 	}
 
 	return phenotypes[sampleIndex];
+}
+
+vector<double> DgeData::GetNormalizationFactors() {
+	return normFactors;
 }

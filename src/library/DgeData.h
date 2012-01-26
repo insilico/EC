@@ -18,7 +18,7 @@ public:
 	DgeData();
 	virtual ~DgeData();
 	/// Create a new set of DGE data with a counts file and a phenotype file
-	bool LoadData(std::string countsFile, std::string phenoFile);
+	bool LoadData(std::string countsFile, std::string phenoFile, std::string normsFile="");
 	/// Get the sample names/IDs
 	std::vector<std::string> GetSampleNames();
 	/// Get the gene names/IDs
@@ -33,11 +33,19 @@ public:
 	std::vector<double> GetSampleCounts(int sampleIndex);
 	/// Get the phenotype at sample index
 	int GetSamplePhenotype(int sampleIndex);
+	/// Get the normalization factors
+	std::vector<double> GetNormalizationFactors();
 private:
 	/// Filename containing DGE counts
 	std::string countsFilename;
 	/// Filename containing DGE phenotypes
 	std::string phenosFilename;
+	/// Filename containing DGE normalization factors
+	std::string normsFilename;
+	/// Are we using normalization?
+	bool hasNormFactors;
+	/// Vector of (optional) normalization factors for each sample
+	std::vector<double> normFactors;
 	/// Gene names
 	std::vector<std::string> geneNames;
 	/// Digital gene expression counts

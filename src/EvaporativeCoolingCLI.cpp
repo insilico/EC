@@ -18,6 +18,8 @@
 #include <map>
 #include <sstream>
 #include <vector>
+
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -53,6 +55,7 @@ int main(int argc, char** argv) {
   string numericsFilename = "";
   string dgeCountsFilename = "";
   string dgePhenosFilename = "";
+  string dgeNormsFilename = "";
   string altPhenotypeFilename = "";
   string outputDatasetFilename = "";
   string outputFilesPrefix = "ec_run";
@@ -103,6 +106,11 @@ int main(int argc, char** argv) {
              po::value<string > (&dgePhenosFilename),
              "read digital gene expression phenotypes from text file"
              )
+             (
+              "dge-norm-factors",
+              po::value<string > (&dgeNormsFilename),
+              "read digital gene expression normalization factors from text file"
+              )
           (
            "alternate-pheno-file",
            po::value<string > (&altPhenotypeFilename),
@@ -351,7 +359,7 @@ int main(int argc, char** argv) {
       cout << Timestamp() << "Reading numerics data set from digital gene "
       << "expression (DGE) data" << endl;
     	dge = new DgeData();
-    	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename)) {
+    	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
     		ds = new Dataset();
     		datasetLoaded = ds->LoadDataset(dge);
     	}
@@ -457,6 +465,21 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   cout << Timestamp() << "Clean up and shutdown" << endl;
   // delete ds;
+
+  /// Remove temporary Random Jungle files if they exist
+  if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
+  	cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
+		vector<string> tempFilenames;
+		tempFilenames.push_back(outputFilesPrefix + ".log");
+		tempFilenames.push_back(outputFilesPrefix + ".verbose");
+		tempFilenames.push_back(outputFilesPrefix + ".importance");
+		tempFilenames.push_back(outputFilesPrefix + ".confusion");
+		tempFilenames.push_back(outputFilesPrefix + ".confusion2");
+		for(vector<string>::const_iterator it=tempFilenames.begin();
+				it != tempFilenames.end(); ++it) {
+			unlink((*it).c_str());
+		}
+  }
 
   float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
   cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
