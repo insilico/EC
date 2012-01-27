@@ -24,17 +24,9 @@ class PlinkRawDataset : public Dataset
 {
 public:
   PlinkRawDataset();
-  ~PlinkRawDataset();
+  ~PlinkRawDataset() { ; }
 private:
   bool LoadSnps(std::string filename);
-  ValueType GetClassValueType(std::string value,
-                              std::vector<std::string> missingValues);
-  bool GetDiscreteClassLevel(std::string inLevel,
-                             std::vector<std::string> missingValues,
-                             ClassLevel& outLevel);
-  bool GetNumericClassLevel(std::string inLevel,
-                            std::vector<std::string> missingValues,
-                            NumericLevel& outLevel);
 };
 
 #endif	/* PLINKDATASET_H */

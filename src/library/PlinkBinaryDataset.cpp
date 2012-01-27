@@ -513,7 +513,7 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
     }
     else {
     	if(thisClassString != "-9") {
-    		discreteClassLevel = lexical_cast<ClassLevel>(thisClassString);
+    		discreteClassLevel = lexical_cast<ClassLevel>(thisClassString) - 1;
     	}
     }
 
@@ -541,86 +541,6 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
 
   cout << Timestamp() << numInstancesRead << " individuals read from the "
   		<< "fam file." << endl;
-
-  return true;
-}
-
-ValueType PlinkBinaryDataset::GetAttributeValueType(string value,
-                                                    vector<string> missingValues) {
-  ValueType returnValueType = NO_VALUE;
-  if(find(missingValues.begin(), missingValues.end(), value) ==
-     missingValues.end()) {
-    return MISSING_VALUE;
-  } else {
-    if((value == "00") || (value == "11") || (value == "12") ||
-       (value == "22") || (value == "AA") || (value == "2")) {
-      return DISCRETE_VALUE;
-    } else {
-      return NUMERIC_VALUE;
-    }
-  }
-  return returnValueType;
-}
-
-ValueType PlinkBinaryDataset::GetClassValueType(string value,
-                                                vector<string> missingValues) {
-  ValueType returnValueType = NO_VALUE;
-  if(find(missingValues.begin(), missingValues.end(), value) !=
-     missingValues.end()) {
-    return MISSING_VALUE;
-  } else {
-    if((value == "1") || (value == "2")) {
-      return DISCRETE_VALUE;
-    } else {
-      return NUMERIC_VALUE;
-    }
-  }
-  return returnValueType;
-}
-
-bool PlinkBinaryDataset::GetDiscreteClassLevel(string inLevel,
-                                               vector<string> missingValues,
-                                               ClassLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_DISCRETE_CLASS_VALUE;
-  } else {
-    if((inLevel == "1") || (inLevel == "2")) {
-      outLevel = lexical_cast<ClassLevel > (inLevel) - 1;
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool PlinkBinaryDataset::GetAttributeLevel(string inLevel,
-                                           vector<string> missingValues,
-                                           AttributeLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_DISCRETE_CLASS_VALUE;
-  } else {
-    if((inLevel == "0") || (inLevel == "1") || (inLevel == "2")) {
-      outLevel = lexical_cast<AttributeLevel > (inLevel);
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool PlinkBinaryDataset::GetNumericClassLevel(string inLevel,
-                                              vector<string> missingValues,
-                                              NumericLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_NUMERIC_CLASS_VALUE;
-  } else {
-    outLevel = lexical_cast<NumericLevel > (inLevel);
-  }
 
   return true;
 }

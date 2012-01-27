@@ -104,6 +104,30 @@ bool PlinkDataset::LoadSnps(string filename) {
   genotypeCounts.resize(numAttributes);
   attributeMutationTypes.resize(numAttributes);
   
+  /// Detect the class type
+	bool classDetected = false;
+	switch (DetectClassType(filename, classColumn+1, true)) {
+	case CASE_CONTROL_CLASS_TYPE:
+		cout << Timestamp() << "Case-control phenotypes detected" << endl;
+		hasContinuousPhenotypes = false;
+		classDetected = true;
+		break;
+	case CONTINUOUS_CLASS_TYPE:
+		cout << Timestamp() << "Continuous phenotypes detected" << endl;
+		hasContinuousPhenotypes = true;
+		classDetected = true;
+		break;
+	case MULTI_CLASS_TYPE:
+		cout << "ERROR: more than two discrete phenotypes detected" << endl;
+		break;
+	case NO_CLASS_TYPE:
+		cout << "ERROR: phenotypes could not be detected" << endl;
+		break;
+	}
+	if (!classDetected) {
+		return false;
+	}
+
   vector<vector<string> > genotypeMatrix;
   /// read attribute values from the ped file
   string pedFilename = filenameBase + ".ped";
@@ -160,86 +184,40 @@ bool PlinkDataset::LoadSnps(string filename) {
     }
 
     string thisClassString = pedColumnsParsed[classColumn];
-    /// determine class data type
-    if(pedLineNumber == 1) {
-      classType = GetClassValueType(thisClassString, missingClassValuesToCheck);
-      switch(classType) {
-        case DISCRETE_VALUE:
-          hasContinuousPhenotypes = false;
-          // cout << Timestamp() << "Detected DISCRETE phenotype" << endl;
-          break;
-        case NUMERIC_VALUE:
-          hasContinuousPhenotypes = true;
-          // cout << Timestamp() << "Detected NUMERIC phenotype" << endl;
-          break;
-        case MISSING_VALUE:
-          cout << Timestamp()
-                  << "WARNING: missing phenotype - skipping line: "
-                  << pedLineNumber << endl;
-          continue;
-        default:
-          cerr << "Could not determine class type on line 1" << endl;
-          return false;
-      }
-    }
     /// assign class level
     ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
     NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-    switch(classType) {
-      case DISCRETE_VALUE:
-        discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-        if(!GetDiscreteClassLevel(thisClassString, missingClassValuesToCheck,
-                                  discreteClassLevel)) {
-          cerr << "ERROR: Could not get class level on line: "
-                  << pedLineNumber << endl;
-          return false;
-        } else {
-          if(discreteClassLevel == MISSING_DISCRETE_CLASS_VALUE) {
-            cout << Timestamp()
-                    << "WARNING: missing phenotype skipped on line: "
-                    << pedLineNumber << endl;
-            continue;
-          }
-        }
-        break;
-      case NUMERIC_VALUE:
-         numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-        if(!GetNumericClassLevel(thisClassString, missingClassValuesToCheck,
-                                 numericClassLevel)) {
-          cerr << "ERROR: Could not get class level on line: "
-                  << pedLineNumber << endl;
-          return false;
-        } else {
-          if(numericClassLevel == MISSING_NUMERIC_CLASS_VALUE) {
-            cout << Timestamp()
-                    << "WARNING: missing phenotype skipped on line: "
-                    << pedLineNumber << endl;
-            continue;
-          }
-          numericClassLevel = numericClassLevel;
-          if(pedLineNumber == 1) {
-            minPheno = maxPheno = numericClassLevel;
-          }
-          else {
-            if(numericClassLevel < minPheno) {
-              minPheno = numericClassLevel;
-            }
-            if(numericClassLevel > maxPheno) {
-              maxPheno = numericClassLevel;
-            }
-          }
-        }
-      break;
-      case NO_VALUE:
-        cerr << "ERROR: class type could not be determined on line: "
-                << pedLineNumber << endl;
-        return false;
-        break;
-      case MISSING_VALUE:
-        cout << "WARNING: missing phenotype - skipping line: "
-                << pedLineNumber << endl;
-        continue;
-    }
+		if (hasContinuousPhenotypes) {
+			if (thisClassString != "-9") {
+				numericClassLevel = lexical_cast<NumericLevel>(thisClassString);
+				if (pedLineNumber == 1) {
+					minPheno = maxPheno = numericClassLevel;
+				} else {
+					if (numericClassLevel < minPheno) {
+						minPheno = numericClassLevel;
+					}
+					if (numericClassLevel > maxPheno) {
+						maxPheno = numericClassLevel;
+					}
+				}
+			} else {
+				if (!hasAlternatePhenotypes) {
+					cout << Timestamp() << "Instance ID " << ID
+							<< " filtered out by missing value" << endl;
+					continue;
+				}
+			}
+		} else {
+			if (thisClassString != "-9") {
+				discreteClassLevel = lexical_cast<ClassLevel>(thisClassString) - 1;
+			} else {
+				if (!hasAlternatePhenotypes) {
+					cout << Timestamp() << "Instance ID " << ID
+							<< " filtered out by missing value" << endl;
+					continue;
+				}
+			}
+		}
 
     DatasetInstance* newInst = new DatasetInstance(this);
     if(hasContinuousPhenotypes) {
@@ -250,7 +228,6 @@ bool PlinkDataset::LoadSnps(string filename) {
     }
     instances.push_back(newInst);
     instanceIds.push_back(ID);
-    // instanceIdsToLoad.push_back(ID);
     instancesMask[ID] = instanceIndex;
 
     // the remaining columns in the line are gentoypes for the instance/subject
@@ -404,52 +381,6 @@ bool PlinkDataset::LoadSnps(string filename) {
 
   cout << Timestamp() << "Dataset read and transformed into integer encoding"
           << endl;
-
-  return true;
-}
-
-ValueType PlinkDataset::GetClassValueType(string value,
-                                          vector<string> missingValues) {
-  ValueType returnValueType = NO_VALUE;
-  if(find(missingValues.begin(), missingValues.end(), value) !=
-     missingValues.end()) {
-    return MISSING_VALUE;
-  } else {
-    if((value == "1") || (value == "2")) {
-      return DISCRETE_VALUE;
-    } else {
-      return NUMERIC_VALUE;
-    }
-  }
-  return returnValueType;
-}
-
-bool PlinkDataset::GetDiscreteClassLevel(string inLevel,
-                                         vector<string> missingValues,
-                                         ClassLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_DISCRETE_CLASS_VALUE;
-  } else {
-    if((inLevel == "1") || (inLevel == "2")) {
-      outLevel = lexical_cast<ClassLevel > (inLevel) - 1;
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool PlinkDataset::GetNumericClassLevel(string inLevel,
-                                        vector<string> missingValues,
-                                        NumericLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_NUMERIC_CLASS_VALUE;
-  } else {
-    outLevel = lexical_cast<NumericLevel > (inLevel);
-  }
 
   return true;
 }

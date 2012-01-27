@@ -1882,14 +1882,13 @@ bool Dataset::LoadSnps(std::string filename) {
 		}
 
 		vector<AttributeLevel> attributeVector;
-		unsigned int attrIdx = 0;
-		unsigned int thisCol = 0;
+		int attrIdx = 0;
 		vector<string>::const_iterator it = attributesStringVector.begin();
 		ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
 		NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-		for (; it != attributesStringVector.end(); ++it, ++thisCol) {
+		for (; it != attributesStringVector.end(); ++it, ++attrIdx) {
 			string thisAttr = *it;
-			if (thisCol == classColumn) {
+			if (attrIdx == classColumn) {
 				discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
 				numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
 				if (hasContinuousPhenotypes) {
@@ -1923,10 +1922,17 @@ bool Dataset::LoadSnps(std::string filename) {
 						}
 					}
 				}
-				++attrIdx;
 			} else {
 				// attributes
-				attributeVector.push_back(lexical_cast<AttributeLevel>(thisAttr));
+        AttributeLevel thisAttrLevel = MISSING_ATTRIBUTE_VALUE;
+				if(thisAttr == "?") {
+					missingValues[ID].push_back(attrIdx);
+				}
+				else {
+					thisAttrLevel = lexical_cast<AttributeLevel>(thisAttr);
+					attributeLevelsSeen[attrIdx].insert(thisAttr);
+				}
+				attributeVector.push_back(thisAttrLevel);
 			}
 		}
 
@@ -1950,7 +1956,6 @@ bool Dataset::LoadSnps(std::string filename) {
 			newInst->LoadInstanceFromVector(attributeVector);
 			instances.push_back(newInst);
 			instanceIds.push_back(ID);
-			// instanceIdsToLoad.push_back(ID);
 			instancesMask[ID] = instanceIndex;
 		} else {
 			cerr << "ERROR: loading tab-delimited data set. "
@@ -1997,83 +2002,6 @@ bool Dataset::LoadSnps(std::string filename) {
 	return true;
 }
 
-bool Dataset::GetAttributeLevel(string inLevel, vector<string> missingValues,
-		AttributeLevel& outLevel) {
-	if (find(missingValues.begin(), missingValues.end(), inLevel)
-			!= missingValues.end()) {
-		outLevel = MISSING_DISCRETE_CLASS_VALUE;
-	} else {
-		if ((inLevel == "0") || (inLevel == "1") || (inLevel == "2")) {
-			outLevel = lexical_cast<AttributeLevel>(inLevel);
-		} else {
-			outLevel = INVALID_ATTRIBUTE_VALUE;
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool Dataset::GetDiscreteClassLevel(string inLevel,
-		vector<string> missingValues, ClassLevel& outLevel) {
-	if (find(missingValues.begin(), missingValues.end(), inLevel)
-			!= missingValues.end()) {
-		outLevel = MISSING_DISCRETE_CLASS_VALUE;
-	} else {
-		if ((inLevel == "0") || (inLevel == "1")) {
-			outLevel = lexical_cast<ClassLevel>(inLevel);
-		} else {
-			outLevel = INVALID_DISCRETE_CLASS_VALUE;
-			return false;
-		}
-	}
-
-	return true;
-}
-
-bool Dataset::GetNumericClassLevel(string inLevel, vector<string> missingValues,
-		NumericLevel& outLevel) {
-	if (find(missingValues.begin(), missingValues.end(), inLevel)
-			!= missingValues.end()) {
-		outLevel = MISSING_NUMERIC_CLASS_VALUE;
-	} else {
-		outLevel = lexical_cast<NumericLevel>(inLevel);
-	}
-
-	return true;
-}
-
-ValueType Dataset::GetAttributeValueType(string value,
-		vector<string> missingValues) {
-	ValueType returnValueType = NO_VALUE;
-	if (find(missingValues.begin(), missingValues.end(), value)
-			!= missingValues.end()) {
-		return MISSING_VALUE;
-	} else {
-		if ((value == "0") || (value == "1") || (value == "2")) {
-			return DISCRETE_VALUE;
-		} else {
-			return NUMERIC_VALUE;
-		}
-	}
-	return returnValueType;
-}
-
-ValueType Dataset::GetClassValueType(string value,
-		vector<string> missingValues) {
-	ValueType returnValueType = NO_VALUE;
-	if (find(missingValues.begin(), missingValues.end(), value)
-			!= missingValues.end()) {
-		return MISSING_VALUE;
-	} else {
-		if ((value == "0") || (value == "1")) {
-			return DISCRETE_VALUE;
-		} else {
-			return NUMERIC_VALUE;
-		}
-	}
-	return returnValueType;
-}
 
 void Dataset::UpdateAllLevelCounts() {
 	cout << Timestamp() << "Updating all level counts:" << endl << Timestamp();

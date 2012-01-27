@@ -22,7 +22,7 @@ class PlinkBinaryDataset : public Dataset
 {
 public:
   PlinkBinaryDataset();
-  ~PlinkBinaryDataset();
+  ~PlinkBinaryDataset() { ; }
 private:
   /*************************************************************************//**
    * Load attribute information.
@@ -37,19 +37,6 @@ private:
    ****************************************************************************/
   bool ReadFamFile(std::string famFilename);
   bool LoadSnps(std::string filename);
-  bool GetAttributeLevel(std::string inLevel,
-                         std::vector<std::string> missingValues,
-                         AttributeLevel& outLevel);
-  bool GetDiscreteClassLevel(std::string inLevel,
-                             std::vector<std::string> missingValues,
-                             ClassLevel& outLevel);
-  bool GetNumericClassLevel(std::string inLevel,
-                            std::vector<std::string> missingValues,
-                            NumericLevel& outLevel);
-  ValueType GetAttributeValueType(std::string value,
-                                  std::vector<std::string> missingValues);
-  ValueType GetClassValueType(std::string value,
-                              std::vector<std::string> missingValues);
   std::pair<char, double> GetAttributeMAF(unsigned int attributeIndex);
   AttributeMutationType GetAttributeMutationType(unsigned int attributeIndex);
 

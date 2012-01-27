@@ -118,7 +118,7 @@ public:
   /// Construct a default data set.
   Dataset();
   /// Destruct all dynamically allocated memory.
-  ~Dataset();
+  virtual ~Dataset();
   /*************************************************************************//**
    * Load the dataset from files passed as parameters.
    * \param [in] snpFilename discrete values (SNPs) filename
@@ -554,56 +554,7 @@ protected:
    * \return success
    ****************************************************************************/
   virtual bool LoadSnps(std::string filename);
-  /*************************************************************************//**
-   * Get the attribute level based on string representation.
-   * \param [in] inLevel attribute level read from file
-   * \param [in] missingValues list of srings representing missing attribute values
-   * \param [out] outLevel attribute level to use in the data set class
-   * \return success
-   ****************************************************************************/
-  virtual bool GetAttributeLevel(std::string inLevel,
-                                 std::vector<std::string> missingValues,
-                                 AttributeLevel& outLevel);
-  /*************************************************************************//**
-   * Get the discrete class level based on string representation.
-   * \param [in] inLevel class level read from file
-   * \param [in] missingValues list of strings representing missing class values
-   * \param [out] outLevel discrete class level to use in the data set class
-   * \return success
-   ****************************************************************************/
-  virtual bool GetDiscreteClassLevel(std::string inLevel,
-                                     std::vector<std::string> missingValues,
-                                     ClassLevel& outLevel);
-  /*************************************************************************//**
-   * Get the numeric class level based on string representation.
-   * \param [in] inLevel class level read from file
-   * \param [in] missingValues list of strings representing missing class values
-   * \param [in,out] outLevel numeric class level to use in the data set class
-   * \return success
-   ****************************************************************************/
-  virtual bool GetNumericClassLevel(std::string inLevel,
-                                    std::vector<std::string> missingValues,
-                                    NumericLevel& outLevel);
-  /*************************************************************************//**
-   * Get the passed attribute value's type.
-   * \param [in] value value to check
-   * \param [in] missingValues vector of possible missing values
-   * \return value's type
-   ****************************************************************************/
-  virtual ValueType GetAttributeValueType(std::string value,
-                                          std::vector<std::string> missingValues);
-  /*************************************************************************//**
-   * Get the passed class value's type.
-   * \param [in] value value to check
-   * \param [in] missingValues vector of possible missing values
-   * \return value's type
-   ****************************************************************************/
-  virtual ValueType GetClassValueType(std::string value,
-                                      std::vector<std::string> missingValues);
-  /*************************************************************************//**
-   * Update all attribute level counts from data set instances.
-   * Updates levelCounts, levelCountsByClass.
-   ****************************************************************************/
+  /// Update level counts for all instances by calling UpdateLevelCounts(inst)
   void UpdateAllLevelCounts();
   /*************************************************************************//**
    * Update all attribute level counts from one data set instance.

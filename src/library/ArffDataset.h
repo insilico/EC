@@ -51,18 +51,9 @@ public:
    * Print the nominals levels to stdout.
    ****************************************************************************/
   void PrintNominalsMapping();
-  ~ArffDataset();
+  ~ArffDataset()  { ; }
 private:
   bool LoadSnps(std::string filename);
-  bool GetAttributeLevel(std::string inLevel,
-                         std::vector<std::string> missingValues,
-                         AttributeLevel& outLevel);
-  bool GetDiscreteClassLevel(std::string inLevel,
-                             std::vector<std::string> missingValues,
-                             ClassLevel& outLevel);
-  bool GetNumericClassLevel(std::string inLevel,
-                            std::vector<std::string> missingValues,
-                            NumericLevel& outLevel);
 
   /// ARFF relation name
   std::string relationName;

@@ -37,17 +37,9 @@ class PlinkDataset : public Dataset
 public:
   /// Construct a PLINK data set reader. Calls Dataset base class constructor.
   PlinkDataset();
-  ~PlinkDataset();
+  ~PlinkDataset() { ; }
 private:
   bool LoadSnps(std::string filename);
-  ValueType GetClassValueType(std::string value,
-                              std::vector<std::string> missingValues);
-  bool GetDiscreteClassLevel(std::string inLevel,
-                             std::vector<std::string> missingValues,
-                             ClassLevel& outLevel);
-  bool GetNumericClassLevel(std::string inLevel,
-                            std::vector<std::string> missingValues,
-                            NumericLevel& outLevel);
   std::pair<char, double> GetAttributeMAF(unsigned int attributeIndex);
   AttributeMutationType GetAttributeMutationType(unsigned int attributeIndex);
   

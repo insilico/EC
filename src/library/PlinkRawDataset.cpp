@@ -46,15 +46,17 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   vector<string>::const_iterator it;
   unsigned int classIndex = 0;
   unsigned int numAttributes = 0;
-  for(it = tokens.begin() + 5; it != tokens.end(); it++) {
+  for(it = tokens.begin(); it != tokens.end(); it++) {
     string headerFieldName = to_upper(*it);
     if(headerFieldName == "PHENOTYPE") {
       cout << Timestamp() << "Class column detect at " << classIndex << endl;
       classColumn = classIndex;
     } else {
-      attributeNames.push_back(*it);
-      attributesMask[*it] = numAttributes;
-      ++numAttributes;
+    	if(classIndex > 5) {
+				attributeNames.push_back(*it);
+				attributesMask[*it] = numAttributes;
+				++numAttributes;
+    	}
     }
     ++classIndex;
   }
@@ -68,10 +70,29 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   genotypeCounts.resize(numAttributes);
   attributeMutationTypes.resize(numAttributes);
 
-  vector<string> missingValuesToCheck;
-  missingValuesToCheck.push_back("?");
-  missingValuesToCheck.push_back("-9");
-  missingValuesToCheck.push_back("NA");
+  /// Detect the class type
+ 	bool classDetected = false;
+ 	switch (DetectClassType(filename, classColumn+1, true)) {
+ 	case CASE_CONTROL_CLASS_TYPE:
+ 		cout << Timestamp() << "Case-control phenotypes detected" << endl;
+ 		hasContinuousPhenotypes = false;
+ 		classDetected = true;
+ 		break;
+ 	case CONTINUOUS_CLASS_TYPE:
+ 		cout << Timestamp() << "Continuous phenotypes detected" << endl;
+ 		hasContinuousPhenotypes = true;
+ 		classDetected = true;
+ 		break;
+ 	case MULTI_CLASS_TYPE:
+ 		cout << "ERROR: more than two discrete phenotypes detected" << endl;
+ 		break;
+ 	case NO_CLASS_TYPE:
+ 		cout << "ERROR: phenotypes could not be detected" << endl;
+ 		break;
+ 	}
+ 	if (!classDetected) {
+ 		return false;
+ 	}
 
   // read instance attributes from whitespace-delimited lines
   unsigned int instanceIndex = 0;
@@ -102,141 +123,88 @@ bool PlinkRawDataset::LoadSnps(string filename) {
     // assume genotype 0/1/2 and phenotype 0/1
     unsigned int attrIdx = 0;
     unsigned int vectorIdx = 0;
+    vector<string>::const_iterator it = attributesStringVector.begin();
     ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
     NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-    bool makeLineIntoInstance = false;
-    vector<string>::const_iterator it = attributesStringVector.begin();
     for(; it != attributesStringVector.end(); ++it, ++vectorIdx) {
       string thisAttr = *it;
-      if(vectorIdx == classColumn) {
-        if(lineNumber == 1) {
-          classType = GetClassValueType(thisAttr, missingValuesToCheck);
-          switch(classType) {
-            case DISCRETE_VALUE:
-              hasContinuousPhenotypes = false;
-              // cout << Timestamp() << "Detected DISCRETE phenotype" << endl;
-              break;
-            case NUMERIC_VALUE:
-              hasContinuousPhenotypes = true;
-              // cout << Timestamp() << "Detected NUMERIC phenotype" << endl;
-              break;
-            case MISSING_VALUE:
-              cout << Timestamp()
-                      << "WARNING: missing phenotype - skipping line: "
-                      << lineNumber << endl;
-              continue;
-            default:
-              cerr << "Could not determine class type on line 1" << endl;
-              return false;
-          }
-        }
+      if(vectorIdx == (classColumn - 5)) {
         discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
         numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-        switch(classType) {
-          case DISCRETE_VALUE:
-            discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
-            if(!GetDiscreteClassLevel(thisAttr, missingValuesToCheck,
-                                      discreteClassLevel)) {
-              cerr << "ERROR: Could not get class level on line: "
-                      << lineNumber << endl;
-              return false;
-            } else {
-              if(discreteClassLevel == MISSING_DISCRETE_CLASS_VALUE) {
-                cout << Timestamp()
-                        << "WARNING: missing discrete phenotype skipped on line: "
-                        << lineNumber << endl;
-                continue;
-              }
-              makeLineIntoInstance = true;
-            }
-            break;
-          case NUMERIC_VALUE:
-            numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
-            if(!GetNumericClassLevel(thisAttr, missingValuesToCheck,
-                                     numericClassLevel)) {
-              cerr << "ERROR: Could not get class level on line: "
-                      << lineNumber << endl;
-              return false;
-            } else {
-              if(numericClassLevel == MISSING_NUMERIC_CLASS_VALUE) {
-                cout << Timestamp()
-                        << "WARNING: missing numeric phenotype skipped on line: "
-                        << lineNumber << endl;
-                continue;
-              }
-              makeLineIntoInstance = true;
-              if(lineNumber == 1) {
-                minPheno = maxPheno = numericClassLevel;
-              } else {
-                if(numericClassLevel < minPheno) {
-                  minPheno = numericClassLevel;
-                }
-                if(numericClassLevel > maxPheno) {
-                  maxPheno = numericClassLevel;
-                }
-              }
-
-            }
-            break;
-          case NO_VALUE:
-            cerr << "ERROR: class type could not be determined on line: "
-                    << lineNumber << endl;
-            return false;
-            break;
-          case MISSING_VALUE:
-            cout << "WARNING: missing phenotype - skipping line: "
-                    << lineNumber << endl;
-            continue;
-        }
-      } else {
+    		if (hasContinuousPhenotypes) {
+    			if (thisAttr != "-9") {
+    				numericClassLevel = lexical_cast<NumericLevel>(thisAttr);
+    				if (lineNumber == 1) {
+    					minPheno = maxPheno = numericClassLevel;
+    				} else {
+    					if (numericClassLevel < minPheno) {
+    						minPheno = numericClassLevel;
+    					}
+    					if (numericClassLevel > maxPheno) {
+    						maxPheno = numericClassLevel;
+    					}
+    				}
+    			} else {
+    				if (!hasAlternatePhenotypes) {
+    					cout << Timestamp() << "Instance ID " << ID
+    							<< " filtered out by missing value" << endl;
+    					continue;
+    				}
+    			}
+    		} else {
+    			if (thisAttr != "-9") {
+    				discreteClassLevel = lexical_cast<ClassLevel>(thisAttr) - 1;
+    			} else {
+    				if (!hasAlternatePhenotypes) {
+    					cout << Timestamp() << "Instance ID " << ID
+    							<< " filtered out by missing value" << endl;
+    					continue;
+    				}
+    			}
+    		}
+     } else {
         AttributeLevel thisAttrLevel = MISSING_ATTRIBUTE_VALUE;
-        if(!GetAttributeLevel(thisAttr, missingValuesToCheck,
-                              thisAttrLevel)) {
-          cout << "ERROR: reading SNP on line: "
-                  << lineNumber << endl;
-          return false;
-        }
-        if(thisAttrLevel == MISSING_ATTRIBUTE_VALUE) {
+        if(thisAttr == "NA") {
           missingValues[ID].push_back(attrIdx);
         }
-        attributeLevelsSeen[attrIdx].insert(thisAttr);
+        else {
+          thisAttrLevel = lexical_cast<AttributeLevel>(thisAttr);
+          attributeLevelsSeen[attrIdx].insert(thisAttr);
+        }
         attributeVector.push_back(thisAttrLevel);
         ++attrIdx;
       }
     }
 
     // create an instance from the vector of attribute and class values
-    if(makeLineIntoInstance) {
-      DatasetInstance * newInst = 0;
-      if(attributeVector.size() != numAttributes) {
-        cerr << "ERROR: Number of attributes parsed on line " << lineNumber
-                << ": " << attributesStringVector.size()
-                << " is not equal to the number of attributes "
-                << " read from the data file header: " << numAttributes
-                << endl;
-        return false;
-      }
-      newInst = new DatasetInstance(this);
-      if(newInst) {
-        if(hasContinuousPhenotypes) {
-          newInst->SetPredictedValueTau(numericClassLevel);
-        } else {
-          newInst->SetClass(discreteClassLevel);
-          classIndexes[discreteClassLevel].push_back(instanceIndex);
-        }
-        newInst->LoadInstanceFromVector(attributeVector);
-        instances.push_back(newInst);
-        instanceIds.push_back(ID);
-        // instanceIdsToLoad.push_back(ID);
-        instancesMask[ID] = instanceIndex;
-      } else {
-        cerr << "ERROR: loading PLINK RAW data set. "
-                << "Could not create dataset instance for line number "
-                << lineNumber << endl;
-        return false;
-      }
-      ++instanceIndex;
-    }
+		DatasetInstance * newInst = 0;
+		if(attributeVector.size() != numAttributes) {
+			cerr << "ERROR: Number of attributes parsed on line " << lineNumber
+							<< ": " << attributesStringVector.size()
+							<< " is not equal to the number of attributes "
+							<< " read from the data file header: " << numAttributes
+							<< endl;
+			return false;
+		}
+		newInst = new DatasetInstance(this);
+		if(newInst) {
+			if(hasContinuousPhenotypes) {
+				newInst->SetPredictedValueTau(numericClassLevel);
+			} else {
+				newInst->SetClass(discreteClassLevel);
+				classIndexes[discreteClassLevel].push_back(instanceIndex);
+			}
+			newInst->LoadInstanceFromVector(attributeVector);
+			instances.push_back(newInst);
+			instanceIds.push_back(ID);
+			instancesMask[ID] = instanceIndex;
+		} else {
+			cerr << "ERROR: loading PLINK RAW data set. "
+							<< "Could not create dataset instance for line number "
+							<< lineNumber << endl;
+			return false;
+		}
+		++instanceIndex;
 
     // happy lights
     if(instanceIndex && ((instanceIndex % 100) == 0)) {
@@ -271,52 +239,6 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   UpdateAllLevelCounts();
 
   hasGenotypes = true;
-
-  return true;
-}
-
-ValueType PlinkRawDataset::GetClassValueType(string value,
-                                             vector<string> missingValues) {
-  ValueType returnValueType = NO_VALUE;
-  if(find(missingValues.begin(), missingValues.end(), value) !=
-     missingValues.end()) {
-    return MISSING_VALUE;
-  } else {
-    if((value == "1") || (value == "2")) {
-      return DISCRETE_VALUE;
-    } else {
-      return NUMERIC_VALUE;
-    }
-  }
-  return returnValueType;
-}
-
-bool PlinkRawDataset::GetDiscreteClassLevel(string inLevel,
-                                            vector<string> missingValues,
-                                            ClassLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_DISCRETE_CLASS_VALUE;
-  } else {
-    if((inLevel == "1") || (inLevel == "2")) {
-      outLevel = lexical_cast<ClassLevel > (inLevel) - 1;
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool PlinkRawDataset::GetNumericClassLevel(string inLevel,
-                                           vector<string> missingValues,
-                                           NumericLevel& outLevel) {
-  if(find(missingValues.begin(), missingValues.end(), inLevel) !=
-     missingValues.end()) {
-    outLevel = MISSING_NUMERIC_CLASS_VALUE;
-  } else {
-    outLevel = lexical_cast<NumericLevel > (inLevel);
-  }
 
   return true;
 }
