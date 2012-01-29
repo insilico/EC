@@ -19,14 +19,11 @@ example3_SOURCES=example3.cpp
 example4_SOURCES=example4.cpp
 
 # libtool libraries
-example1_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
-example2_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
-example3_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
-example4_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
-
-# additional include paths to support the library headers
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/$(LIBDIR)
+example1_LDADD=-lec -lrjungle -llr \
+$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
+example2_LDADD=-lec -lrjungle -llr \
+$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
+example3_LDADD=-lec -lrjungle -llr \
+$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
+example4_LDADD=-lec -lrjungle -llr \
+$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
