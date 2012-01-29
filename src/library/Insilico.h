@@ -18,7 +18,7 @@
 #include <vector>
 
 /// Forward reference to Dataset class.
-#include "Dataset.h";
+#include "Dataset.h"
 
 /**
  * \enum AnalysisType.
