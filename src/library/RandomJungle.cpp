@@ -39,7 +39,7 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 
   rjParams.mpiId = 0;
   rjParams.nthreads = numProcs;
-  rjParams.verbose_flag = vm["verbose"].as<bool>();
+  rjParams.verbose_flag = vm.count("verbose")? true: false;
 
   // fill in the parameters object for the RJ run
   rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);

@@ -39,17 +39,9 @@ namespace po = boost::program_options;
 
 int main(int argc, char** argv) {
 
-  // ---------------------------------------------------------------------------
-  cout << Timestamp() << argv[0] << " starting" << endl;
-  clock_t t;
-  t = clock();
-
-  // ---------------------------------------------------------------------------
-  cout << Timestamp() << "Processing command line arguments" << endl;
-
   // command line processing variables: defaults and storage for boost
-  bool verbose = false;
   // data set files
+  string configFilename = "";
   string snpsFilename = "";
   string snpExclusionFile = "";
   string numericsFilename = "";
@@ -81,20 +73,106 @@ int main(int argc, char** argv) {
   po::options_description desc("Allowed options");
   desc.add_options()
           ("help", "produce help message")
+          ("verbose", "verbose output")
           (
-           "snp-data",
+           "config-file,c",
+           po::value<string > (&configFilename),
+           "read configuration options from file - command line overrides these"
+           )
+          (
+           "snp-data,s",
            po::value<string > (&snpsFilename),
            "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
            )
           (
-           "snp-exclusion-file",
-           po::value<string > (&snpExclusionFile),
-           "file of SNP names to be excluded"
-           )
-          (
-           "numeric-data",
+           "numeric-data,n",
            po::value<string > (&numericsFilename),
            "read continuous attributes from PLINK-style covar file"
+           )
+          (
+           "alternate-pheno-file,a",
+           po::value<string > (&altPhenotypeFilename),
+           "specifies an alternative phenotype/class label file; one value per line"
+           )
+           (
+            "ec-algorithm-steps,g",
+            po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+            "EC steps to run (all|rj|rf)"
+            )
+           (
+            "ec-num-target,t",
+            po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
+            "EC N_target - target number of attributes to keep"
+            )
+           (
+            "ec-iter-remove-n,r",
+            po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
+            "Evaporative Cooling number of attributes to remove per iteration"
+            )
+           (
+            "ec-iter-remove-percent,p",
+            po::value<unsigned int>(&ecIterPercentToRemove),
+            "Evaporative Cooling precentage of attributes to remove per iteration"
+            )
+          (
+           "out-dataset-filename,O",
+           po::value<string > (&outputDatasetFilename),
+           "write a new tab-delimited data set with EC filtered attributes"
+           )
+          (
+           "out-files-prefix,o",
+           po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
+           "use prefix for all output files"
+           )
+           (
+            "snp-metric,S",
+            po::value<string > (&snpMetric)->default_value(snpMetric),
+            "metric for determining the difference between SNPs (gm|am)"
+            )
+           (
+            "numeric-metric,N",
+            po::value<string > (&numMetric)->default_value(numMetric),
+            "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
+            )
+          (
+           "rj-num-trees,j",
+           po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
+           "Random Jungle number of trees to grow"
+           )
+           (
+            "snp-exclusion-file,x",
+            po::value<string > (&snpExclusionFile),
+            "file of SNP names to be excluded"
+            )
+          (
+           "k-nearest-neighbors,k",
+           po::value<unsigned int>(&k)->default_value(k),
+           "set k nearest neighbors"
+           )
+          (
+           "number-random-samples,m",
+           po::value<unsigned int>(&m)->default_value(m),
+           "number of random samples (0=all|1 <= n <= number of samples)"
+           )
+          (
+           "weight-by-distance-method,b",
+           po::value<string > (&weightByDistanceMethod)->default_value(weightByDistanceMethod),
+           "weight-by-distance method (equal|one_over_k|exponential)"
+           )
+          (
+           "weight-by-distance-sigma",
+           po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
+           "weight by distance sigma"
+           )
+          (
+           "diagnostic-tests,d",
+           po::value<string > (&diagnosticLogFilename),
+           "performs diagnostic tests and sends output to filename without running Relief-F"
+           )
+          (
+           "diagnostic-levels-file,D",
+           po::value<string > (&diagnosticLevelsCountsFilename),
+           "write diagnostic attribute level counts to filename"
            )
            (
             "dge-counts-data",
@@ -111,91 +189,6 @@ int main(int argc, char** argv) {
               po::value<string > (&dgeNormsFilename),
               "read digital gene expression normalization factors from text file"
               )
-          (
-           "alternate-pheno-file",
-           po::value<string > (&altPhenotypeFilename),
-           "specifies an alternative phenotype/class label file; one value per line"
-           )
-          (
-           "out-dataset-filename",
-           po::value<string > (&outputDatasetFilename),
-           "write a new tab-delimited data set with EC filtered attributes"
-           )
-          (
-           "out-files-prefix",
-           po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
-           "use prefix for all output files"
-           )
-          (
-           "verbose",
-           po::value<bool>(&verbose)->default_value(verbose),
-           "verbose output to stdout (0=no|1=yes)"
-           )
-          (
-           "rj-num-trees",
-           po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
-           "Random Jungle number of trees to grow"
-           )
-          (
-           "k-nearest-neighbors",
-           po::value<unsigned int>(&k)->default_value(k),
-           "set k nearest neighbors"
-           )
-          (
-           "number-random-samples",
-           po::value<unsigned int>(&m)->default_value(m),
-           "number of random samples (0=all|1 <= n <= number of samples)"
-           )
-          (
-           "snp-metric",
-           po::value<string > (&snpMetric)->default_value(snpMetric),
-           "metric for determining the difference between SNPs (gm|am)"
-           )
-          (
-           "numeric-metric",
-           po::value<string > (&numMetric)->default_value(numMetric),
-           "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
-           )
-          (
-           "weight-by-distance-method",
-           po::value<string > (&weightByDistanceMethod)->default_value(weightByDistanceMethod),
-           "weight-by-distance method (equal|one_over_k|exponential)"
-           )
-          (
-           "weight-by-distance-sigma",
-           po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
-           "weight by distance sigma"
-           )
-          (
-           "diagnostic-tests",
-           po::value<string > (&diagnosticLogFilename),
-           "performs diagnostic tests and sends output to filename without running Relief-F"
-           )
-          (
-           "diagnostic-levels-file",
-           po::value<string > (&diagnosticLevelsCountsFilename),
-           "write diagnostic attribute level counts to filename"
-           )
-          (
-           "ec-algorithm-steps",
-           po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
-           "EC steps to run (all|rj|rf)"
-           )
-          (
-           "ec-num-target",
-           po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
-           "EC N_target - target number of attributes to keep"
-           )
-          (
-           "ec-iter-remove-n",
-           po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
-           "Evaporative Cooling number of attributes to remove per iteration"
-           )
-          (
-           "ec-iter-remove-percent",
-           po::value<unsigned int>(&ecIterPercentToRemove),
-           "Evaporative Cooling precentage of attributes to remove per iteration"
-           )
           ;
 
   // parse the command line into a map
@@ -204,9 +197,32 @@ int main(int argc, char** argv) {
   // po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
   po::notify(vm);
 
-  if(vm.count("help") || (argc == 0)) {
+  if(vm.count("help") || (argc == 1)) {
     cerr << desc << endl;
     exit(COMMAND_LINE_ERROR);
+  }
+
+  // ---------------------------------------------------------------------------
+  cout << Timestamp() << argv[0] << " starting" << endl;
+  clock_t t;
+  t = clock();
+
+  // ---------------------------------------------------------------------------
+  cout << Timestamp() << "Processing command line arguments" << endl;
+
+  // read config file if specified
+  if(vm.count("config-file")) {
+  	ifstream configStream(configFilename.c_str());
+  	if (!configStream.is_open()) {
+  		cerr << "ERROR: Could not open configuration file: "
+  				<< configFilename << endl;
+  		exit(EXIT_FAILURE);
+  	}
+  	cout << Timestamp() << "Reading configuration options from: "
+  			<< configFilename << endl;
+    po::store(po::parse_config_file(configStream, desc), vm);
+    po::notify(vm);
+    configStream.close();
   }
 
   /// determine the output data set type
