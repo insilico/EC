@@ -28,6 +28,7 @@
 #include "Insilico.h"
 
 namespace po = boost::program_options;
+using namespace boost;
 using namespace std;
 using namespace insilico;
 
@@ -256,6 +257,157 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
     cout << Timestamp() << ", using sigma = " << weightByDistanceSigma << endl;
   } else {
     cout << endl;
+  }
+
+  int numProcs = omp_get_num_procs();
+  int numThreads = omp_get_num_threads();
+  cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
+  cout << Timestamp() << numThreads << " OpenMP threads in work team" << endl;
+
+  vector<string> atrNames = dataset->GetAttributeNames();
+  vector<string> numNames = dataset->GetNumericsNames();
+  scoreNames.resize(atrNames.size() + numNames.size());
+  copy(atrNames.begin(), atrNames.end(), scoreNames.begin());
+  copy(numNames.begin(), numNames.end(), scoreNames.begin() + atrNames.size());
+}
+
+ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
+  cout << Timestamp() << "ReliefF initialization:" << endl;
+  if(ds) {
+    dataset = ds;
+  } else {
+    cerr << "ERROR: dataset is not initialized" << endl;
+    exit(-1);
+  }
+  analysisType = anaType;
+
+  string configValue;
+
+  // remove any attributes from distance calculations that
+  // are in the attribute exclusion file
+  if(GetConfigValue(configMap, "snp-exclusion-file", configValue)) {
+    cout << Timestamp() << "Processing exclusion file [" << configValue << "]"
+    		<< endl;
+    if(!ProcessExclusionFile(configValue)) {
+      cerr << "ERROR: Could not process exclusion file" << endl;
+      exit(EXIT_FAILURE);
+    }
+    cout << Timestamp() << dataset->NumVariables()
+            << " attributes after processing exclusions file" << endl;
+  }
+  if(GetConfigValue(configMap, "number-random-samples", configValue)) {
+    m = lexical_cast<unsigned int>(configValue);
+    if(!m) {
+      m = dataset->NumInstances();
+    }
+  } else {
+    m = dataset->NumInstances();
+  }
+  if(GetConfigValue(configMap, "k-nearest-neighbors", configValue)) {
+    k = lexical_cast<unsigned int>(configValue);
+  } else {
+    k = 10;
+  }
+  if(GetConfigValue(configMap, "snp-metric", configValue)) {
+    snpMetric = configValue;
+  } else {
+    snpMetric = "gm";
+  }
+  if(GetConfigValue(configMap, "numeric-metric", configValue)) {
+    numMetric = configValue;
+  } else {
+    numMetric = "manhattan";
+  }
+
+  removePerIteration = 0;
+  if(GetConfigValue(configMap, "iter-remove-n", configValue)) {
+  	removePerIteration = lexical_cast<unsigned int>(configValue);
+		if((removePerIteration < 1) ||
+			 (removePerIteration >= dataset->NumAttributes())) {
+			cerr << "ERROR: Number to remove per iteratopn ["
+							<< removePerIteration << "] not in valid range" << endl;
+			exit(EXIT_FAILURE);
+		}
+		cout << Timestamp() << "Iteratively removing " << removePerIteration << endl;
+  }
+  else {
+    if(GetConfigValue(configMap, "iter-remove-percent", configValue)) {
+			doRemovePercent = true;
+			removePercentage = lexical_cast<unsigned int>(configValue) / 100.0;
+			removePerIteration = (unsigned int)
+							((double) dataset->NumAttributes() * removePercentage + 0.5);
+			if((removePerIteration < 1) ||
+				 (removePerIteration >= dataset->NumAttributes())) {
+				cerr << "ERROR: Number to remove per iteratopn ["
+								<< removePerIteration << "] not in valid range" << endl;
+				exit(-1);
+			}
+			cout << Timestamp() << "Iteratively removing " << (removePercentage * 100)
+									<< "% = " << removePerIteration << endl;
+    }
+  }
+
+	cout << Timestamp() << "Iteratively removing " << removePerIteration << endl;
+
+  cout << Timestamp() << "Number of samples: m = " << m << endl;
+  randomlySelect = true;
+  if(m == 0 || m == ds->NumInstances()) {
+    // sample deterministically unless a sample size has been set
+    cout << Timestamp() << "Sampling all instances deterministically" << endl;
+    randomlySelect = false;
+    m = ds->NumInstances();
+  } else {
+    cout << Timestamp() << "Sampling instances randomly" << endl;
+    randomlySelect = true;
+  }
+
+  cout << Timestamp() << "Number of nearest neighbors: k = " << k << endl;
+
+  // k nearest neighbors and m randomly selected instances
+  // spread differences and thus weight updates
+  // over (m x k) iterations
+  one_over_m_times_k =
+          1.0 / (((double) m) * ((double) k));
+  //                                  m           *                  k
+
+  if(to_upper(snpMetric) == "GM") {
+    snpDiff = diffGMM;
+  } else {
+    if(to_upper(snpMetric) == "AM") {
+      snpDiff = diffAMM;
+    } else {
+      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  if(to_upper(numMetric) == "MANHATTAN") {
+    numDiff = diffManhattan;
+  } else {
+    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
+    exit(EXIT_FAILURE);
+  }
+
+  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
+
+  if(GetConfigValue(configMap, "weight-by-distance-method", configValue)) {
+		weightByDistanceMethod = configValue;
+		if((weightByDistanceMethod != "exponential") &&
+			 (weightByDistanceMethod != "equal")) {
+			cerr << "ERROR: Invalid --weight-by-distance-method: "
+							<< weightByDistanceMethod << endl;
+			exit(EXIT_FAILURE);
+		}
+		if(GetConfigValue(configMap, "weight-by-distance-sigma", configValue)) {
+			weightByDistanceSigma = lexical_cast<double>(configValue);
+		}
+		cout << Timestamp() << "Weight by distance method: " << weightByDistanceMethod;
+		if(weightByDistanceMethod == "exponential") {
+			cout << Timestamp() << ", using sigma = " << weightByDistanceSigma << endl;
+		} else {
+			cout << endl;
+		}
   }
 
   int numProcs = omp_get_num_procs();
@@ -643,7 +795,7 @@ bool ReliefF::PreComputeDistances() {
   cout << Timestamp() << "1) Computing instance-to-instance distances... "
   		<< endl << Timestamp();
   //  omp_set_nested(1);
-#pragma omp parallel for schedule(runtime)
+#pragma omp parallel for schedule(dynamic, 1)
   for(int i = 0; i < numInstances; ++i) {
     // cout << "Computing instance to instance distances. Row: " << i << endl;
     // #pragma omp parallel for

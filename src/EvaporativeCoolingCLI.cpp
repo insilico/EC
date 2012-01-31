@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
           (
            "diagnostic-tests,d",
            po::value<string > (&diagnosticLogFilename),
-           "performs diagnostic tests and sends output to filename without running Relief-F"
+           "performs diagnostic tests and sends output to filename without running EC"
            )
           (
            "diagnostic-levels-file,D",

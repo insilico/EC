@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = ec$(EXEEXT)
+bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,6 +56,9 @@ am_ec_OBJECTS = EvaporativeCoolingCLI.$(OBJEXT)
 ec_OBJECTS = $(am_ec_OBJECTS)
 am__DEPENDENCIES_1 =
 ec_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_ecm_OBJECTS = EvaporativeCoolingCLINewAPI.$(OBJEXT)
+ecm_OBJECTS = $(am_ecm_OBJECTS)
+ecm_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -69,8 +72,8 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(ec_SOURCES)
-DIST_SOURCES = $(ec_SOURCES)
+SOURCES = $(ec_SOURCES) $(ecm_SOURCES)
+DIST_SOURCES = $(ec_SOURCES) $(ecm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -289,6 +292,11 @@ ec_SOURCES = EvaporativeCoolingCLI.cpp
 ec_LDADD = $(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
 
+ecm_SOURCES = EvaporativeCoolingCLINewAPI.cpp
+# libtool libraries
+ecm_LDADD = $(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
+
 
 # additional include paths to support the library headers
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/$(LIBDIR)
@@ -375,6 +383,9 @@ clean-binPROGRAMS:
 ec$(EXEEXT): $(ec_OBJECTS) $(ec_DEPENDENCIES) 
 	@rm -f ec$(EXEEXT)
 	$(CXXLINK) $(ec_OBJECTS) $(ec_LDADD) $(LIBS)
+ecm$(EXEEXT): $(ecm_OBJECTS) $(ecm_DEPENDENCIES) 
+	@rm -f ecm$(EXEEXT)
+	$(CXXLINK) $(ecm_OBJECTS) $(ecm_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -383,6 +394,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EvaporativeCoolingCLI.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EvaporativeCoolingCLINewAPI.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

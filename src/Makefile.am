@@ -12,10 +12,17 @@ AM_CXXFLAGS += -I$(top_srcdir)/src/library -I$(top_srcdir)/src -I$(top_srcdir)
 # library flags
 AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
 
-bin_PROGRAMS = ec
+# make ec and ecm (iMproved!)
+bin_PROGRAMS = ec ecm
+
 ec_SOURCES=EvaporativeCoolingCLI.cpp
 # libtool libraries
 ec_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
+
+ecm_SOURCES=EvaporativeCoolingCLINewAPI.cpp
+# libtool libraries
+ecm_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
 
 # additional include paths to support the library headers

@@ -300,3 +300,15 @@ ClassType DetectClassType(std::string filename, int classColumn,
 
 	return detectedClass;
 }
+
+bool GetConfigValue(ConfigMap& configMap, std::string key, std::string& value) {
+	if(configMap.find(key) != configMap.end()) {
+		value = configMap[key];
+		string trimmedKey = trim(value);
+		if(trimmedKey == "") {
+			return false;
+		}
+		return true;
+	}
+	return false;
+}

@@ -45,7 +45,14 @@ public:
    * \param [in] anaType analysis type
    ****************************************************************************/
   ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType);
-  ~ReliefF();
+  /*************************************************************************//**
+   * Construct an ReliefF algorithm object.
+   * \param [in] ds pointer to a Dataset object
+   * \param [in] configMap reference to a ConfigMap (map<string, string>)
+   * \param [in] anaType analysis type
+   ****************************************************************************/
+  ReliefF(Dataset* ds, ConfigMap& vm, AnalysisType anaType);
+  virtual ~ReliefF();
   /**
    * Compute the ReliefF scores for the current set of attributes.
    * Implements ReliefF algorithm:

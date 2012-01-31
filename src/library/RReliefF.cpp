@@ -36,6 +36,16 @@ RReliefF::RReliefF(Dataset* ds, po::variables_map& vm) :
 	}
 }
 
+RReliefF::RReliefF(Dataset* ds, ConfigMap& configMap) :
+		ReliefF::ReliefF(ds, configMap, REGRESSION_ANALYSIS) {
+	cout << Timestamp() << "RReliefF initialization" << endl;
+	if (!ds->HasContinuousPhenotypes()) {
+		cerr << "ERROR: Attempting to construct RReliefF object without a "
+				"continuous phenotype data set" << endl;
+		exit(1);
+	}
+}
+
 RReliefF::~RReliefF() {
 }
 

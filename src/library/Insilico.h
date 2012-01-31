@@ -20,6 +20,8 @@
 /// Forward reference to Dataset class.
 #include "Dataset.h"
 
+typedef std::map<std::string, std::string> ConfigMap;
+
 /**
  * \enum AnalysisType.
  * Type of analysis to perform.
@@ -92,5 +94,14 @@ bool GetMatchingIds(std::string numericsFilename,
  * \return ClassType defined in Dataset.h
  ******************************************************************************/
 ClassType DetectClassType(std::string filename, int classColumn, bool hasHeader);
+/***************************************************************************//**
+ * Get the parameter value from the configuration map key.
+ * \param [in] configMap reference to a configuration map
+ * \param [in] key parameter name
+ * \param [out] parameter value
+ * \return true if key found, false if not found
+ ******************************************************************************/
+///
+bool GetConfigValue(ConfigMap& configMap, std::string key, std::string& value);
 
 #endif	/* INSILICO_H */

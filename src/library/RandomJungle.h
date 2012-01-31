@@ -19,6 +19,7 @@
 #include <vector>
 #include <fstream>
 
+#include "Insilico.h"
 #include "Dataset.h"
 #include <boost/program_options.hpp>
 #include "rjungle/RJunglePar.h"
@@ -34,6 +35,12 @@ public:
    * \param [in] vm reference to a Boost map of command line options
    ****************************************************************************/
   RandomJungle(Dataset* ds, po::variables_map& vm);
+  /*************************************************************************//**
+   * Construct an RandomJungle algorithm object.
+   * \param [in] ds pointer to a Dataset object
+   * \param [in] configMap reference ConfigMap (map<string, string>)
+   ****************************************************************************/
+  RandomJungle(Dataset* ds, ConfigMap& vm);
   virtual ~RandomJungle();
   /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScores();

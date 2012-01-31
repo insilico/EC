@@ -43,106 +43,112 @@ typedef std::vector<std::pair<double, std::string> >::const_iterator EcScoresCIt
  * \enum EcAlgorithmType.
  * Type of algorithm steps to perform.
  */
-typedef enum
-{
-  EC_ALL, /**< Run RandomJungle and ReliefF */
-  EC_RJ,  /**< Run only RandomJungle */
-  EC_RF   /**< Run only ReliefF */
+typedef enum {
+	EC_ALL, /**< Run RandomJungle and ReliefF */
+	EC_RJ, /**< Run only RandomJungle */
+	EC_RF
+/**< Run only ReliefF */
 } EcAlgorithmType;
 
-class EvaporativeCooling
-{
+class EvaporativeCooling {
 public:
-  /*************************************************************************//**
-   * Construct an EC algorithm object.
-   * \param [in] ds pointer to a Dataset object
-   * \param [in] vm reference to a Boost map of command line options
-   * \param [in] anaType analysis type
-   ****************************************************************************/
-  EvaporativeCooling(Dataset* ds, po::variables_map& vm,
-                     AnalysisType anaType=SNP_ONLY_ANALYSIS);
-  virtual ~EvaporativeCooling();
-  /// Compute the EC scores based on the current set of attributes.
-  bool ComputeECScores();
-  /// Get the last computed RandomJungle scores.
-  EcScores& GetRandomJungleScores();
-  /// Get the last computed ReliefF scores.
-  EcScores& GetReliefFScores();
-  /// Get the last computed EC scores.
-  EcScores& GetECScores();
-  /// Return the algorithm type: EC_ALL, EC_RJ or EC_RF.
-  EcAlgorithmType GetAlgorithmType();
-  /*************************************************************************//**
-   * Write the scores and attribute names to file.
-   * \param [in] baseFilename filename to write score-attribute name pairs
-   ****************************************************************************/
-  void WriteAttributeScores(std::string baseFilename);
-  /*************************************************************************//**
-   * Write the scores and attribute names to stream.
-   * \param [in] outStream stream to write score-attribute name pairs
-   ****************************************************************************/
-  void PrintAttributeScores(std::ofstream& outStream);
-  /// Print the current attributes scores to stdout in tab-delimited format.
-  bool PrintAllScoresTabular();
-  /// Print the kendall taus between the ReliefF and RandomJungle scores.
-  bool PrintKendallTaus();
+	/*************************************************************************//**
+	 * Construct an EC algorithm object.
+	 * \param [in] ds pointer to a Dataset object
+	 * \param [in] vm reference to a Boost map of command line options
+	 * \param [in] anaType analysis type
+	 ****************************************************************************/
+	EvaporativeCooling(Dataset* ds, po::variables_map& vm,
+			AnalysisType anaType =SNP_ONLY_ANALYSIS);
+	/*************************************************************************//**
+	 * Construct an EC algorithm object.
+	 * \param [in] ds pointer to a Dataset object
+	 * \param [in] configMap reference to a ConfigMap (map<string, string>)
+	 * \param [in] anaType analysis type
+	 ****************************************************************************/
+	EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
+			AnalysisType anaType = SNP_ONLY_ANALYSIS);
+	virtual ~EvaporativeCooling();
+	/// Compute the EC scores based on the current set of attributes.
+	bool ComputeECScores();
+	/// Get the last computed RandomJungle scores.
+	EcScores& GetRandomJungleScores();
+	/// Get the last computed ReliefF scores.
+	EcScores& GetReliefFScores();
+	/// Get the last computed EC scores.
+	EcScores& GetECScores();
+	/// Return the algorithm type: EC_ALL, EC_RJ or EC_RF.
+	EcAlgorithmType GetAlgorithmType();
+	/*************************************************************************//**
+	 * Write the scores and attribute names to file.
+	 * \param [in] baseFilename filename to write score-attribute name pairs
+	 ****************************************************************************/
+	void WriteAttributeScores(std::string baseFilename);
+	/*************************************************************************//**
+	 * Write the scores and attribute names to stream.
+	 * \param [in] outStream stream to write score-attribute name pairs
+	 ****************************************************************************/
+	void PrintAttributeScores(std::ofstream& outStream);
+	/// Print the current attributes scores to stdout in tab-delimited format.
+	bool PrintAllScoresTabular();
+	/// Print the kendall taus between the ReliefF and RandomJungle scores.
+	bool PrintKendallTaus();
 private:
-  /// Run the ReliefF algorithm.
-  bool RunReliefF();
-  /*************************************************************************//**
-   * Compute the attributes' free energy using the couple temperature.
-   * \param [in] tempreatire coupling temperature T
-   * \return distance
-   ****************************************************************************/
-  bool ComputeFreeEnergy(double temperature);
-  /*************************************************************************//**
-   * Remove the worst attribute based on free energy scores.
-   * \param [in] numToRemove number of attributes to remove/evaporate
-   * \return distance
-   ****************************************************************************/
-  bool RemoveWorstAttributes(unsigned int numToRemove=1);
-  
-  /// pointer to a Dataset object
-  Dataset* dataset;
-  /// command line parameters map
-  po::variables_map paramsMap;
-  /// prefix for all output files
-  std::string outFilesPrefix;
+	/// Run the ReliefF algorithm.
+	bool RunReliefF();
+	/*************************************************************************//**
+	 * Compute the attributes' free energy using the couple temperature.
+	 * \param [in] tempreatire coupling temperature T
+	 * \return distance
+	 ****************************************************************************/
+	bool ComputeFreeEnergy(double temperature);
+	/*************************************************************************//**
+	 * Remove the worst attribute based on free energy scores.
+	 * \param [in] numToRemove number of attributes to remove/evaporate
+	 * \return distance
+	 ****************************************************************************/
+	bool RemoveWorstAttributes(unsigned int numToRemove = 1);
 
-  /// type of analysis to perform
-  /// \sa ReliefF
-  AnalysisType analysisType;
-  /// algorithm steps to perform
-  EcAlgorithmType algorithmType;
+	/// pointer to a Dataset object
+	Dataset* dataset;
+	/// command line parameters map
+	po::variables_map paramsMap;
+	/// prefix for all output files
+	std::string outFilesPrefix;
 
-  /// pointer to a ReliefF or RReliefF algorithm object
-  ReliefF* reliefF;
-  /// pointer to a RandomJungle algorithm onject
-  RandomJungle* randomJungle;
+	/// type of analysis to perform
+	/// \sa ReliefF
+	AnalysisType analysisType;
+	/// algorithm steps to perform
+	EcAlgorithmType algorithmType;
 
-  /// current random jungle scores
-  EcScores rjScores;
-  /// current relieff scores
-  EcScores rfScores;
-  /// current free energy scores
-  EcScores freeEnergyScores;
+	/// pointer to a ReliefF or RReliefF algorithm object
+	ReliefF* reliefF;
+	/// pointer to a RandomJungle algorithm onject
+	RandomJungle* randomJungle;
 
-  // number of threads to use for random jungle
-  unsigned int numRFThreads;
-  /// number of attributes to remove per iteration
-  unsigned int numToRemovePerIteration;
-  /// number of target attributes
-  unsigned int numTargetAttributes;
-  /// attributes that have been evaporated so far
-  EcScores evaporatedAttributes;
-  /// current set of ec scores
-  EcScores ecScores;
+	/// current random jungle scores
+	EcScores rjScores;
+	/// current relieff scores
+	EcScores rfScores;
+	/// current free energy scores
+	EcScores freeEnergyScores;
+
+	// number of threads to use for random jungle
+	unsigned int numRFThreads;
+	/// number of attributes to remove per iteration
+	unsigned int numToRemovePerIteration;
+	/// number of target attributes
+	unsigned int numTargetAttributes;
+	/// attributes that have been evaporated so far
+	EcScores evaporatedAttributes;
+	/// current set of ec scores
+	EcScores ecScores;
 };
 
 /// HACK FOR AUTOTOOLS LIBRARY DETECTION
-extern "C"
-{
-  void libec_is_present(void);
+extern "C" {
+void libec_is_present(void);
 }
 
 #endif	/* EVAPORATIVECOOLING_H */

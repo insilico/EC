@@ -25,6 +25,7 @@
 
 #include "ReliefF.h"
 #include "Dataset.h"
+#include "Insilico.h"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -43,6 +44,12 @@ public:
    * \param [in] vm reference to a Boost map of command line options
    ****************************************************************************/
   RReliefF(Dataset* ds, po::variables_map& vm);
+  /*************************************************************************//**
+   * Construct an ReliefF algorithm object.
+   * \param [in] ds pointer to a Dataset object
+   * \param [in] configMap reference to a ConfigMap (map<string, string>)
+   ****************************************************************************/
+  RReliefF(Dataset* ds, ConfigMap& configMap);
   bool ComputeAttributeScores();
   virtual ~RReliefF();
 private:  
