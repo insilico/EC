@@ -236,7 +236,7 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
         // express as a percentage rather than huge numbers
         float percentDone = ((float) attributesRead / attributesToRead) * 100.0;
         if((attributesRead % tenPercentAttributes) == 0) {
-          cout << percentDone << "% ";
+          cout << (int) percentDone << "% ";
           cout.flush();
         }
 
