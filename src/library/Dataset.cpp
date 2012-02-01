@@ -2228,7 +2228,9 @@ bool Dataset::LoadAlternatePhenotypes(string phenotypesFilename) {
 		classDetected = true;
 		break;
 	case MULTI_CLASS_TYPE:
-		cout << "ERROR: more than two discrete phenotypes detected" << endl;
+		cout << Timestamp() << "Multiclass phenotypes detected" << endl;
+		hasContinuousPhenotypes = false;
+		classDetected = true;
 		break;
 	case NO_CLASS_TYPE:
 		cout << "ERROR: phenotypes could not be detected" << endl;

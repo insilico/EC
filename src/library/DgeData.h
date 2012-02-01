@@ -35,6 +35,8 @@ public:
 	int GetSamplePhenotype(int sampleIndex);
 	/// Get the normalization factors
 	std::vector<double> GetNormalizationFactors();
+	/// Print the Sample statistics to the console
+	void PrintSampleStats();
 private:
 	/// Filename containing DGE counts
 	std::string countsFilename;

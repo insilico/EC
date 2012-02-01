@@ -85,10 +85,20 @@ public:
 	 ****************************************************************************/
 	void WriteAttributeScores(std::string baseFilename);
 	/*************************************************************************//**
-	 * Write the scores and attribute names to stream.
+	 * Write the EC scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
 	void PrintAttributeScores(std::ofstream& outStream);
+	/*************************************************************************//**
+	 * Write the RJ scores and attribute names to stream.
+	 * \param [in] outStream stream to write score-attribute name pairs
+	 ****************************************************************************/
+	void PrintRJAttributeScores(std::ofstream& outStream);
+	/*************************************************************************//**
+	 * Write the RF scores and attribute names to stream.
+	 * \param [in] outStream stream to write score-attribute name pairs
+	 ****************************************************************************/
+	void PrintRFAttributeScores(std::ofstream& outStream);
 	/// Print the current attributes scores to stdout in tab-delimited format.
 	bool PrintAllScoresTabular();
 	/// Print the kendall taus between the ReliefF and RandomJungle scores.

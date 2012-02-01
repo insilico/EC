@@ -411,7 +411,6 @@ EcAlgorithmType EvaporativeCooling::GetAlgorithmType() {
 }
 
 void EvaporativeCooling::PrintAttributeScores(ofstream& outStream) {
-
 	for (EcScoresCIt ecScoresIt = ecScores.begin(); ecScoresIt != ecScores.end();
 			++ecScoresIt) {
 		outStream << fixed << setprecision(8) << (*ecScoresIt).first << "\t"
@@ -419,19 +418,82 @@ void EvaporativeCooling::PrintAttributeScores(ofstream& outStream) {
 	}
 }
 
+void EvaporativeCooling::PrintRJAttributeScores(ofstream& outStream) {
+	sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
+	for (EcScoresCIt rjScoresIt = rjScores.begin(); rjScoresIt != rjScores.end();
+			++rjScoresIt) {
+		outStream << fixed << setprecision(8) << (*rjScoresIt).first << "\t"
+				<< (*rjScoresIt).second << endl;
+	}
+}
+
+void EvaporativeCooling::PrintRFAttributeScores(ofstream& outStream) {
+	sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+	for (EcScoresCIt rfScoresIt = rfScores.begin(); rfScoresIt != rfScores.end();
+			++rfScoresIt) {
+		outStream << fixed << setprecision(8) << (*rfScoresIt).first << "\t"
+				<< (*rfScoresIt).second << endl;
+	}
+}
+
 void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 	string resultsFilename = baseFilename;
+	ofstream outFile;
 	// added 9/26/11 for reflecting the fact that only parts of the
 	// complete EC algorithm were performed
 	switch (algorithmType) {
 	case EC_ALL:
-		resultsFilename += ".ec";
+		resultsFilename = baseFilename + ".ec";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintAttributeScores(outFile);
+		outFile.close();
+
+		resultsFilename = baseFilename + ".ec.rj";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintRJAttributeScores(outFile);
+		outFile.close();
+
+		resultsFilename = baseFilename + ".ec.rf";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintRFAttributeScores(outFile);
+		outFile.close();
 		break;
 	case EC_RJ:
-		resultsFilename += ".ec.rj";
+		resultsFilename += ".rj";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintAttributeScores(outFile);
+		outFile.close();
 		break;
 	case EC_RF:
-		resultsFilename += ".ec.rf";
+		resultsFilename += ".rf";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintAttributeScores(outFile);
+		outFile.close();
 		break;
 	default:
 		// we should not get here by the CLI front end but it is possible to call
@@ -441,15 +503,6 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 				<< "type was determined. " << endl;
 		return;
 	}
-	ofstream outFile;
-	outFile.open(resultsFilename.c_str());
-	if (outFile.bad()) {
-		cerr << "ERROR: Could not open scores file " << resultsFilename
-				<< "for writing" << endl;
-		exit(1);
-	}
-	PrintAttributeScores(outFile);
-	outFile.close();
 }
 
 bool EvaporativeCooling::PrintAllScoresTabular() {

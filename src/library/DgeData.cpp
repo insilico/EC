@@ -284,3 +284,16 @@ int DgeData::GetSamplePhenotype(int sampleIndex) {
 vector<double> DgeData::GetNormalizationFactors() {
 	return normFactors;
 }
+
+void DgeData::PrintSampleStats() {
+	cout << Timestamp() << "DGE Sample Statistics" << endl;
+	for(int sampleIndex = 0; sampleIndex < sampleNames.size(); ++sampleIndex) {
+		cout << Timestamp()
+				 << sampleNames[sampleIndex]
+		     << " min: " << minMaxSampleCounts[sampleIndex].first
+		     << " max: " << minMaxSampleCounts[sampleIndex].second
+		     << " zeroes: " << sampleZeroes[sampleIndex].size()
+		     << endl;
+	}
+}
+

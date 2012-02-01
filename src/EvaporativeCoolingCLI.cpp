@@ -416,9 +416,13 @@ int main(int argc, char** argv) {
     ds->PrintStats();
   } else {
     if(analysisType == NUMERIC_ONLY_ANALYSIS ||
-       analysisType == INTEGRATED_ANALYSIS ||
-       analysisType == DGE_ANALYSIS) {
+       analysisType == INTEGRATED_ANALYSIS) {
       ds->PrintNumericsStats();
+    }
+    else {
+    	if(analysisType == DGE_ANALYSIS) {
+    		dge->PrintSampleStats();
+    	}
     }
   }
 
@@ -446,10 +450,10 @@ int main(int argc, char** argv) {
       resultsFilename += ".ec";
       break;
     case EC_RJ:
-      resultsFilename += ".ec.rj";
+      resultsFilename += ".rj";
       break;
     case EC_RF:
-      resultsFilename += ".ec.rf";
+      resultsFilename += ".rf";
       break;
     default:
       // we should not get here by the CLI front end but it is possible to call

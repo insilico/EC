@@ -41,8 +41,9 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   cout << Timestamp() << "Reading RAW file" << endl;
 
   getline(dataStream, line);
+  string trimmedLine = trim(line);
   vector<string> tokens;
-  split(tokens, line);
+  split(tokens, trimmedLine);
   vector<string>::const_iterator it;
   unsigned int classIndex = 0;
   unsigned int numAttributes = 0;
