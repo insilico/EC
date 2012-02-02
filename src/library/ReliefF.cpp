@@ -15,7 +15,10 @@
 #include <cmath>
 #include <sstream>
 
+#ifdef WITH_OPENMP
 #include <omp.h>
+#endif
+
 #include <boost/program_options.hpp>
 #include <boost/unordered_map.hpp>
 
@@ -795,7 +798,9 @@ bool ReliefF::PreComputeDistances() {
   cout << Timestamp() << "1) Computing instance-to-instance distances... "
   		<< endl << Timestamp();
   //  omp_set_nested(1);
+#ifdef WITH_OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
+#endif
   for(int i = 0; i < numInstances; ++i) {
     // cout << "Computing instance to instance distances. Row: " << i << endl;
     // #pragma omp parallel for
@@ -923,7 +928,9 @@ bool ReliefF::PreComputeDistancesByMap() {
   boost::unordered_map<pair<string, string>, double > distanceMatrix;
   //        ID1     ID2     dist
   int i = 0;
+#ifdef WITH_OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
+#endif
   for(i = 0; i < numInstances; ++i) {
     for(int j = i + 1; j < numInstances; ++j) {
       string instanceId1 = instanceIds[i];
@@ -935,7 +942,9 @@ bool ReliefF::PreComputeDistancesByMap() {
       double distance =
               ComputeInstanceToInstanceDistance(dataset->GetInstance(dsi1Index),
                                                 dataset->GetInstance(dsi2Index));
+#ifdef WITH_OPENMP
 #pragma omp critical
+#endif
       {
         distanceMatrix[key] = distance;
         //        cout << i << "," << j << " -> (" << key.first << "," << key.second

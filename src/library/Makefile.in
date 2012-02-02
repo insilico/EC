@@ -33,6 +33,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+# library flags
+@WITH_OPENMP_TRUE@am__append_1 = -fopenmp -DWITH_OPENMP
 subdir = src/library
 DIST_COMMON = $(libec_la_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -41,8 +43,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/boost.m4 \
 	$(top_srcdir)/m4/gsl.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/libxml2.m4 $(top_srcdir)/m4/ltoptions.m4 \
 	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/openmp.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -170,7 +172,6 @@ MKDIR_P = @MKDIR_P@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJEXT = @OBJEXT@
-OPENMP_CXXFLAGS = @OPENMP_CXXFLAGS@
 OS_CXX = @OS_CXX@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
@@ -249,11 +250,12 @@ AUTOMAKE_OPTIONS = foreign
 
 # Random Jungle flags
 # project flags
-# library flags
 AM_CXXFLAGS = -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen @OS_CXX@ \
 	-DHAVE__BOOL -D__NOPLUGIN__ -I$(top_srcdir)/src \
-	-I$(top_srcdir) $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+	-I$(top_srcdir) $(am__append_1)
 LIBNAME = @LIBNAME@
+
+# AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
 
 # shared library build
 lib_LTLIBRARIES = libec.la

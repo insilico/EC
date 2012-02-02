@@ -18,6 +18,9 @@
 /* Define to 1 if you have the `gcc' library (-lgcc). */
 #undef HAVE_LIBGCC
 
+/* Define to 1 if you have the `gomp' library (-lgomp). */
+#undef HAVE_LIBGOMP
+
 /* Define to 1 if you have the `lr' library (-llr). */
 #undef HAVE_LIBLR
 

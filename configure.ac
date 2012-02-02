@@ -187,14 +187,22 @@ AC_SUBST(XML_LIBS)
 
 dnl ===========================================================================
 
-AC_OPENMP
-if test -z "$OPENMP_CXXFLAGS" ; then
-  AC_MSG_WARN([Could not detect OpenMP support.])
-  AC_MSG_NOTICE([If you have got multiple CPUs in your computer the speed of the program will drastically increase with OpenMP.])
-  AC_MSG_NOTICE([Install a compiler with OpenMP support for better performance.])
-else
-  AC_MSG_NOTICE([OpenMP support detected.])
-fi
+AC_ARG_WITH([openmp],
+	[AS_HELP_STRING([--with-openmp],
+	[enable support for OpenMP parallelism])],
+	[],
+	[with_openmp=yes])
+AS_IF([test "x$with_openmp" = xyes],
+	# FIXME: Replace `main' with a function in `-lgomp':
+	[AC_CHECK_LIB([gomp], [main],
+		[],
+		[if test "x$with_openmp" != xcheck; then
+			AC_MSG_ERROR(
+				[--with-openmp was given, but test for openmp failed])
+		fi
+		], [])])
+
+AM_CONDITIONAL([WITH_OPENMP], [test "x$with_openmp" = xyes])
 
 ######################################################################
 # DOXYGEN SUPPORT

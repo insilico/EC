@@ -9,7 +9,13 @@ AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
 # project flags
 AM_CXXFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)
 # library flags
-AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+
+if WITH_OPENMP
+AM_CXXFLAGS += -fopenmp
+AM_CXXFLAGS += -DWITH_OPENMP
+endif
+
+# AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
 
 # shared library build
 lib_LTLIBRARIES=libec.la
