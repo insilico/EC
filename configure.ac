@@ -90,7 +90,7 @@ AC_ARG_ENABLE(windows, AC_HELP_STRING([--enable-windows],[Compile code for Windo
   #AC_PROG_F77([gfortran-4.3.3 gfortran-4 gfortran g++-4.3.1 g++-4.3.0])
   #AC_PROG_CXX([g++ gcc cl KCC CC cxx cc++ xlC aCC c++])
   #AC_PROG_CC([gcc])
-  #AC_PROG_F77([gfortran])
+  AC_PROG_F77([gfortran])
 echo
 
 
@@ -109,7 +109,7 @@ if test "$with_timeprof" == 'yes' ; then
 fi
 
 # Check for openmp
-AC_OPENMP
+# AC_OPENMP
 
 # boost.m4
 BOOST_REQUIRE([1.34])
@@ -179,7 +179,7 @@ if test "$with_xml" != 'no'; then
 fi
 
 # check for RandomJungle dependency
-AC_CHECK_LIB([rjungle], [randomJungle])
+AC_CHECK_LIB([rjungle], [main])
 AC_CHECK_LIB([lr], [mk_lr_options])
 
 AM_CONDITIONAL(XML_DELEGATE,test "$have_xml" = 'yes')
@@ -187,10 +187,13 @@ AC_SUBST(XML_LIBS)
 
 dnl ===========================================================================
 
+AC_OPENMP
 if test -z "$OPENMP_CXXFLAGS" ; then
   AC_MSG_WARN([Could not detect OpenMP support.])
   AC_MSG_NOTICE([If you have got multiple CPUs in your computer the speed of the program will drastically increase with OpenMP.])
   AC_MSG_NOTICE([Install a compiler with OpenMP support for better performance.])
+else
+  AC_MSG_NOTICE([OpenMP support detected.])
 fi
 
 ######################################################################

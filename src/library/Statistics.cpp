@@ -263,11 +263,15 @@ double KendallTau(vector<string> X, vector<string> Y)
       string Xj = X[j];
       string Yi = Y[i];
       string Yj = Y[j];
-      if((Xi == Yi) && (Xj == Yj)) {
+      if(((Xi > Xj) && (Yi > Yj)) ||
+      	 ((Xi < Xj) && (Yi < Yj))) {
         ++C;
       }
       else {
-        ++D;
+        if(((Xi > Xj) && (Yi < Yj)) ||
+        	 ((Xi < Xj) && (Yi > Yj))) {
+        	++D;
+        }
       }
     }
   }
