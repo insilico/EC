@@ -54,10 +54,14 @@ case "$host_os" in
 		AC_CHECK_LIB([nsl], [main])
         ;;
 
-  *mingw32* | *cygwin*)
+  # next three comments by bcw to test mingw build - 2/3/12
+  # *mingw32* | *cygwin*)
+  *mingw32*)
   		# Windows
-        OS_CXX="-DWIN"
-        SYS_WIN=1
+        # OS_CXX="-DWIN"
+        # SYS_WIN=1
+        OS_CXX="-DUNIX -I/usr/local/include"
+        SYS_UNIX=1
         ;;
     *)
         #Default Case, assume UNIX

@@ -22,7 +22,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
-#include <sys/resource.h>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -469,11 +468,6 @@ int main(int argc, char** argv) {
     exit(COMMAND_LINE_ERROR);
   }
 
-  struct rusage s;
-  struct rusage*p = &s;
-  getrusage(RUSAGE_SELF, p);
-  cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
-          << " MB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
   // ---------------------------------------------------------------------------
