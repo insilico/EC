@@ -15,9 +15,7 @@
 #include <cmath>
 #include <sstream>
 
-#ifdef WITH_OPENMP
 #include <omp.h>
-#endif
 
 #include <boost/program_options.hpp>
 #include <boost/unordered_map.hpp>

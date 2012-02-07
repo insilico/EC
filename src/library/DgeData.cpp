@@ -162,9 +162,9 @@ bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
 	/// get min and max sample counts, and sample zeroes
 	minMaxSampleCounts.resize(numSamples);
 	sampleZeroes.resize(numSamples);
-	for(int geneIndex=0; geneIndex < counts.size(); ++geneIndex) {
+	for(size_t geneIndex=0; geneIndex < counts.size(); ++geneIndex) {
 		vector<double> thisGeneCounts = counts[geneIndex];
-		for(int sampleIndex=0; sampleIndex < thisGeneCounts.size(); ++sampleIndex) {
+		for(int sampleIndex=0; sampleIndex < (int) thisGeneCounts.size(); ++sampleIndex) {
 			double thisCount = thisGeneCounts[sampleIndex];
 			if(geneIndex==0) {
 				minMaxSampleCounts[sampleIndex].first = thisCount;
@@ -238,7 +238,7 @@ vector<string> DgeData::GetGeneNames() {
 }
 
 pair<double, double> DgeData::GetGeneMinMax(int geneIndex) {
-	if((geneIndex >= 0) && (geneIndex < counts.size())) {
+	if((geneIndex >= 0) && (geneIndex < (int) counts.size())) {
 		return minMaxGeneCounts[geneIndex];
 	}
 	else {
@@ -257,14 +257,14 @@ int DgeData::GetNumGenes() {
 }
 
 vector<double> DgeData::GetSampleCounts(int sampleIndex) {
-	if((sampleIndex < 0) || (sampleIndex >= sampleNames.size())) {
+	if((sampleIndex < 0) || (sampleIndex >= (int) sampleNames.size())) {
 		cerr << "ERROR: DgeData::GetSampleCounts, index out of range: "
 				<< sampleIndex << endl;
 		exit(EXIT_FAILURE);
 	}
 
 	vector<double> returnVector;
-	for(int i=0; i < geneNames.size(); ++i) {
+	for(int i=0; i < (int) geneNames.size(); ++i) {
 		returnVector.push_back(counts[i][sampleIndex]);
 	}
 
@@ -272,7 +272,7 @@ vector<double> DgeData::GetSampleCounts(int sampleIndex) {
 }
 
 int DgeData::GetSamplePhenotype(int sampleIndex) {
-	if((sampleIndex < 0) || (sampleIndex >= sampleNames.size())) {
+	if((sampleIndex < 0) || (sampleIndex >= (int) sampleNames.size())) {
 		cerr << "ERROR: DgeData::GetSamplePhenotype, index out of range: "
 				<< sampleIndex << endl;
 		exit(EXIT_FAILURE);
@@ -287,7 +287,7 @@ vector<double> DgeData::GetNormalizationFactors() {
 
 void DgeData::PrintSampleStats() {
 	cout << Timestamp() << "DGE Sample Statistics" << endl;
-	for(int sampleIndex = 0; sampleIndex < sampleNames.size(); ++sampleIndex) {
+	for(int sampleIndex = 0; sampleIndex < (int) sampleNames.size(); ++sampleIndex) {
 		cout << Timestamp()
 				 << sampleNames[sampleIndex]
 		     << " min: " << minMaxSampleCounts[sampleIndex].first

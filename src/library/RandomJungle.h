@@ -22,6 +22,9 @@
 #include "Insilico.h"
 #include "Dataset.h"
 #include <boost/program_options.hpp>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include "rjungle/RJunglePar.h"
 
 namespace po = boost::program_options;

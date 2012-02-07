@@ -270,7 +270,7 @@ bool ArffDataset::LoadSnps(string filename) {
 					// create an instance from the vector of attribute and class values
 					if (makeLineIntoInstance) {
 						DatasetInstance * newInst = 0;
-						if (attributeVector.size() != numAttributes) {
+						if ((int) attributeVector.size() != numAttributes) {
 							cerr << "ERROR: Number of attributes parsed on line "
 									<< lineNumber << ": " << attributesStringVector.size()
 									<< " is not equal to the number of attributes "
@@ -278,7 +278,7 @@ bool ArffDataset::LoadSnps(string filename) {
 									<< endl;
 							return false;
 						}
-						if (numericsVector.size() != numNumerics) {
+						if ((int) numericsVector.size() != numNumerics) {
 							cerr << "ERROR: Number of numerics parsed on line " << lineNumber
 									<< ": " << numericsVector.size()
 									<< " is not equal to the number of attributes "
@@ -297,7 +297,7 @@ bool ArffDataset::LoadSnps(string filename) {
 								newInst->LoadInstanceFromVector(attributeVector);
 							}
 							if (hasNumerics) {
-								for (int i = 0; i < numericsVector.size(); ++i) {
+								for (int i = 0; i < (int) numericsVector.size(); ++i) {
 									newInst->AddNumeric(numericsVector[i]);
 								}
 							}

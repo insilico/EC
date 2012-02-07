@@ -141,7 +141,7 @@ bool PlinkDataset::LoadSnps(string filename) {
   unsigned int pedLineNumber = 0;
   unsigned int instanceIndex = 0;
   cout << Timestamp();
-  ValueType classType = NO_VALUE;
+  // ValueType classType = NO_VALUE;
   vector<pair<string, string> > alleles;
   double minPheno = 0.0, maxPheno = 0.0;
   while(getline(pedDataStream, line)) {

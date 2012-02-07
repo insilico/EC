@@ -8,6 +8,10 @@
  */
 
 // Random Jungle source distribution
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "rjungle/librjungle.h"
 #include "rjungle/RJunglePar.h"
 #include "rjungle/RJungleCtrl.h"

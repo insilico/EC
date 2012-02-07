@@ -99,7 +99,6 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   unsigned int instanceIndex = 0;
   unsigned int lineNumber = 0;
   cout << Timestamp();
-  ValueType classType = NO_VALUE;
   double minPheno = 0.0, maxPheno = 0.0;
   while(getline(dataStream, line)) {
     ++lineNumber;

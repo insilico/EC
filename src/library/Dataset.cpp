@@ -183,7 +183,7 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 
 	// populate numericNames, numericsMinMax and numericsMask
 	vector<string> geneNames = dgeData->GetGeneNames();
-	for (int i = 0; i < geneNames.size(); ++i) {
+	for (int i = 0; i < (int) geneNames.size(); ++i) {
 		numericsNames.push_back(geneNames[i]);
 		numericsMinMax.push_back(dgeData->GetGeneMinMax(i));
 		numericsMask[geneNames[i]] = i;
@@ -192,11 +192,11 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 	// load the data set instances: set the instance numerics,
 	// instance IDs, instance mask and phenotype
 	vector<string> sampleNames = dgeData->GetSampleNames();
-	for (int instanceIndex = 0; instanceIndex < sampleNames.size();
+	for (int instanceIndex = 0; instanceIndex < (int) sampleNames.size();
 			++instanceIndex) {
 		vector<double> sampleValues = dgeData->GetSampleCounts(instanceIndex);
 		DatasetInstance* dsi = new DatasetInstance(this);
-		for (int numericIndex = 0; numericIndex < geneNames.size();
+		for (int numericIndex = 0; numericIndex < (int) geneNames.size();
 				++numericIndex) {
 			dsi->AddNumeric(sampleValues[numericIndex]);
 		}
@@ -1765,10 +1765,10 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
 	vector<AttributeLevel> c;
 	vector<AttributeLevel> a;
 	GetClassValues(c);
-	for (int i = 0; i < NumAttributes(); i++) {
+	for (int i = 0; i < (int) NumAttributes(); i++) {
 		GetAttributeValues(attrNames[i], a);
 		gainMatrix[i][i] = SelfEntropy(a, c);
-		for (int j = i + 1; j < NumAttributes(); j++) {
+		for (int j = i + 1; j < (int) NumAttributes(); j++) {
 			map<string, double> r = results[make_pair(i, j)];
 			gainMatrix[i][j] = gainMatrix[j][i] = r["I_3_paper"];
 		}
@@ -1882,7 +1882,7 @@ bool Dataset::LoadSnps(std::string filename) {
 		}
 
 		vector<AttributeLevel> attributeVector;
-		int attrIdx = 0;
+		unsigned int attrIdx = 0;
 		vector<string>::const_iterator it = attributesStringVector.begin();
 		ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
 		NumericLevel numericClassLevel = MISSING_NUMERIC_CLASS_VALUE;
