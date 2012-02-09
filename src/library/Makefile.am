@@ -1,30 +1,18 @@
 AUTOMAKE_OPTIONS = foreign
-AM_CXXFLAGS = -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen @OS_CXX@
 LIBS=@LIBS@
 LIBDIR=@LIBDIR@
 LIBNAME=@LIBNAME@
 
-# Random Jungle flags
-AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
-# project flags
-AM_CXXFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)
-# library flags
-
-if WITH_OPENMP
-AM_CXXFLAGS += -fopenmp
-AM_CXXFLAGS += -DWITH_OPENMP
-endif
-
-# AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/library
+mycppflags = $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 
 # shared library build
 lib_LTLIBRARIES=libec.la
 libec_la_SOURCES=\
-ArffDataset.cpp ChiSquared.cpp Dataset.cpp \
-DatasetInstance.cpp DistanceMetrics.cpp EvaporativeCooling.cpp \
-FilesystemUtils.cpp Insilico.cpp PlinkBinaryDataset.cpp \
-PlinkDataset.cpp PlinkRawDataset.cpp RReliefF.cpp RandomJungle.cpp \
-ReliefF.cpp Statistics.cpp DgeData.cpp
+Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
+PlinkRawDataset.cpp DgeData.cpp DatasetInstance.cpp DistanceMetrics.cpp \
+FilesystemUtils.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
+ReliefF.cpp RReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
 
 # the list of header files that belong to the library
 libec_la_HEADERS= \
@@ -34,6 +22,7 @@ GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
 StringUtils.h best_n.h
 
+libec_la_CPPFLAGS = $(mycppflags)
 libec_la_LDFLAGS = -release 1.0.0
 
 # where to install the headers on the system

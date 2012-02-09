@@ -7,113 +7,73 @@
 ### http://insilico.utulsa.edu/evaporative-cooling
 
 AC_PREREQ(2.61)
+
 AC_INIT(ec, 1.0, bill-whit@utulsa.edu, http://insilico.utulsa.edu/evaporative-cooling)
+
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR(src/library/EvaporativeCooling.cpp)
-AC_CONFIG_HEADER([config.h])
-AC_LANG_CPLUSPLUS
+AC_CONFIG_HEADERS([config.h])
 
 AM_INIT_AUTOMAKE(ec, 1.0)
 
-if test -z $CXXFLAGS; then
-	CXXFLAGS='-O3'
-fi
+AC_SUBST(SRCDIR, src)
+AC_SUBST(LIBDIR, library)
+
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
 
 # Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
 AC_PROG_CPP
+AC_PROG_CC
+AC_F77_LIBRARY_LDFLAGS
+AC_PROG_LN_S
+AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 # Use libtool for all builds
 LT_INIT
 
-AC_CANONICAL_BUILD
-AC_CANONICAL_HOST
-
-AC_SUBST(SRCDIR, src)
-AC_SUBST(LIBDIR, library)
-
-# Checks OS
-case "$host_os" in
-  darwin*)
-        # Mac OS X
-        OS_CXX="-DUNIX"
-        SYS_MAC=1
-        ;;
-  *solaris*)
-  		# Solaris
-  		OS_CXX="-fast -xtarget=ultraT2 -xdepend=no"
-  		SYS_SOLARIS=1
-		# FIXME: Replace `main' with a function in `-lgcc':
-		AC_CHECK_LIB([gcc], [main])
-		# FIXME: Replace `main' with a function in `-lsocket':
-		AC_CHECK_LIB([socket], [main])
-		# FIXME: Replace `main' with a function in `-lnsl':
-		AC_CHECK_LIB([nsl], [main])
-        ;;
-
-  # next three comments by bcw to test mingw build - 2/3/12
-  # *mingw32* | *cygwin*)
-  *mingw32*)
-  		# Windows
-        # OS_CXX="-DWIN"
-        # SYS_WIN=1
-        OS_CXX="-DUNIX -I/usr/local/include"
-        SYS_UNIX=1
-        ;;
-    *)
-        #Default Case, assume UNIX
-        OS_CXX="-DUNIX"
-        SYS_UNIX=1
-        ;;
-esac
-
-# OS conditionals
-AM_CONDITIONAL([SYS_MAC], [test "x$SYS_MAC" = x1])
-AM_CONDITIONAL([SYS_SOLARIS], [test "x$SYS_SOLARIS" = x1])
-AM_CONDITIONAL([SYS_WIN], [test "x$SYS_WIN" = x1])
-AM_CONDITIONAL([SYS_UNIX], [test "x$SYS_UNIX" = x1])
-
-# Set OS C++ flags in Makefile.am
-AC_SUBST(OS_CXX)
-
 # add parameter(s)
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_rjungle=yes])
-AC_ARG_ENABLE(mpi, AC_HELP_STRING([--enable-mpi],[Compile code for MPI support (use mpic++ not g++ compiler).]), [with_mpi=yes])
-AC_ARG_ENABLE(timeprof, AC_HELP_STRING([--enable-timeprof],[Get time profiling of internal functions.]), [with_timeprof=no])
-AC_ARG_ENABLE(windows, AC_HELP_STRING([--enable-windows],[Compile code for Windows platform using cygwin]), [MAKE_FOR_WINDOWS=yes], [MAKE_FOR_WINDOWS=no])
+AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
 
-#
-# Compiler config
-#
-# Set variables
-  #AC_PROG_CXX([g++-4.3.3 g++-4.3.1 g++-4.3.0 g++-4 g++ gcc cl KCC CC cxx cc++ xlC aCC c++])
-  #AC_PROG_CC([gcc-4.3.3 gcc-4.3.1 gcc-4.3.0 gcc-4 gcc])
-  #AC_PROG_F77([gfortran-4.3.3 gfortran-4 gfortran g++-4.3.1 g++-4.3.0])
-  #AC_PROG_CXX([g++ gcc cl KCC CC cxx cc++ xlC aCC c++])
-  #AC_PROG_CC([gcc])
-  AC_PROG_F77([gfortran])
-echo
-
-
-# CXXFLAGS="-Wall -DHAVE__BOOL  -D__NOPLUGIN__ $CXXFLAGS"
-# CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64  -DNDEBUG"
-# CXXFLAGS="$CXXFLAGS -ansi -Wno-long-long"
-
-#LIBS="-lrjungle-1.2.362 -llr-1.2.362 $LIBS"
-#LIBS="$LIBS"
-
-#
-# Time profiling
-#
-if test "$with_timeprof" == 'yes' ; then
-  AC_DEFINE([HAVE_TIMEPROF], 1, [Time profiling])
+# Set variables for basic compile debug/release
+if test "$debug_ec" != 'yes' ; then
+    CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"
+else
+    CXXFLAGS="-O0 -gdwarf-2 -Wall $CXXFLAGS -D__DEBUG__"
 fi
+CXXFLAGS="$CXXFLAGS -D__NOPLUGIN__ -I/usr/local/include"
+CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
+LIBS="-lm -lgfortran $LIBS"
+LIBDIR="$LIBDIR -L/usr/local/lib"
 
-# Check for openmp
-# AC_OPENMP
+# Checks for header files.
+AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
+AC_CHECK_SIZEOF(void *)
+
+# makeinfo
+AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find required program: makeinfo]))
+
+AC_MSG_NOTICE([--------------------------------------------------])
+
+# OpenMP
+CXXFLAGS="$CXXFLAGS -fopenmp"
+LDFLAGS="$LDFLAGS -fopenmp -lgomp -lpthread"
+
+# check for RandomJungle dependency
+AC_CHECK_LIB([rjungle], [main])
+AC_CHECK_LIB([lr], [mk_lr_options])
+RJ_LIBS="-lrjungle -llr" 
+AC_SUBST([RJ_LIBS])
 
 # boost.m4
 BOOST_REQUIRE([1.34])
@@ -122,6 +82,9 @@ BOOST_FIND_HEADER(boost/program_options.hpp, AC_MSG_ERROR([could not find requir
 
 # gsl.m4
 AX_PATH_GSL(1.8,, AC_MSG_ERROR([could not find required version of GSL]))
+GSL_LIBS='-lgsl -lgslcblas'
+AC_SUBST([GSL_LIBS])
+LDFLAGS="$LDFLAGS -lgsl -lgslcblas"
 
 # libxml2.m4
 AM_PATH_XML2(2.0.0,, AC_MSG_ERROR([could not find required version of XML2]))
@@ -182,31 +145,8 @@ if test "$with_xml" != 'no'; then
     fi
 fi
 
-# check for RandomJungle dependency
-AC_CHECK_LIB([rjungle], [main])
-AC_CHECK_LIB([lr], [mk_lr_options])
-
 AM_CONDITIONAL(XML_DELEGATE,test "$have_xml" = 'yes')
 AC_SUBST(XML_LIBS)
-
-dnl ===========================================================================
-
-AC_ARG_WITH([openmp],
-	[AS_HELP_STRING([--with-openmp],
-	[enable support for OpenMP parallelism])],
-	[],
-	[with_openmp=yes])
-AS_IF([test "x$with_openmp" = xyes],
-	# FIXME: Replace `main' with a function in `-lgomp':
-	[AC_CHECK_LIB([gomp], [main],
-		[],
-		[if test "x$with_openmp" != xcheck; then
-			AC_MSG_ERROR(
-				[--with-openmp was given, but test for openmp failed])
-		fi
-		], [])])
-
-AM_CONDITIONAL([WITH_OPENMP], [test "x$with_openmp" = xyes])
 
 ######################################################################
 # DOXYGEN SUPPORT
@@ -224,19 +164,6 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg])
 
 ######################################################################
-
-# Checks for header files.
-AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h getopt.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_INLINE
-AC_TYPE_SIZE_T
-
-# Check pointer size
-AC_CHECK_SIZEOF(void *)
-# Checks for library functions.
-AC_FUNC_ERROR_AT_LINE
 
 AC_MSG_NOTICE([--------------------------------------------------])
 

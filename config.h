@@ -10,35 +10,35 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
-/* Define to 1 if you have the <getopt.h> header file. */
-#define HAVE_GETOPT_H 1
+/* Define to 1 if you have the `floor' function. */
+#define HAVE_FLOOR 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
-/* Define to 1 if you have the `gcc' library (-lgcc). */
-/* #undef HAVE_LIBGCC */
-
-/* Define to 1 if you have the `gomp' library (-lgomp). */
-#define HAVE_LIBGOMP 1
-
 /* Define to 1 if you have the `lr' library (-llr). */
 #define HAVE_LIBLR 1
 
-/* Define to 1 if you have the `nsl' library (-lnsl). */
-/* #undef HAVE_LIBNSL */
-
 /* Define to 1 if you have the `rjungle' library (-lrjungle). */
 #define HAVE_LIBRJUNGLE 1
-
-/* Define to 1 if you have the `socket' library (-lsocket). */
-/* #undef HAVE_LIBSOCKET */
 
 /* Define to 1 if you have the <math.h> header file. */
 #define HAVE_MATH_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define to 1 if you have the `memset' function. */
+#define HAVE_MEMSET 1
+
+/* Define to 1 if you have the `pow' function. */
+#define HAVE_POW 1
+
+/* Define to 1 if you have the `round' function. */
+#define HAVE_ROUND 1
+
+/* Define to 1 if you have the `sqrt' function. */
+#define HAVE_SQRT 1
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #define HAVE_STDBOOL_H 1
@@ -64,14 +64,11 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
 
-/* Time profiling */
-/* #undef HAVE_TIMEPROF */
-
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
 /* Define to 1 if the system has the type `_Bool'. */
-/* #undef HAVE__BOOL */
+#define HAVE__BOOL 1
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -99,7 +96,7 @@
 #define SIZEOF_VOID_P 8
 
 /* Define to 1 if you have the ANSI C header files. */
-/* #undef STDC_HEADERS */
+#define STDC_HEADERS 1
 
 /* Version number of package */
 #define VERSION "1.0"

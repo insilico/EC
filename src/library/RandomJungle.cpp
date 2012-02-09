@@ -39,32 +39,32 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 
 	rjParams = initRJunglePar();
 
-	int numProcs = omp_get_num_procs();
-	int numThreads = omp_get_num_threads();
-	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
-	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
-
-	rjParams.mpiId = 0;
-	rjParams.nthreads = numProcs;
-	rjParams.verbose_flag = vm.count("verbose") ? true : false;
-
-	// fill in the parameters object for the RJ run
-	rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);
-	gsl_rng_set(rjParams.rng, rjParams.seed);
-
 	if (vm.count("rj-num-trees")) {
 		rjParams.ntree = vm["rj-num-trees"].as<uli_t>();
 	} else {
 		rjParams.ntree = 1000;
 	}
 
+	rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);
+	gsl_rng_set(rjParams.rng, rjParams.seed);
+
 	rjParams.nrow = dataset->NumInstances();
 	rjParams.depVarName = (char *) "Class";
 	//  rjParams.verbose_flag = true;
 	rjParams.filename = (char*) "";
 
+	rjParams.mpiId = 0;
+
+	rjParams.verbose_flag = vm.count("verbose") ? true : false;
+
 	string outFilesPrefix = vm["out-files-prefix"].as<string>();
 	rjParams.outprefix = (char*) outFilesPrefix.c_str();
+
+	int numProcs = omp_get_num_procs();
+	int numThreads = omp_get_num_threads();
+	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
+	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
+	rjParams.nthreads = numProcs;
 }
 
 RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
@@ -109,7 +109,6 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
 	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
 	rjParams.nthreads = numProcs;
-
 }
 
 RandomJungle::~RandomJungle() {
@@ -162,7 +161,8 @@ bool RandomJungle::ComputeAttributeScores() {
 		} else {
 			if (dataset->HasGenotypes()) {
 				// nominal/nominal
-				rjParams.treeType = 2;
+				rjParams.treeType = 1;
+				// rjParams.treeType = 2;
 				treeTypeDesc = "Classification trees: discrete/discrete";
 			} else {
 				// numeric/nominal
@@ -216,8 +216,8 @@ bool RandomJungle::ComputeAttributeScores() {
 				data->set(
 						i,
 						j,
-						(NumericLevel) dataset->GetAttribute(instanceIndex,
-								attributeNames[a]));
+						static_cast<NumericLevel>(dataset->GetAttribute(instanceIndex,
+								attributeNames[a])));
 				++j;
 			}
 			for (unsigned int n = 0; n < numericNames.size(); ++n) {
@@ -229,7 +229,7 @@ bool RandomJungle::ComputeAttributeScores() {
 						dataset->GetInstance(instanceIndex)->GetPredictedValueTau());
 			} else {
 				data->set(i, j,
-						(double) dataset->GetInstance(instanceIndex)->GetClass());
+						static_cast<NumericLevel>(dataset->GetInstance(instanceIndex)->GetClass()));
 			}
 			// happy lights
 			if (i && ((i % 100) == 0)) {

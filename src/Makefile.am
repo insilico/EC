@@ -1,32 +1,27 @@
 AUTOMAKE_OPTIONS = foreign
-AM_CXXFLAGS = -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen @OS_CXX@
 LIBS=@LIBS@
 LIBDIR=@LIBDIR@
 EXECNAME=@EXECNAME@
 LIBNAME=@LIBNAME@
 
-# Random Jungle flags
-AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
-# project flags
-AM_CXXFLAGS += -I$(top_srcdir)/src/library -I$(top_srcdir)/src -I$(top_srcdir)
-# library flags
-AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/$(LIBDIR)
+mycppflags = $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 
 # make ec and ecm (iMproved!)
 bin_PROGRAMS = ec ecm
 
 ec_SOURCES=EvaporativeCoolingCLI.cpp
 # libtool libraries
-ec_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
+ec_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
 
 ecm_SOURCES=EvaporativeCoolingCLINewAPI.cpp
 # libtool libraries
-ecm_LDADD=$(OPENMP_CXXFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
--L$(top_srcdir)/src/$(LIBDIR) -lec -lrjungle -llr
+ecm_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
 
 # additional include paths to support the library headers
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/$(LIBDIR)
+INCLUDES = $(myincludes)
 
 # the subdirectories of src to go into
 SUBDIRS=library

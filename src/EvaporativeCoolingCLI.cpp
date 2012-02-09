@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
   // prepare data for running EC
   cout << Timestamp() << "Preparing data set for EC analysis" << endl;
   Dataset* ds = 0;
-	DgeData* dge;
+	DgeData* dge = 0;
   bool datasetLoaded = false;
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
