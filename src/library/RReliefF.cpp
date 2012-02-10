@@ -162,14 +162,10 @@ bool RReliefF::ComputeAttributeScores() {
 
 		// happy lights
 		if (i && ((i % 100) == 0)) {
-			cout << i << "/" << m << " ";
-			cout.flush();
-		}
-		if (i && ((i % 1000) == 0)) {
-			cout << endl << Timestamp();
+			cout << Timestamp() << i << "/" << m << endl;
 		}
 	}
-	cout << m << "/" << m << endl;
+	cout << Timestamp() << m << "/" << m << " done" << endl;
 
 	cout << Timestamp() << "Computing final scores" << endl;
 	for (unsigned int A = 0; A < dataset->NumVariables(); ++A) {

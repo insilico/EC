@@ -169,7 +169,6 @@ bool ArffDataset::LoadSnps(string filename) {
 				bool makeLineIntoInstance = true;
 				unsigned int instanceIndex = 0;
 				int numericsAdded = 0;
-				cout << Timestamp();
 
 				while (getline(dataStream, line)) {
 					++lineNumber;
@@ -316,11 +315,7 @@ bool ArffDataset::LoadSnps(string filename) {
 
 					// happy lights
 					if ((lineNumber - 1) && ((lineNumber % 100) == 0)) {
-						cout << lineNumber << " ";
-						cout.flush();
-					}
-					if ((lineNumber - 1) && ((lineNumber % 1000) == 0)) {
-						cout << endl << Timestamp();
+						cout << Timestamp() << lineNumber << endl;
 					}
 				} // while reading file lines
 
@@ -329,7 +324,7 @@ bool ArffDataset::LoadSnps(string filename) {
 		} // end switch
 
 	} // end while
-	cout << endl;
+	cout << Timestamp() << lineNumber << " lines read" << endl;
 
 	dataStream.close();
 

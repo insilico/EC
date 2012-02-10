@@ -431,7 +431,7 @@ bool ReliefF::ComputeAttributeScores() {
   // changed from matrix to map for ID matching - November 2011
   PreComputeDistances();
 
-  // algorithm line 1
+  /// algorithm line 1
   W.resize(dataset->NumVariables(), 0.0);
 
   // pointer to the instance being sampled
@@ -442,8 +442,7 @@ bool ReliefF::ComputeAttributeScores() {
   		<< setprecision(6) << one_over_m_times_k << endl;
 
   vector<string> instanceIds = dataset->GetInstanceIds();
-  cout << Timestamp();
-  // algorithm line 2
+  /// algorithm line 2
   for(i = 0; i < (int) m; i++) {
     // algorithm line 3
     if(randomlySelect) {
@@ -463,7 +462,7 @@ bool ReliefF::ComputeAttributeScores() {
     }
     ClassLevel class_R_i = R_i->GetClass();
 
-    // algorithm lines 4, 5 and 6
+    /// algorithm lines 4, 5 and 6
     // find k nearest hits and nearest misses
     vector<unsigned int> hits;
     map<ClassLevel, vector<unsigned int> > misses;
@@ -525,16 +524,16 @@ bool ReliefF::ComputeAttributeScores() {
     if(dataset->HasGenotypes()) {
       vector<unsigned int> attributeIndicies = 
         dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
-      // algorithm line 7
+      /// algorithm line 7
       for(unsigned int attrIdx = 0; attrIdx < attributeIndicies.size(); ++attrIdx) {
         A = attributeIndicies[attrIdx];
         double hitSum = 0.0, missSum = 0.0;
-        // algorithm line 8
+        /// algorithm line 8
         for(unsigned int j = 0; j < k; j++) {
           DatasetInstance* H_j = dataset->GetInstance(hits[j]);
           hitSum += (snpDiff(A, R_i, H_j) * one_over_m_times_k);
         }
-        // algorithm line 9
+        /// algorithm line 9
         map<ClassLevel, vector<unsigned int> >::const_iterator mit;
         for(mit = misses.begin(); mit != misses.end(); ++mit) {
           ClassLevel C = mit->first;
@@ -589,16 +588,11 @@ bool ReliefF::ComputeAttributeScores() {
 
     // happy lights
     if(i && ((i % 100) == 0)) {
-      cout << i << "/" << m << " ";
-      cout.flush();
-    }
-    if(i && ((i % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << i << "/" << m << endl;
     }
 
   } // number to randomly select
-
-  cout << i << "/" << m << endl;
+  cout << Timestamp() << i << "/" << m << " done" << endl;
 
   return true;
 }
@@ -794,7 +788,7 @@ bool ReliefF::PreComputeDistances() {
   // populate the matrix - upper triangular
   // NOTE: make complete symmetric matrix for neighbor-to-neighbor sums
   cout << Timestamp() << "1) Computing instance-to-instance distances... "
-  		<< endl << Timestamp();
+  		<< endl;
   //  omp_set_nested(1);
 #ifdef WITH_OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
@@ -813,14 +807,10 @@ bool ReliefF::PreComputeDistances() {
       // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
     }
     if(i && (i % 100 == 0)) {
-      cout << i << "/" << numInstances << " ";
-      cout.flush();
-    }
-    if(i && ((i % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << i << "/" << numInstances << endl;
     }
   }
-  cout << numInstances << "/" << numInstances << " done" << endl;
+  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
 
   //  DEBUG
   //  ofstream outFile;
@@ -850,7 +840,7 @@ bool ReliefF::PreComputeDistances() {
       cout << Timestamp() << "2) Calculating same and different class nearest neighbors... ";
     }
   }
-  cout << endl << Timestamp();
+  cout << endl;
 
   DistancePair nnInfo;
   for(int i = 0; i < numInstances; ++i) {
@@ -890,14 +880,10 @@ bool ReliefF::PreComputeDistances() {
     }
 
     if(i && (i % 100 == 0)) {
-      cout << i << "/" << numInstances << " ";
-      cout.flush();
-    }
-    if(i && ((i % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << i << "/" << numInstances << endl;
     }
   }
-  cout << numInstances << "/" << numInstances << " done" << endl;
+  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
 
   cout << Timestamp() << "3) Calculating weight by distance factors for "
           << "nearest neighbors... " << endl;
@@ -950,14 +936,10 @@ bool ReliefF::PreComputeDistancesByMap() {
       }
     }
     if(i && (i % 100 == 0)) {
-      cout << i << "/" << numInstances << " ";
-      cout.flush();
-    }
-    if(i && ((i % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << i << "/" << numInstances << endl;
     }
   }
-  cout << numInstances << "/" << numInstances << " done" << endl;
+  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
 
   if(dataset->HasContinuousPhenotypes()) {
     cout << Timestamp() << "2) Calculating continuous phenotype nearest neighbors... ";
@@ -1018,14 +1000,10 @@ bool ReliefF::PreComputeDistancesByMap() {
     }
 
     if(i % 100 == 0) {
-      cout << i << "/" << numInstances << " ";
-      cout.flush();
-    }
-    if(i && ((i % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << i << "/" << numInstances << endl;
     }
   }
-  cout << numInstances << "/" << numInstances << " done" << endl;
+  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
 
   cout << Timestamp() << "3) Calculating weight by distance factors for "
           << "nearest neighbors... " << endl;

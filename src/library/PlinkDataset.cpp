@@ -140,7 +140,6 @@ bool PlinkDataset::LoadSnps(string filename) {
           << pedFilename << endl;
   unsigned int pedLineNumber = 0;
   unsigned int instanceIndex = 0;
-  cout << Timestamp();
   // ValueType classType = NO_VALUE;
   vector<pair<string, string> > alleles;
   double minPheno = 0.0, maxPheno = 0.0;
@@ -272,14 +271,10 @@ bool PlinkDataset::LoadSnps(string filename) {
 
     // happy lights
     if(instanceIndex && ((instanceIndex % 100) == 0)) {
-      cout << instanceIndex << " ";
-      cout.flush();
-    }
-    if(instanceIndex && ((instanceIndex % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << instanceIndex << endl;
     }
   }
-  cout << endl;
+  cout << Timestamp() << instanceIndex << " lines read" << endl;
 
   pedDataStream.close();
 

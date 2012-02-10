@@ -1850,7 +1850,6 @@ bool Dataset::LoadSnps(std::string filename) {
 
 	// read instance attributes from whitespace-delimited lines
 	unsigned int instanceIndex = 0;
-	cout << Timestamp();
 	double minPheno = 0.0, maxPheno = 0.0;
 	unsigned int lineNumber = 0;
 	while (getline(dataStream, line)) {
@@ -1966,15 +1965,11 @@ bool Dataset::LoadSnps(std::string filename) {
 		++instanceIndex;
 
 		// happy lights
-		if ((lineNumber - 1) && ((instanceIndex % 100) == 0)) {
-			cout << instanceIndex << " ";
-			cout.flush();
-		}
-		if ((lineNumber - 1) && ((instanceIndex % 1000) == 0)) {
-			cout << endl << Timestamp();
+		if ((lineNumber - 1) && ((lineNumber % 100) == 0)) {
+			cout << Timestamp() << lineNumber << endl;
 		}
 	}
-	cout << endl;
+	cout << Timestamp() << lineNumber << " lines read" << endl;
 
 	dataStream.close();
 
@@ -2004,7 +1999,7 @@ bool Dataset::LoadSnps(std::string filename) {
 
 
 void Dataset::UpdateAllLevelCounts() {
-	cout << Timestamp() << "Updating all level counts:" << endl << Timestamp();
+	cout << Timestamp() << "Updating all level counts:" << endl;
 	levelCounts.clear();
 	levelCounts.resize(NumAttributes());
 	if (!hasContinuousPhenotypes) {
@@ -2016,15 +2011,15 @@ void Dataset::UpdateAllLevelCounts() {
 	for (; it != instancesMask.end(); ++it) {
 		UpdateLevelCounts(instances[it->second]);
 		if (instanceCount && ((instanceCount % 100) == 0)) {
-			cout << instanceCount << " ";
+			cout << Timestamp() << instanceCount << endl;
 			cout.flush();
 		}
 		if (instanceCount && ((instanceCount % 1000) == 0)) {
-			cout << endl << Timestamp();
+			cout << Timestamp() << instanceCount << endl;
 		}
 		++instanceCount;
 	}
-	cout << instanceCount << endl;
+	cout << Timestamp() << instanceCount << endl;
 }
 
 void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {

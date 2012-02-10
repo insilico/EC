@@ -98,7 +98,6 @@ bool PlinkRawDataset::LoadSnps(string filename) {
   // read instance attributes from whitespace-delimited lines
   unsigned int instanceIndex = 0;
   unsigned int lineNumber = 0;
-  cout << Timestamp();
   double minPheno = 0.0, maxPheno = 0.0;
   while(getline(dataStream, line)) {
     ++lineNumber;
@@ -208,14 +207,10 @@ bool PlinkRawDataset::LoadSnps(string filename) {
 
     // happy lights
     if(instanceIndex && ((instanceIndex % 100) == 0)) {
-      cout << instanceIndex << " ";
-      cout.flush();
-    }
-    if(instanceIndex && ((instanceIndex % 1000) == 0)) {
-      cout << endl << Timestamp();
+      cout << Timestamp() << instanceIndex << endl;
     }
   }
-  cout << endl;
+  cout << Timestamp() << instanceIndex << " lines read" << endl;
 
   dataStream.close();
 
