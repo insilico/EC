@@ -19168,12 +19168,16 @@ fi
 
 # Set variables for basic compile debug/release
 if test "$debug_ec" != 'yes' ; then
+    CPPFLAGS="-O2 -g0 -Wall -DNDEBUG $CPPFLAGS"
     CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"
 else
+    CPPFLAGS="-O0 -gdwarf-2 -Wall $CPPFLAGS -D__DEBUG__"
     CXXFLAGS="-O0 -gdwarf-2 -Wall $CXXFLAGS -D__DEBUG__"
 fi
 CXXFLAGS="$CXXFLAGS -D__NOPLUGIN__ -I/usr/local/include"
 CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
+CPPFLAGS="$CPPFLAGS -D__NOPLUGIN__ -I/usr/local/include"
+CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
 LIBS="-lm -lgfortran $LIBS"
 LIBDIR="$LIBDIR -L/usr/local/lib"
 
@@ -20503,6 +20507,7 @@ fi
 echo "$as_me: --------------------------------------------------" >&6;}
 
 # OpenMP
+CPPFLAGS="$CPPFLAGS -fopenmp"
 CXXFLAGS="$CXXFLAGS -fopenmp"
 LDFLAGS="$LDFLAGS -fopenmp -lgomp -lpthread"
 
@@ -20645,6 +20650,7 @@ fi
 
 RJ_LIBS="-lrjungle -llr"
 
+LDFLAGS="$LDFLAGS -lrjungle -llr"
 
 # boost.m4
 echo "$as_me: this is boost.m4 serial 16" >&5
@@ -24563,7 +24569,7 @@ esac
 echo "$as_me: --------------------------------------------------" >&6;}
 
 # Process makefiles
-ac_config_files="$ac_config_files Makefile src/library/Makefile src/Makefile examples/Makefile"
+ac_config_files="$ac_config_files Makefile src/library/Makefile src/Makefile examples/Makefile doc/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -25764,6 +25770,7 @@ do
     "src/library/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

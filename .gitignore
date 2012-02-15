@@ -1,4 +1,5 @@
 ec
+ecm
 *~
 *.o
 *.lo
@@ -15,4 +16,6 @@ autom4te.cache
 /src/.libs/
 src/library/.libs/
 libtool
+doc/*
+benchmarks/*
 

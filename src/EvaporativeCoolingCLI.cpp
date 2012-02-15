@@ -28,11 +28,12 @@
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
 
-#include "Insilico.h"
 #include "EvaporativeCooling.h"
+#include "Insilico.h"
 #include "Dataset.h"
-#include "FilesystemUtils.h"
 #include "DgeData.h"
+#include "BirdseedData.h"
+#include "FilesystemUtils.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -48,9 +49,15 @@ int main(int argc, char** argv) {
   string dgeCountsFilename = "";
   string dgePhenosFilename = "";
   string dgeNormsFilename = "";
+  string birdseedFilename = "";
+  string birdseedPhenosFilename = "";
+  string birdseedSubjectsFilename = "";
+  string birdseedIncludeSnpsFilename = "";
+  string birdseedExcludeSnpsFilename = "";
   string altPhenotypeFilename = "";
   string outputDatasetFilename = "";
   string outputFilesPrefix = "ec_run";
+  string distanceMatrixFilename = "";
   // Random Jungle
   uli_t rjNumTrees = 1000;
   // ReliefF
@@ -72,124 +79,154 @@ int main(int argc, char** argv) {
   // declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
-          ("help", "produce help message")
-          ("verbose", "verbose output")
-          (
-           "config-file,c",
-           po::value<string > (&configFilename),
-           "read configuration options from file - command line overrides these"
-           )
-          (
-           "snp-data,s",
-           po::value<string > (&snpsFilename),
-           "read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
-           )
-          (
-           "numeric-data,n",
-           po::value<string > (&numericsFilename),
-           "read continuous attributes from PLINK-style covar file"
-           )
-          (
-           "alternate-pheno-file,a",
-           po::value<string > (&altPhenotypeFilename),
-           "specifies an alternative phenotype/class label file; one value per line"
-           )
-           (
-            "ec-algorithm-steps,g",
-            po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
-            "EC steps to run (all|rj|rf)"
-            )
-           (
-            "ec-num-target,t",
-            po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
-            "EC N_target - target number of attributes to keep"
-            )
-           (
-            "ec-iter-remove-n,r",
-            po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
-            "Evaporative Cooling number of attributes to remove per iteration"
-            )
-           (
-            "ec-iter-remove-percent,p",
-            po::value<unsigned int>(&ecIterPercentToRemove),
-            "Evaporative Cooling precentage of attributes to remove per iteration"
-            )
-          (
-           "out-dataset-filename,O",
-           po::value<string > (&outputDatasetFilename),
-           "write a new tab-delimited data set with EC filtered attributes"
-           )
-          (
-           "out-files-prefix,o",
-           po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
-           "use prefix for all output files"
-           )
-           (
-            "snp-metric,S",
-            po::value<string > (&snpMetric)->default_value(snpMetric),
-            "metric for determining the difference between SNPs (gm|am)"
-            )
-           (
-            "numeric-metric,N",
-            po::value<string > (&numMetric)->default_value(numMetric),
-            "metric for determining the difference between numeric attributes (manhattan=|euclidean)"
-            )
-          (
-           "rj-num-trees,j",
-           po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
-           "Random Jungle number of trees to grow"
-           )
-           (
-            "snp-exclusion-file,x",
-            po::value<string > (&snpExclusionFile),
-            "file of SNP names to be excluded"
-            )
-          (
-           "k-nearest-neighbors,k",
-           po::value<unsigned int>(&k)->default_value(k),
-           "set k nearest neighbors"
-           )
-          (
-           "number-random-samples,m",
-           po::value<unsigned int>(&m)->default_value(m),
-           "number of random samples (0=all|1 <= n <= number of samples)"
-           )
-          (
-           "weight-by-distance-method,b",
-           po::value<string > (&weightByDistanceMethod)->default_value(weightByDistanceMethod),
-           "weight-by-distance method (equal|one_over_k|exponential)"
-           )
-          (
-           "weight-by-distance-sigma",
-           po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
-           "weight by distance sigma"
-           )
-          (
-           "diagnostic-tests,d",
-           po::value<string > (&diagnosticLogFilename),
-           "performs diagnostic tests and sends output to filename without running EC"
-           )
-          (
-           "diagnostic-levels-file,D",
-           po::value<string > (&diagnosticLevelsCountsFilename),
-           "write diagnostic attribute level counts to filename"
-           )
-           (
-            "dge-counts-data",
-            po::value<string > (&dgeCountsFilename),
-            "read digital gene expression counts from text file"
-            )
-            (
-             "dge-phenos-data",
-             po::value<string > (&dgePhenosFilename),
-             "read digital gene expression phenotypes from text file"
-             )
-             (
-              "dge-norm-factors",
-              po::value<string > (&dgeNormsFilename),
-              "read digital gene expression normalization factors from text file"
-              )
-          ;
+		("help", "produce help message")
+		("verbose", "verbose output")
+		(
+		"config-file,c",
+		po::value<string > (&configFilename),
+		"read configuration options from file - command line overrides these"
+		)
+		(
+		"snp-data,s",
+		po::value<string > (&snpsFilename),
+		"read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+		)
+		(
+		"numeric-data,n",
+		po::value<string > (&numericsFilename),
+		"read continuous attributes from PLINK-style covar file"
+		)
+		(
+		"alternate-pheno-file,a",
+		po::value<string > (&altPhenotypeFilename),
+		"specifies an alternative phenotype/class label file; one value per line"
+		)
+		(
+		"ec-algorithm-steps,g",
+		po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+		"EC steps to run (all|rj|rf)"
+		)
+		(
+		"ec-num-target,t",
+		po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
+		"EC N_target - target number of attributes to keep"
+		)
+		(
+		"ec-iter-remove-n,r",
+		po::value<unsigned int>(&ecIterNumToRemove)->default_value(ecIterNumToRemove),
+		"Evaporative Cooling number of attributes to remove per iteration"
+		)
+		(
+		"ec-iter-remove-percent,p",
+		po::value<unsigned int>(&ecIterPercentToRemove),
+		"Evaporative Cooling precentage of attributes to remove per iteration"
+		)
+		(
+		"out-dataset-filename,O",
+		po::value<string > (&outputDatasetFilename),
+		"write a new tab-delimited data set with EC filtered attributes"
+		)
+		(
+		"out-files-prefix,o",
+		po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
+		"use prefix for all output files"
+		)
+		(
+		"snp-metric,S",
+		po::value<string > (&snpMetric)->default_value(snpMetric),
+		"metric for determining the difference between SNPs (gm|am)"
+		)
+		(
+		"numeric-metric,N",
+		po::value<string > (&numMetric)->default_value(numMetric),
+		"metric for determining the difference between numeric attributes (manhattan=|euclidean)"
+		)
+		(
+		"rj-num-trees,j",
+		po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
+		"Random Jungle number of trees to grow"
+		)
+		(
+		"snp-exclusion-file,x",
+		po::value<string > (&snpExclusionFile),
+		"file of SNP names to be excluded"
+		)
+		(
+		"k-nearest-neighbors,k",
+		po::value<unsigned int>(&k)->default_value(k),
+		"set k nearest neighbors"
+		)
+		(
+		"number-random-samples,m",
+		po::value<unsigned int>(&m)->default_value(m),
+		"number of random samples (0=all|1 <= n <= number of samples)"
+		)
+		(
+		"weight-by-distance-method,b",
+		po::value<string > (&weightByDistanceMethod)->default_value(weightByDistanceMethod),
+		"weight-by-distance method (equal|one_over_k|exponential)"
+		)
+		(
+		"weight-by-distance-sigma",
+		po::value<double>(&weightByDistanceSigma)->default_value(weightByDistanceSigma),
+		"weight by distance sigma"
+		)
+		(
+		"diagnostic-tests,d",
+		po::value<string > (&diagnosticLogFilename),
+		"performs diagnostic tests and sends output to filename without running EC"
+		)
+		(
+		"diagnostic-levels-file,D",
+		po::value<string > (&diagnosticLevelsCountsFilename),
+		"write diagnostic attribute level counts to filename"
+		)
+		(
+		"dge-counts-data",
+		po::value<string > (&dgeCountsFilename),
+		"read digital gene expression counts from text file"
+		)
+		(
+		"dge-phenos-data",
+		po::value<string > (&dgePhenosFilename),
+		"read digital gene expression phenotypes from text file"
+		)
+		(
+		"dge-norm-factors",
+		po::value<string > (&dgeNormsFilename),
+		"read digital gene expression normalization factors from text file"
+		)
+		(
+		"birdseed-snps-data",
+		po::value<string > (&birdseedFilename),
+		"read SNP data from a birdseed formatted file"
+		)
+		(
+		"birdseed-phenos-data",
+		po::value<string > (&birdseedPhenosFilename),
+		"read birdseed subjects phenotypes from text file"
+		)
+		(
+		"birdseed-subjects-labels",
+		po::value<string > (&birdseedSubjectsFilename),
+		"read subject labels from filename to override names from data file"
+		)
+		(
+		"birdseed-include-snps",
+		po::value<string > (&birdseedIncludeSnpsFilename),
+		"read data SNPs data only for the subject IDs in file"
+		)
+		(
+		"birdseed-exclude-snps",
+		po::value<string > (&birdseedExcludeSnpsFilename),
+		"read data SNPs data only for the subject IDs in file"
+		)
+		(
+		"distance-matrix",
+		po::value<string > (&distanceMatrixFilename),
+		"create a distance matrix for the loaded samples and exit"
+		)
+		;
 
   // parse the command line into a map
   po::variables_map vm;
@@ -257,46 +294,52 @@ int main(int argc, char** argv) {
     cout << Timestamp() << "Diagnostic test requested" << endl;
     analysisType = DIAGNOSTIC_ANALYSIS;
   } else {
-    if(vm.count("snp-data") && vm.count("numeric-data")) {
-      cout << Timestamp() << "Integrated analysis requested" << endl;
-      analysisType = INTEGRATED_ANALYSIS;
-    }
-    if(vm.count("snp-data-clean") && vm.count("numeric-data")) {
-      cout << Timestamp() << "Integrated analysis requested" << endl;
-      analysisType = INTEGRATED_ANALYSIS;
-    }
-    if(vm.count("snp-data") && !vm.count("numeric-data")) {
+		if(vm.count("snp-data") && vm.count("numeric-data")) {
+			cout << Timestamp() << "Integrated analysis requested" << endl;
+			analysisType = INTEGRATED_ANALYSIS;
+		}
+		if(vm.count("snp-data-clean") && vm.count("numeric-data")) {
+			cout << Timestamp() << "Integrated analysis requested" << endl;
+			analysisType = INTEGRATED_ANALYSIS;
+		}
+		if(vm.count("snp-data") && !vm.count("numeric-data")) {
 			cout << Timestamp() << "SNP-only analysis requested" << endl;
 			analysisType = SNP_ONLY_ANALYSIS;
-    } else {
-      if(!vm.count("snp-data") && (vm.count("numeric-data"))) {
-        cout << Timestamp() << "Numeric-only analysis requested" << endl;
-        analysisType = NUMERIC_ONLY_ANALYSIS;
-        // must have an alternate phenotype file for numeric only
-        if(!vm.count("alternate-pheno-file")) {
-          cerr << "An alternate phenotype file must be specified with the "
-                  << "--alternate-pheno-file option for numeric-only or "
-                  << "digital gene expression data"
-                  << endl;
-          exit(COMMAND_LINE_ERROR);
-        }
-      } else {
-        if(vm.count("snp-data") && vm.count("numeric-data")) {
-          cout << Timestamp() << "Integrated analysis requested" << endl;
-          analysisType = INTEGRATED_ANALYSIS;
-        } else {
-          if(vm.count("dge-counts-data") && vm.count("dge-phenos-data")) {
-            cout << Timestamp() << "DGE analysis requested" << endl;
-            analysisType = DGE_ANALYSIS;
-          }
-          else {
-						cerr << "ERROR: Could not determine the analysis to perform based on "
-										<< "command line options: " << endl << desc << endl;
-						exit(COMMAND_LINE_ERROR);
-          }
-        }
-      }
-    }
+		} else {
+			if(!vm.count("snp-data") && (vm.count("numeric-data"))) {
+				cout << Timestamp() << "Numeric-only analysis requested" << endl;
+				analysisType = NUMERIC_ONLY_ANALYSIS;
+				// must have an alternate phenotype file for numeric only
+				if(!vm.count("alternate-pheno-file")) {
+					cerr << "An alternate phenotype file must be specified with the "
+									<< "--alternate-pheno-file option for numeric-only or "
+									<< "digital gene expression data"
+									<< endl;
+					exit(COMMAND_LINE_ERROR);
+				}
+			} else {
+				if(vm.count("snp-data") && vm.count("numeric-data")) {
+					cout << Timestamp() << "Integrated analysis requested" << endl;
+					analysisType = INTEGRATED_ANALYSIS;
+				} else {
+					if(vm.count("dge-counts-data")) {
+						cout << Timestamp() << "DGE analysis requested" << endl;
+						analysisType = DGE_ANALYSIS;
+					}
+					else {
+						if(vm.count("birdseed-snps-data")) {
+							cout << Timestamp() << "Birdseed SNPs analysis requested" << endl;
+							analysisType = BIRDSEED_ANALYSIS;
+						}
+						else {
+							cerr << "ERROR: Could not determine the analysis to perform based on "
+											<< "command line options: " << endl << desc << endl;
+							exit(COMMAND_LINE_ERROR);
+						}
+					}
+				}
+			}
+		}
   }
 
   // -------------------------------------------------------------------------
@@ -351,6 +394,7 @@ int main(int argc, char** argv) {
   cout << Timestamp() << "Preparing data set for EC analysis" << endl;
   Dataset* ds = 0;
 	DgeData* dge = 0;
+	BirdseedData* birdseed = 0;
   bool datasetLoaded = false;
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
@@ -378,6 +422,17 @@ int main(int argc, char** argv) {
     	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
     		ds = new Dataset();
     		datasetLoaded = ds->LoadDataset(dge);
+    	}
+    	break;
+    case BIRDSEED_ANALYSIS:
+      cout << Timestamp() << "Reading SNPs data set from Birdseed-called "
+      << "data" << endl;
+    	birdseed = new BirdseedData();
+    	if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
+    			birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
+    			birdseedExcludeSnpsFilename)) {
+    		ds = new Dataset();
+    		datasetLoaded = ds->LoadDataset(birdseed);
     	}
     	break;
     case DIAGNOSTIC_ANALYSIS:
@@ -423,7 +478,27 @@ int main(int argc, char** argv) {
     	if(analysisType == DGE_ANALYSIS) {
     		dge->PrintSampleStats();
     	}
+    	else {
+      	if(analysisType == BIRDSEED_ANALYSIS) {
+      		birdseed->PrintInfo();
+      	}
+    	}
     }
+  }
+
+  /// distance matrix calculation
+  if(distanceMatrixFilename != "") {
+  	double** distanceMatrix = 0;
+  	if(ds->CalculateDistanceMatrix(distanceMatrix, distanceMatrixFilename)) {
+  	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
+  	  cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
+  	  cout << Timestamp() << argv[0] << " done" << endl;
+  		return 0;
+  	}
+  	else {
+  		cerr << "ERROR: Could not calculate a distance matrix." << endl;
+  		exit(EXIT_FAILURE);
+  	}
   }
 
   // ---------------------------------------------------------------------------

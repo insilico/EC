@@ -35,6 +35,8 @@ typedef enum
   DIAGNOSTIC_ANALYSIS, /**< diagnostic mode - no ReliefF analysis */
   REGRESSION_ANALYSIS, /**< regression ReliefF analysis */
   DGE_ANALYSIS, /**< digital gene expression (DGE) analysis */
+  BIRDSEED_ANALYSIS, /**< Birdseed called SNPs analysis */
+  DISTANCE_MATRIX_ANALYSIS, /**< distance matrix calculation */
   NO_ANALYSIS /**< no analysis specified */
 } AnalysisType;
 

@@ -30,6 +30,7 @@
 #include "GSLRandomFlat.h"
 
 class DgeData;
+class BirdseedData;
 
 /// return value for invalid distance
 const static int INVALID_DISTANCE = INT_MAX;
@@ -120,7 +121,7 @@ public:
   /// Destruct all dynamically allocated memory.
   virtual ~Dataset();
   /*************************************************************************//**
-   * Load the dataset from files passed as parameters.
+   * Load the data set from files passed as parameters.
    * \param [in] snpFilename discrete values (SNPs) filename
    * \param [in] doRecodeA perform recodeA encoding after reading
    * \param [in] numericsFilename continuous values (numerics) filename or empty string
@@ -133,11 +134,17 @@ public:
                    std::string altPhenoFilename,
                    std::vector<std::string> ids);
   /*************************************************************************//**
-   * Load the dataset from DGE data.
+   * Load the data set from DGE data.
    * \param [in] dgeData pointer to a digital gene expression (DGE) data object
    * \return success
    ****************************************************************************/
   bool LoadDataset(DgeData* dgeData);
+  /*************************************************************************//**
+   * Load the data set from Birdseed data.
+   * \param [in] birdseedData pointer to a Birdseed-called SNP data object
+   * \return success
+   ****************************************************************************/
+  bool LoadDataset(BirdseedData* birdseedData);
   /*************************************************************************//**
    * Get the attribute value at row, column.
    * Same as instance index, attribute index.
@@ -546,6 +553,25 @@ public:
    * \return success
    ****************************************************************************/
   bool CalculateGainMatrix(double** gainMatrix);
+  /*************************************************************************//**
+   * Calculate the instance-to-instance distance matrix for this data set.
+   * Uses OpenMP to calculate matrix entries in parallel threads.
+   * \param [out] distanceMatrix pointer to an allocated m x m matrix,
+   *                         m = number of instances
+   * \param [in] distanceMatrixFilename filename to write matrix
+   * \return success
+   ****************************************************************************/
+  bool CalculateDistanceMatrix(double** distanceMatrix,
+  		std::string matrixFilename);
+  /*************************************************************************//**
+   * Compute the distance between two DatasetInstances.
+   * \param [in] dsi1 pointer to DatasetInstance 1
+   * \param [in] dsi2 pointer to DatasetInstance 2
+   * \return distance
+   ****************************************************************************/
+  double ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
+                                           DatasetInstance* dsi2);
+  /// bool SetMetric(std::string newMetricString);
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.
@@ -592,6 +618,32 @@ protected:
    * \return [out] success
    ****************************************************************************/
   bool IsLoadableInstanceID(std::string ID);
+
+  /*************************************************************************//**
+   * Compute the discrete difference in an attribute between two instances.
+   * \param [in] attributeIndex index into vector of all attributes
+   * \param [in] dsi1 pointer to DatasetInstance 1
+   * \param [in] dsi2 pointer to DatasetInstance 2
+   * \return diff(erence)
+   ****************************************************************************/
+  double (*snpDiff)(unsigned int attributeIndex,
+                    DatasetInstance* dsi1,
+                    DatasetInstance* dsi2);
+  /*************************************************************************//**
+   * Compute the continuous difference in an attribute between two instances.
+   * \param [in] attributeIndex index into vector of all attributes
+   * \param [in] dsi1 pointer to DatasetInstance 1
+   * \param [in] dsi2 pointer to DatasetInstance 2
+   * \return diff(erence)
+   ****************************************************************************/
+  double (*numDiff)(unsigned int attributeIndex,
+                    DatasetInstance* dsi1,
+                    DatasetInstance* dsi2);
+
+  /// the name of discrete diff(erence) function
+  std::string snpMetric;
+  /// the name of continuous diff(erence) function
+  std::string numMetric;
 
   /// file from which the discrete attributes (SNPSs) were read
   std::string snpsFilename;

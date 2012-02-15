@@ -61,10 +61,10 @@ libec_la_LIBADD =
 am_libec_la_OBJECTS = libec_la-Dataset.lo libec_la-ArffDataset.lo \
 	libec_la-PlinkDataset.lo libec_la-PlinkBinaryDataset.lo \
 	libec_la-PlinkRawDataset.lo libec_la-DgeData.lo \
-	libec_la-DatasetInstance.lo libec_la-DistanceMetrics.lo \
-	libec_la-FilesystemUtils.lo libec_la-Statistics.lo \
-	libec_la-ChiSquared.lo libec_la-Insilico.lo \
-	libec_la-ReliefF.lo libec_la-RReliefF.lo \
+	libec_la-BirdseedData.lo libec_la-DatasetInstance.lo \
+	libec_la-DistanceMetrics.lo libec_la-FilesystemUtils.lo \
+	libec_la-Statistics.lo libec_la-ChiSquared.lo \
+	libec_la-Insilico.lo libec_la-ReliefF.lo libec_la-RReliefF.lo \
 	libec_la-RandomJungle.lo libec_la-EvaporativeCooling.lo
 libec_la_OBJECTS = $(am_libec_la_OBJECTS)
 libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
@@ -258,7 +258,7 @@ mycppflags = $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 lib_LTLIBRARIES = libec.la
 libec_la_SOURCES = \
 Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
-PlinkRawDataset.cpp DgeData.cpp DatasetInstance.cpp DistanceMetrics.cpp \
+PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp DistanceMetrics.cpp \
 FilesystemUtils.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
 ReliefF.cpp RReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
 
@@ -269,7 +269,7 @@ ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h \
 Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
-StringUtils.h best_n.h
+StringUtils.h best_n.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
 libec_la_LDFLAGS = -release 1.0.0
@@ -346,6 +346,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-ArffDataset.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-BirdseedData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-ChiSquared.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Dataset.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-DatasetInstance.Plo@am__quote@
@@ -424,6 +425,13 @@ libec_la-DgeData.lo: DgeData.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='DgeData.cpp' object='libec_la-DgeData.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-DgeData.lo `test -f 'DgeData.cpp' || echo '$(srcdir)/'`DgeData.cpp
+
+libec_la-BirdseedData.lo: BirdseedData.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-BirdseedData.lo -MD -MP -MF $(DEPDIR)/libec_la-BirdseedData.Tpo -c -o libec_la-BirdseedData.lo `test -f 'BirdseedData.cpp' || echo '$(srcdir)/'`BirdseedData.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libec_la-BirdseedData.Tpo $(DEPDIR)/libec_la-BirdseedData.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='BirdseedData.cpp' object='libec_la-BirdseedData.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-BirdseedData.lo `test -f 'BirdseedData.cpp' || echo '$(srcdir)/'`BirdseedData.cpp
 
 libec_la-DatasetInstance.lo: DatasetInstance.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-DatasetInstance.lo -MD -MP -MF $(DEPDIR)/libec_la-DatasetInstance.Tpo -c -o libec_la-DatasetInstance.lo `test -f 'DatasetInstance.cpp' || echo '$(srcdir)/'`DatasetInstance.cpp
@@ -706,7 +714,7 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-libec_laHEADERS
 #ec/EvaporativeCooling.h ec/FilesystemUtils.h ec/GSLRandomBase.h \
 #ec/GSLRandomFlat.h ec/Insilico.h ec/PlinkBinaryDataset.h ec/PlinkDataset.h \
 #ec/PlinkRawDataset.h ec/RReliefF.h ec/RandomJungle.h ec/ReliefF.h \
-#ec/Statistics.h ec/StringUtils.h ec/best_n.h
+#ec/Statistics.h ec/StringUtils.h ec/best_n.h ec/BirdseedData.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

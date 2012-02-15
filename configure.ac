@@ -39,12 +39,16 @@ AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging
 
 # Set variables for basic compile debug/release
 if test "$debug_ec" != 'yes' ; then
+    CPPFLAGS="-O2 -g0 -Wall -DNDEBUG $CPPFLAGS"
     CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"
 else
+    CPPFLAGS="-O0 -gdwarf-2 -Wall $CPPFLAGS -D__DEBUG__"
     CXXFLAGS="-O0 -gdwarf-2 -Wall $CXXFLAGS -D__DEBUG__"
 fi
 CXXFLAGS="$CXXFLAGS -D__NOPLUGIN__ -I/usr/local/include"
 CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
+CPPFLAGS="$CPPFLAGS -D__NOPLUGIN__ -I/usr/local/include"
+CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
 LIBS="-lm -lgfortran $LIBS"
 LIBDIR="$LIBDIR -L/usr/local/lib"
 
@@ -66,6 +70,7 @@ AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find r
 AC_MSG_NOTICE([--------------------------------------------------])
 
 # OpenMP
+CPPFLAGS="$CPPFLAGS -fopenmp"
 CXXFLAGS="$CXXFLAGS -fopenmp"
 LDFLAGS="$LDFLAGS -fopenmp -lgomp -lpthread"
 
@@ -74,6 +79,7 @@ AC_CHECK_LIB([rjungle], [main])
 AC_CHECK_LIB([lr], [mk_lr_options])
 RJ_LIBS="-lrjungle -llr" 
 AC_SUBST([RJ_LIBS])
+LDFLAGS="$LDFLAGS -lrjungle -llr"
 
 # boost.m4
 BOOST_REQUIRE([1.34])
@@ -168,5 +174,5 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg])
 AC_MSG_NOTICE([--------------------------------------------------])
 
 # Process makefiles
-AC_CONFIG_FILES([Makefile src/library/Makefile src/Makefile examples/Makefile])
+AC_CONFIG_FILES([Makefile src/library/Makefile src/Makefile examples/Makefile doc/Makefile])
 AC_OUTPUT

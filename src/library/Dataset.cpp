@@ -2,7 +2,7 @@
  * Dataset.cpp - Bill White - 6/14/05
  *
  * Collection class holding DatasetInstances
- * Added interaction infomation week of 4/18-26/06
+ * Added interaction information week of 4/18-26/06
  * Reworked entirely for McKinney Lab work - 2/28/11
  */
 
@@ -38,6 +38,8 @@
 #include "Debugging.h"
 #include "Insilico.h"
 #include "DgeData.h"
+#include "BirdseedData.h"
+#include "DistanceMetrics.h"
 
 using namespace std;
 using namespace insilico;
@@ -71,6 +73,30 @@ Dataset::Dataset() {
 	attributeMutationMap[make_pair('T', 'A')] = TRANSVERSION_MUTATION;
 	attributeMutationMap[make_pair('C', 'G')] = TRANSVERSION_MUTATION;
 	attributeMutationMap[make_pair('G', 'C')] = TRANSVERSION_MUTATION;
+
+	snpMetric = "gm";
+	numMetric = "manhattan";
+
+	if(to_upper(snpMetric) == "GM") {
+    snpDiff = diffGMM;
+  } else {
+    if(to_upper(snpMetric) == "AM") {
+      snpDiff = diffAMM;
+    } else {
+      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
+      exit(1);
+    }
+  }
+
+  if(to_upper(numMetric) == "MANHATTAN") {
+    numDiff = diffManhattan;
+  } else {
+    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
+    exit(1);
+  }
+
+  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
 
 	rng = NULL;
 }
@@ -217,6 +243,66 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 
 	// create and seed a random number generator for random sampling
 	rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
+
+	return true;
+}
+
+bool Dataset::LoadDataset(BirdseedData* birdseedData) {
+	// TODO: check for genotypes already loaded; assume birdseed only for now
+
+		snpsFilename = "BirdseedData CLASS";
+
+		cout << Timestamp() << "Reading attributes from " << snpsFilename << endl;
+
+		// populate attributeNames and attributesMask
+		vector<string> snpNames = birdseedData->GetSNPNames();
+		for (int i = 0; i < (int) snpNames.size(); ++i) {
+			attributeNames.push_back(snpNames[i]);
+			attributesMask[snpNames[i]] = i;
+		}
+
+		// load the data set instances: set the instance attributes,
+		// instance IDs, instance mask and phenotype
+		vector<string> sampleNames;
+		if(birdseedData->HasSubjectLabels()) {
+			sampleNames = birdseedData->GetSubjectLabels();
+		}
+		else {
+			sampleNames = birdseedData->GetSubjectNames();
+		}
+		for (int instanceIndex = 0; instanceIndex < (int) sampleNames.size();
+				++instanceIndex) {
+			vector<AttributeLevel> sampleValues =
+					birdseedData->GetSubjectGenotypes(instanceIndex);
+			DatasetInstance* dsi = new DatasetInstance(this);
+			for (int snpIndex = 0; snpIndex < (int) snpNames.size();
+					++snpIndex) {
+				dsi->attributes.push_back(sampleValues[snpIndex]);
+			}
+			instances.push_back(dsi);
+			string ID = sampleNames[instanceIndex];
+			instanceIds.push_back(ID);
+//			attributeIds.push_back(ID);
+			instancesMask[ID] = instanceIndex;
+			ClassLevel thisClass = birdseedData->GetSamplePhenotype(instanceIndex);
+			dsi->SetClass(thisClass);
+			if(birdseedData->HasPhenotypes()) {
+				classIndexes[thisClass].push_back(instanceIndex);
+			}
+		}
+
+		cout << Timestamp() << "Dataset: Read " << NumInstances()
+				<< " instances, " << NumAttributes() << " SNP attributes"
+				<< " from birdseed data" << endl;
+
+		if(!birdseedData->HasPhenotypes()) {
+			cout << Timestamp() << "Birdseed data DOES NOT have phenotypes." << endl;
+		}
+
+		hasGenotypes = true;
+
+		// create and seed a random number generator for random sampling
+		rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
 
 	return true;
 }
@@ -1775,6 +1861,111 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix) {
 	}
 
 	return true;
+}
+
+double
+Dataset::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
+                                           DatasetInstance* dsi2) {
+  double distance = 0;
+  //cout << "ComputeInstanceToInstanceDistance: " << dsi1 << ", " << dsi2 << endl;
+
+  if(HasGenotypes()) {
+    vector<unsigned int> attributeIndices =
+      MaskGetAttributeIndices(DISCRETE_TYPE);
+    for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
+      distance += snpDiff(attributeIndices[i], dsi1, dsi2);
+    }
+    // cout << "SNP distance = " << distance << endl;
+  }
+
+  // added 6/16/11
+  // compute numeric distances
+  if(HasNumerics()) {
+  	//cout << "Computing numeric instance-to-instance distance..." << endl;
+    vector<unsigned int> numericIndices =
+      MaskGetAttributeIndices(NUMERIC_TYPE);
+    //cout << "\tNumber of numerics: " << numericIndices.size() << endl;
+    for(unsigned int i = 0; i < numericIndices.size(); ++i) {
+    	//cout << "\t\tNumeric index: " << numericIndices[i] << endl;
+      double numDistance = numDiff(numericIndices[i], dsi1, dsi2);
+      //cout << "Numeric distance " << i << " => " << numDistance << endl;
+      distance += numDistance;
+    }
+  }
+
+  return distance;
+}
+
+bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {
+  cout << Timestamp() << "Calculating distance matrix" << endl;
+  map<string, unsigned int> instanceMask = MaskGetInstanceMask();
+  vector<string> instanceIds = MaskGetInstanceIds();
+  int numInstances = instanceIds.size();
+
+  // create a distance matrix
+  cout << Timestamp() << "Allocating distance matrix";
+  distanceMatrix = new double*[numInstances];
+  for(int i = 0; i < numInstances; ++i) {
+    distanceMatrix[i] = new double[numInstances];
+    for(int j = 0; j < numInstances; ++j) {
+      distanceMatrix[i][j] = 0.0;
+    }
+  }
+  cout << " done" << endl;
+
+  // populate the matrix - upper triangular
+  // NOTE: make complete symmetric matrix for neighbor-to-neighbor sums
+  cout << Timestamp() << "Computing instance-to-instance distances... "
+  		<< endl;
+  //  omp_set_nested(1);
+#pragma omp parallel for schedule(dynamic, 1)
+  for(int i = 0; i < numInstances; ++i) {
+    // cout << "Computing instance to instance distances. Row: " << i << endl;
+    // #pragma omp parallel for
+    for(int j = i + 1; j < numInstances; ++j) {
+      unsigned int dsi1Index;
+      GetInstanceIndexForID(instanceIds[i], dsi1Index);
+      unsigned int dsi2Index;
+      GetInstanceIndexForID(instanceIds[j], dsi2Index);
+      distanceMatrix[i][j] = distanceMatrix[j][i] =
+              ComputeInstanceToInstanceDistance(GetInstance(dsi1Index),
+                                                GetInstance(dsi2Index));
+      // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
+    }
+    if(i && (i % 100 == 0)) {
+      cout << Timestamp() << i << "/" << numInstances << endl;
+    }
+  }
+  cout << Timestamp() << numInstances << "/" << numInstances << " done" << endl;
+
+  if(matrixFilename != "") {
+  	cout << Timestamp() << "Writing distance matrix to file ["
+  			<< matrixFilename << "]" << endl;
+		ofstream outFile(matrixFilename.c_str());
+		/// write header
+		for(int i=0; i < numInstances; ++i) {
+			if(i) {
+				outFile << "\t" << instanceIds[i];
+			}
+			else {
+				outFile << instanceIds[i];
+			}
+		}
+		outFile << endl;
+		/// write all n-by-n matrix entries
+		for(int i=0; i < numInstances; ++i) {
+			for(int j=0; j < numInstances; ++j) {
+				if(j)
+					outFile << "\t" << distanceMatrix[i][j];
+				else
+					outFile << distanceMatrix[i][j];
+			}
+			outFile << endl;
+		}
+		outFile.close();
+  }
+
+  return true;
 }
 
 /// ------------ Beginning of private methods ------------------

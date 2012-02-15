@@ -44,7 +44,6 @@ bool ArffDataset::LoadSnps(string filename) {
 	int numericsIndex = 0;
 	string attributeType = "";
 	string classTypeString = "";
-	ClassType classType = NO_CLASS_TYPE;
 	unsigned int lineNumber = 0;
 	double minPheno = 0.0, maxPheno = 0.0;
 	while (getline(dataStream, line)) {
@@ -78,11 +77,9 @@ bool ArffDataset::LoadSnps(string filename) {
 					classTypeString = to_upper(trimmedLine.substr(secondSpace + 1));
 					if (classTypeString == "NUMERIC") {
 						hasContinuousPhenotypes = true;
-						classType = CONTINUOUS_CLASS_TYPE;
 						cout << Timestamp() << "Detected continuous phenotype" << endl;
 					} else {
 						hasContinuousPhenotypes = false;
-						classType = CASE_CONTROL_CLASS_TYPE;
 						cout << Timestamp() << "Detected case-control phenotype" << endl;
 					}
 				} else {

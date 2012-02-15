@@ -790,9 +790,7 @@ bool ReliefF::PreComputeDistances() {
   cout << Timestamp() << "1) Computing instance-to-instance distances... "
   		<< endl;
   //  omp_set_nested(1);
-#ifdef WITH_OPENMP
 #pragma omp parallel for schedule(dynamic, 1)
-#endif
   for(int i = 0; i < numInstances; ++i) {
     // cout << "Computing instance to instance distances. Row: " << i << endl;
     // #pragma omp parallel for
