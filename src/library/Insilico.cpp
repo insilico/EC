@@ -46,23 +46,23 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
 	Dataset* ds = 0;
 	cout << Timestamp() << "Dataset detect by extension: ";
 	if (fileExt == "arff") {
-		cout << "ARFF";
+		cout << "ARFF" << endl;
 		ds = new ArffDataset();
 	} else {
 		if (fileExt == "tab" || fileExt == "txt") {
-			cout << "Whitespace-delimited";
+			cout << "Whitespace-delimited" << endl;
 			ds = new Dataset();
 		} else {
 			if (fileExt == "ped" || fileExt == "map") {
-				cout << "Plink map/ped";
+				cout << "Plink map/ped" << endl;
 				ds = new PlinkDataset();
 			} else {
 				if (fileExt == "raw") {
-					cout << "Plink raw";
+					cout << "Plink raw" << endl;
 					ds = new PlinkRawDataset();
 				} else {
 					if (fileExt == "bed" || fileExt == "bim" || fileExt == "fam") {
-						cout << "Plink binary";
+						cout << "Plink binary" << endl;
 						ds = new PlinkBinaryDataset();
 					} else {
 						cerr << endl;
@@ -74,7 +74,6 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
 			}
 		}
 	}
-	cout << endl;
 
 	return ds;
 }

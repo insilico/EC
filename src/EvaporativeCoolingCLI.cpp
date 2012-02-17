@@ -30,53 +30,56 @@
 
 #include "EvaporativeCooling.h"
 #include "Insilico.h"
+#include "FilesystemUtils.h"
+
+/// data types
 #include "Dataset.h"
 #include "DgeData.h"
 #include "BirdseedData.h"
-#include "FilesystemUtils.h"
 
 using namespace std;
 namespace po = boost::program_options;
 
 int main(int argc, char** argv) {
 
-  // command line processing variables: defaults and storage for boost
-  // data set files
-  string configFilename = "";
-  string snpsFilename = "";
-  string snpExclusionFile = "";
-  string numericsFilename = "";
-  string dgeCountsFilename = "";
-  string dgePhenosFilename = "";
-  string dgeNormsFilename = "";
-  string birdseedFilename = "";
-  string birdseedPhenosFilename = "";
-  string birdseedSubjectsFilename = "";
-  string birdseedIncludeSnpsFilename = "";
-  string birdseedExcludeSnpsFilename = "";
-  string altPhenotypeFilename = "";
-  string outputDatasetFilename = "";
-  string outputFilesPrefix = "ec_run";
-  string distanceMatrixFilename = "";
-  // Random Jungle
-  uli_t rjNumTrees = 1000;
-  // ReliefF
-  unsigned int k = 10;
-  unsigned int m = 0;
-  string snpMetric = "gm";
-  string numMetric = "manhattan";
-  string weightByDistanceMethod = "equal";
-  double weightByDistanceSigma = 2.0;
-  // diagnostic
-  string diagnosticLogFilename = "";
-  string diagnosticLevelsCountsFilename = "";
-  // EC parameters
-  string ecAlgorithmSteps = "all";
-  unsigned int ecNumTarget = 0;
-  unsigned int ecIterNumToRemove = 0;
-  unsigned int ecIterPercentToRemove = 0;
+	/// command line processing variables: defaults and storage for boost
+	// file names
+	string configFilename = "";
+	string snpsFilename = "";
+	string snpExclusionFile = "";
+	string numericsFilename = "";
+	string dgeCountsFilename = "";
+	string dgePhenosFilename = "";
+	string dgeNormsFilename = "";
+	string birdseedFilename = "";
+	string birdseedPhenosFilename = "";
+	string birdseedSubjectsFilename = "";
+	string birdseedIncludeSnpsFilename = "";
+	string birdseedExcludeSnpsFilename = "";
+	string altPhenotypeFilename = "";
+	string outputDatasetFilename = "";
+	string outputFilesPrefix = "ec_run";
+	string distanceMatrixFilename = "";
+	string gainMatrixFilename = "";
+	// Random Jungle
+	uli_t rjNumTrees = 1000;
+	// ReliefF
+	unsigned int k = 10;
+	unsigned int m = 0;
+	string snpMetric = "gm";
+	string numMetric = "manhattan";
+	string weightByDistanceMethod = "equal";
+	double weightByDistanceSigma = 2.0;
+	// diagnostic
+	string diagnosticLogFilename = "";
+	string diagnosticLevelsCountsFilename = "";
+	// EC parameters
+	string ecAlgorithmSteps = "all";
+	unsigned int ecNumTarget = 0;
+	unsigned int ecIterNumToRemove = 0;
+	unsigned int ecIterPercentToRemove = 0;
 
-  // declare the supported options
+  /// declare the supported options
   po::options_description desc("Allowed options");
   desc.add_options()
 		("help", "produce help message")
@@ -226,289 +229,329 @@ int main(int argc, char** argv) {
 		po::value<string > (&distanceMatrixFilename),
 		"create a distance matrix for the loaded samples and exit"
 		)
+		(
+		"gain-matrix",
+		po::value<string > (&gainMatrixFilename),
+		"create a GAIN matrix for the loaded samples and exit"
+		)
 		;
 
-  // parse the command line into a map
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
-  // po::store(po::command_line_parser(argc, argv).options(desc).positional(pd).run(), vm);
-  po::notify(vm);
+	/// parse the command line and/or config file into a Boost variables map
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
 
-  if(vm.count("help") || (argc == 1)) {
-    cerr << desc << endl;
-    exit(COMMAND_LINE_ERROR);
-  }
+	/// user needs help
+	if(vm.count("help") || (argc == 1)) {
+		cerr << desc << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
 
-  // ---------------------------------------------------------------------------
-  cout << Timestamp() << argv[0] << " starting" << endl;
-  clock_t t;
-  t = clock();
+	/// begin main program
+	// ---------------------------------------------------------------------------
+	cout << Timestamp() << argv[0] << " starting" << endl;
+	clock_t t;
+	t = clock();
 
-  // ---------------------------------------------------------------------------
-  cout << Timestamp() << "Processing command line arguments" << endl;
+	// ---------------------------------------------------------------------------
+	cout << Timestamp() << "Processing command line arguments" << endl;
 
-  // read config file if specified
-  if(vm.count("config-file")) {
-  	ifstream configStream(configFilename.c_str());
-  	if (!configStream.is_open()) {
-  		cerr << "ERROR: Could not open configuration file: "
-  				<< configFilename << endl;
-  		exit(EXIT_FAILURE);
-  	}
-  	cout << Timestamp() << "Reading configuration options from: "
-  			<< configFilename << endl;
-    po::store(po::parse_config_file(configStream, desc), vm);
-    po::notify(vm);
-    configStream.close();
-  }
+	/// read config file if specified
+	if(vm.count("config-file")) {
+		ifstream configStream(configFilename.c_str());
+		if (!configStream.is_open()) {
+			cerr << "ERROR: Could not open configuration file: "
+					<< configFilename << endl;
+			exit(EXIT_FAILURE);
+		}
+		cout << Timestamp() << "Reading configuration options from: "
+				<< configFilename << endl;
+		po::store(po::parse_config_file(configStream, desc), vm);
+		po::notify(vm);
+		configStream.close();
+	}
 
-  /// determine the output data set type
-  OutputDatasetType outputDatasetType = NO_OUTPUT_DATASET;
-  if(outputDatasetFilename != "") {
-    // determine the dataset type
-    string outFileExtension = GetFileExtension(outputDatasetFilename);
-    if(outFileExtension == "txt") {
-      outputDatasetType = TAB_DELIMITED_DATASET;
-    } else {
-      if(outFileExtension == "csv") {
-        outputDatasetType = CSV_DELIMITED_DATASET;
-      } else {
-        if(outFileExtension == "arff") {
-          outputDatasetType = ARFF_DATASET;
-        } else {
-          cerr << "Unrecognized output data set filename extension: ["
-                  << outFileExtension << "]" << endl;
-          exit(COMMAND_LINE_ERROR);
-        }
-      }
-    }
-    cout << Timestamp() << "Writing ReliefF filtered data set to ["
-            << outputDatasetFilename
-            << "]" << endl;
-  }
+	/// determine the output data set type
+	OutputDatasetType outputDatasetType = NO_OUTPUT_DATASET;
+	if(outputDatasetFilename != "") {
+		// determine the dataset type
+		string outFileExtension = GetFileExtension(outputDatasetFilename);
+		if(outFileExtension == "txt") {
+			outputDatasetType = TAB_DELIMITED_DATASET;
+		} else {
+			if(outFileExtension == "csv") {
+				outputDatasetType = CSV_DELIMITED_DATASET;
+			} else {
+				if(outFileExtension == "arff") {
+					outputDatasetType = ARFF_DATASET;
+				} else {
+					cerr << "Unrecognized output data set filename extension: ["
+									<< outFileExtension << "]" << endl;
+					exit(COMMAND_LINE_ERROR);
+				}
+			}
+		}
+		cout << Timestamp() << "Writing ReliefF filtered data set to ["
+						<< outputDatasetFilename
+						<< "]" << endl;
+	}
 
   /// determine the analysis type
   cout << Timestamp() << "Determining analysis type" << endl;
   AnalysisType analysisType = NO_ANALYSIS;
-  if(vm.count("diagnostic-tests") || vm.count("diagnostic-levels-file")) {
+  bool noAnalysisFound = true;
+  if(noAnalysisFound &&
+  		(vm.count("diagnostic-tests") || vm.count("diagnostic-levels-file"))) {
     cout << Timestamp() << "Diagnostic test requested" << endl;
     analysisType = DIAGNOSTIC_ANALYSIS;
-  } else {
-		if(vm.count("snp-data") && vm.count("numeric-data")) {
-			cout << Timestamp() << "Integrated analysis requested" << endl;
-			analysisType = INTEGRATED_ANALYSIS;
-		}
-		if(vm.count("snp-data-clean") && vm.count("numeric-data")) {
-			cout << Timestamp() << "Integrated analysis requested" << endl;
-			analysisType = INTEGRATED_ANALYSIS;
-		}
-		if(vm.count("snp-data") && !vm.count("numeric-data")) {
-			cout << Timestamp() << "SNP-only analysis requested" << endl;
-			analysisType = SNP_ONLY_ANALYSIS;
-		} else {
-			if(!vm.count("snp-data") && (vm.count("numeric-data"))) {
-				cout << Timestamp() << "Numeric-only analysis requested" << endl;
-				analysisType = NUMERIC_ONLY_ANALYSIS;
-				// must have an alternate phenotype file for numeric only
-				if(!vm.count("alternate-pheno-file")) {
-					cerr << "An alternate phenotype file must be specified with the "
-									<< "--alternate-pheno-file option for numeric-only or "
-									<< "digital gene expression data"
-									<< endl;
-					exit(COMMAND_LINE_ERROR);
-				}
-			} else {
-				if(vm.count("snp-data") && vm.count("numeric-data")) {
-					cout << Timestamp() << "Integrated analysis requested" << endl;
-					analysisType = INTEGRATED_ANALYSIS;
-				} else {
-					if(vm.count("dge-counts-data")) {
-						cout << Timestamp() << "DGE analysis requested" << endl;
-						analysisType = DGE_ANALYSIS;
-					}
-					else {
-						if(vm.count("birdseed-snps-data")) {
-							cout << Timestamp() << "Birdseed SNPs analysis requested" << endl;
-							analysisType = BIRDSEED_ANALYSIS;
-						}
-						else {
-							cerr << "ERROR: Could not determine the analysis to perform based on "
-											<< "command line options: " << endl << desc << endl;
-							exit(COMMAND_LINE_ERROR);
-						}
-					}
-				}
+    noAnalysisFound = false;
+  }
+	if(noAnalysisFound && (vm.count("snp-data") && vm.count("numeric-data"))) {
+		cout << Timestamp() << "Integrated analysis requested" << endl;
+		analysisType = INTEGRATED_ANALYSIS;
+    noAnalysisFound = false;
+	}
+	if(noAnalysisFound && (vm.count("snp-data") && !vm.count("numeric-data"))) {
+		cout << Timestamp() << "SNP-only analysis requested" << endl;
+		analysisType = SNP_ONLY_ANALYSIS;
+    noAnalysisFound = false;
+	}
+	if(noAnalysisFound && (!vm.count("snp-data") && (vm.count("numeric-data")))) {
+		cout << Timestamp() << "Numeric-only analysis requested" << endl;
+		analysisType = NUMERIC_ONLY_ANALYSIS;
+    noAnalysisFound = false;
+	}
+	if(noAnalysisFound && (vm.count("snp-data") && vm.count("numeric-data"))) {
+		cout << Timestamp() << "Integrated analysis requested" << endl;
+		analysisType = INTEGRATED_ANALYSIS;
+    noAnalysisFound = false;
+	}
+	if(noAnalysisFound && vm.count("dge-counts-data")) {
+		cout << Timestamp() << "DGE analysis requested" << endl;
+		analysisType = DGE_ANALYSIS;
+		noAnalysisFound = false;
+	}
+	if(noAnalysisFound && vm.count("birdseed-snps-data")) {
+		cout << Timestamp() << "Birdseed SNPs analysis requested" << endl;
+		analysisType = BIRDSEED_ANALYSIS;
+    noAnalysisFound = false;
+	}
+	if(noAnalysisFound) {
+		cerr << "ERROR: Could not determine the analysis to perform based on "
+						<< "command line options: " << endl << desc << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
+
+	/// check for numerics and alternate phenotype files; if present need to
+	/// match/intersect the IDs used and only load those IDs from the data set
+	// -------------------------------------------------------------------------
+	// added bcw 7/15/11 - number of numerics or phenotypes might not be the
+	// same as the data set - only load those in the numerics/phenotype file
+	// if covariate or alternate phenotype file is present, read it first to
+	// get the keys for reading the data set instances
+	cout << Timestamp()
+					<< "Checking for numeric data and/or alternate phenotype files" << endl;
+	vector<string> numericsIds;
+	vector<string> phenoIds;
+	if(analysisType == SNP_ONLY_ANALYSIS ||
+		 analysisType == NUMERIC_ONLY_ANALYSIS ||
+		 analysisType == INTEGRATED_ANALYSIS) {
+		if(numericsFilename != "") {
+			cout << Timestamp() << "Loading individual IDs from numeric data file: "
+							<< numericsFilename << endl;
+			if(!LoadNumericIds(numericsFilename, numericsIds)) {
+				exit(COMMAND_LINE_ERROR);
 			}
+			// copy (numericsIds.begin(), numericsIds.end(), ostream_iterator<string> (cout, "\n"));
 		}
-  }
+		if(altPhenotypeFilename != "") {
+			cout << Timestamp() << "Loading individual IDs from alternate phenotype file: "
+							<< altPhenotypeFilename << endl;
+			if(!LoadPhenoIds(altPhenotypeFilename, phenoIds)) {
+				exit(COMMAND_LINE_ERROR);
+			}
+			// copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
+		}
+	} else {
+		cout << Timestamp() << "Numeric data and alternate phenotype files are not "
+				"specified for this analysis type" << endl;
+	}
 
-  // -------------------------------------------------------------------------
-  // added bcw 7/15/11 - number of numerics or phenotypes might not be the
-  // same as the data set - only load those in the numerics/phenotype file
-  // if covariate or alternate phenotype file is present, read it first to
-  // get the keys for reading the data set instances
-  cout << Timestamp()
-          << "Checking for covariates and/or alternate phenotype files" << endl;
-  vector<string> numericsIds;
-  vector<string> phenoIds;
-  if(analysisType == SNP_ONLY_ANALYSIS ||
-     analysisType == NUMERIC_ONLY_ANALYSIS ||
-     analysisType == INTEGRATED_ANALYSIS) {
-    if(numericsFilename != "") {
-      cout << Timestamp() << "Loading individual IDs from covar file: "
-              << numericsFilename << endl;
-      if(!LoadNumericIds(numericsFilename, numericsIds)) {
-        exit(COMMAND_LINE_ERROR);
-      }
-      // copy (numericsIds.begin(), numericsIds.end(), ostream_iterator<string> (cout, "\n"));
-    }
-    if(altPhenotypeFilename != "") {
-      cout << Timestamp() << "Loading individual IDs from alternate phenotype file: "
-              << altPhenotypeFilename << endl;
-      if(!LoadPhenoIds(altPhenotypeFilename, phenoIds)) {
-        exit(COMMAND_LINE_ERROR);
-      }
-      // copy(phenoIds.begin(), phenoIds.end(), ostream_iterator<string> (cout, "\n"));
-    }
-  } else {
-    cout << Timestamp() << "Covariate and alternate phenotype files not used for "
-            << "this analysis type" << endl;
-  }
+	// -------------------------------------------------------------------------
+	/// find IDs for loading from the dataset
+	cout << Timestamp() << "Determining the IDs to be read from the dataset" << endl;
+	vector<string> indIds;
+	if(!GetMatchingIds(numericsFilename, altPhenotypeFilename,
+										 numericsIds, phenoIds, indIds)) {
+		cerr << "ERROR: could not get matching IDs from numeric " <<
+						" and/or phenotype files." << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
+	cout << Timestamp() << indIds.size()
+					<< " individual IDs read from numeric and/or phenotype file(s)"
+					<< endl;
 
-  // -------------------------------------------------------------------------
-  // find IDs for loading from the dataset
-  cout << Timestamp() << "Determining the IDs to be read from the dataset" << endl;
-  vector<string> indIds;
-  if(!GetMatchingIds(numericsFilename, altPhenotypeFilename,
-                     numericsIds, phenoIds, indIds)) {
-    cerr << "ERROR: could not get matching IDs from numeric " <<
-            " and/or phenotype files." << endl;
-    exit(COMMAND_LINE_ERROR);
-  }
-  cout << Timestamp() << indIds.size()
-          << " individual IDs read from numeric and/or phenotype file(s)"
-          << endl;
-
-  // -------------------------------------------------------------------------
-  // prepare data for running EC
-  cout << Timestamp() << "Preparing data set for EC analysis" << endl;
-  Dataset* ds = 0;
+	// -------------------------------------------------------------------------
+	/// load and prepare data for running EC
+	cout << Timestamp() << "Loading and preparing data for EC analysis" << endl;
+	Dataset* ds = 0;
 	DgeData* dge = 0;
 	BirdseedData* birdseed = 0;
-  bool datasetLoaded = false;
-  switch(analysisType) {
-    case SNP_ONLY_ANALYSIS:
-      cout << Timestamp() << "Reading SNPs data set" << endl;
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      datasetLoaded = ds->LoadDataset(snpsFilename, "",
-                                      altPhenotypeFilename, indIds);
-      break;
-    case NUMERIC_ONLY_ANALYSIS:
-      cout << Timestamp() << "Reading numerics only data set" << endl;
-      ds = new Dataset();
-      datasetLoaded = ds->LoadDataset("", numericsFilename,
-                                      altPhenotypeFilename, indIds);
-      break;
-    case INTEGRATED_ANALYSIS:
-      cout << Timestamp() << "Reading datasets for integrated analysis" << endl;
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
-                                      altPhenotypeFilename, indIds);
-      break;
-    case DGE_ANALYSIS:
-      cout << Timestamp() << "Reading numerics data set from digital gene "
-      << "expression (DGE) data" << endl;
-    	dge = new DgeData();
-    	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
-    		ds = new Dataset();
-    		datasetLoaded = ds->LoadDataset(dge);
-    	}
-    	break;
-    case BIRDSEED_ANALYSIS:
-      cout << Timestamp() << "Reading SNPs data set from Birdseed-called "
-      << "data" << endl;
-    	birdseed = new BirdseedData();
-    	if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
-    			birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
-    			birdseedExcludeSnpsFilename)) {
-    		ds = new Dataset();
-    		datasetLoaded = ds->LoadDataset(birdseed);
-    	}
-    	break;
-    case DIAGNOSTIC_ANALYSIS:
-      cout << Timestamp() << "Performing SNP diagnostics on the data set" << endl;
-      if(snpsFilename == "") {
-        cerr << "Cannot run diagnostics without a SNP file specified with "
-                << "--snp-data or --snp-data-clean flag" << endl;
-        exit(COMMAND_LINE_ERROR);
-      }
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
-      ds->LoadDataset(snpsFilename, numericsFilename,
-                      altPhenotypeFilename, indIds);
-      ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
-      if(diagnosticLevelsCountsFilename != "") {
-        ds->WriteLevelCounts(diagnosticLevelsCountsFilename + ".counts");
-      }
-      // brutal exit!
-      cout << argv[0] << " done" << endl;
-      exit(0);
-      break;
-    case NO_ANALYSIS:
-      cerr << "Analysis type could not be determined" << endl;
-      exit(COMMAND_LINE_ERROR);
-    default:
-      cerr << "Undefined analysis type: " << analysisType << endl;
-      exit(COMMAND_LINE_ERROR);
-  }
+	bool datasetLoaded = false;
+	switch(analysisType) {
+		case SNP_ONLY_ANALYSIS:
+			cout << Timestamp() << "Reading SNPs data set" << endl;
+			ds = ChooseSnpsDatasetByExtension(snpsFilename);
+			datasetLoaded = ds->LoadDataset(snpsFilename, "",
+																			altPhenotypeFilename, indIds);
+			break;
+		case NUMERIC_ONLY_ANALYSIS:
+			cout << Timestamp() << "Reading numeric data set" << endl;
+			ds = new Dataset();
+			datasetLoaded = ds->LoadDataset("", numericsFilename,
+																			altPhenotypeFilename, indIds);
+			break;
+		case INTEGRATED_ANALYSIS:
+			cout << Timestamp() << "Reading datasets for integrated analysis" << endl;
+			ds = ChooseSnpsDatasetByExtension(snpsFilename);
+			datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
+																			altPhenotypeFilename, indIds);
+			break;
+		case DGE_ANALYSIS:
+			cout << Timestamp() << "Reading numerics data set from digital gene "
+			<< "expression (DGE) data" << endl;
+			dge = new DgeData();
+			if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
+				ds = new Dataset();
+				datasetLoaded = ds->LoadDataset(dge);
+			}
+			break;
+		case BIRDSEED_ANALYSIS:
+			cout << Timestamp() << "Reading SNPs data set from Birdseed-called "
+			<< "data" << endl;
+			birdseed = new BirdseedData();
+			if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
+					birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
+					birdseedExcludeSnpsFilename)) {
+				ds = new Dataset();
+				datasetLoaded = ds->LoadDataset(birdseed);
+			}
+			break;
+		case DIAGNOSTIC_ANALYSIS:
+			cout << Timestamp() << "Performing SNP diagnostics on the data set" << endl;
+			if(snpsFilename == "") {
+				cerr << "Cannot run diagnostics without a SNP file specified with "
+								<< "--snp-data or --snp-data-clean flag" << endl;
+				exit(COMMAND_LINE_ERROR);
+			}
+			ds = ChooseSnpsDatasetByExtension(snpsFilename);
+			ds->LoadDataset(snpsFilename, numericsFilename,
+											altPhenotypeFilename, indIds);
+			ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
+			if(diagnosticLevelsCountsFilename != "") {
+				ds->WriteLevelCounts(diagnosticLevelsCountsFilename + ".counts");
+			}
+			cout << argv[0] << " done" << endl;
+			return 0;
+			break;
+		case NO_ANALYSIS:
+			cerr << "Analysis type could not be determined" << endl;
+			exit(COMMAND_LINE_ERROR);
+		default:
+			cerr << "INTERNAL ERROR: Undefined analysis type: "
+				<< analysisType << endl;
+			exit(COMMAND_LINE_ERROR);
+	}
 
-  if(!datasetLoaded) {
-    cerr << "ERROR: Failure to load dataset for analysis" << endl << endl;
-    exit(COMMAND_LINE_ERROR);
-  }
+	if(!datasetLoaded) {
+		cerr << "ERROR: Failure to load dataset for analysis" << endl << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
 
-  // happy lights
-  if(analysisType == SNP_ONLY_ANALYSIS) {
-    ds->PrintStats();
-  } else {
-    if(analysisType == NUMERIC_ONLY_ANALYSIS ||
-       analysisType == INTEGRATED_ANALYSIS) {
-      ds->PrintNumericsStats();
-    }
-    else {
-    	if(analysisType == DGE_ANALYSIS) {
-    		dge->PrintSampleStats();
-    	}
-    	else {
-      	if(analysisType == BIRDSEED_ANALYSIS) {
-      		birdseed->PrintInfo();
-      	}
-    	}
-    }
-  }
+	/// happy lights
+	switch(analysisType) {
+		case SNP_ONLY_ANALYSIS:
+		case DISTANCE_MATRIX_ANALYSIS:
+		case DIAGNOSTIC_ANALYSIS:
+			ds->PrintStats();
+			break;
+		case NUMERIC_ONLY_ANALYSIS:
+		case INTEGRATED_ANALYSIS:
+		case REGRESSION_ANALYSIS:
+			ds->PrintNumericsStats();
+			break;
+		case DGE_ANALYSIS:
+			dge->PrintSampleStats();
+			break;
+		case BIRDSEED_ANALYSIS:
+			birdseed->PrintInfo();
+			break;
+		case NO_ANALYSIS:
+			break;
+	}
 
-  /// distance matrix calculation
-  if(distanceMatrixFilename != "") {
-  	double** distanceMatrix = 0;
-  	if(ds->CalculateDistanceMatrix(distanceMatrix, distanceMatrixFilename)) {
-  	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-  	  cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
-  	  cout << Timestamp() << argv[0] << " done" << endl;
-  		return 0;
-  	}
-  	else {
-  		cerr << "ERROR: Could not calculate a distance matrix." << endl;
-  		exit(EXIT_FAILURE);
-  	}
-  }
+	/// distance matrix calculation(s) do their work then exit main()
+	if(vm.count("distance-matrix") || vm.count("gain-matrix")) {
+		if(vm.count("distance-matrix")) {
+			double** distanceMatrix = 0;
+		  /// create a distance matrix
+		  vector<string> instanceIds = ds->MaskGetInstanceIds();
+		  int numInstances = instanceIds.size();
+		  distanceMatrix = new double*[numInstances];
+		  for(int i = 0; i < numInstances; ++i) {
+		    distanceMatrix[i] = new double[numInstances];
+		    for(int j = 0; j < numInstances; ++j) {
+		      distanceMatrix[i][j] = 0.0;
+		    }
+		  }
+			if(ds->CalculateDistanceMatrix(distanceMatrix, distanceMatrixFilename)) {
+				for(unsigned int i=0; i < ds->NumInstances(); ++i) {
+					delete [] distanceMatrix[i];
+				}
+				delete [] distanceMatrix;
+			}
+			else {
+				cerr << "ERROR: Could not calculate a distance matrix." << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+		if(vm.count("gain-matrix")) {
+			double** gainMatrix = 0;
+		  /// create an attribute interactiom matrix
+		  vector<unsigned int> attributeIds = ds->MaskGetAttributeIndices(DISCRETE_TYPE);
+		  int numAttributes = attributeIds.size();
+		  gainMatrix = new double*[numAttributes];
+		  for(int i = 0; i < numAttributes; ++i) {
+		    gainMatrix[i] = new double[numAttributes];
+		    for(int j = 0; j < numAttributes; ++j) {
+		      gainMatrix[i][j] = 0.0;
+		    }
+		  }
+			if(ds->CalculateGainMatrix(gainMatrix, gainMatrixFilename)) {
+				for(unsigned int i=0; i < ds->NumAttributes(); ++i) {
+					delete [] gainMatrix[i];
+				}
+				delete [] gainMatrix;
+			}
+			else {
+				cerr << "ERROR: Could not calculate a GAIN matrix." << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
+	  cout << Timestamp() << "Elapsed time: " << elapsedTime << " secs" << endl;
+	  cout << Timestamp() << argv[0] << " done" << endl;
+		return 0;
+	}
 
-  // ---------------------------------------------------------------------------
-  // FINALLY! run EC algorithm
-  cout << Timestamp() << "Running EC" << endl;
-  EvaporativeCooling ec(ds, vm, analysisType);
-  if(!ec.ComputeECScores()) {
-    cerr << "ERROR: Failed to calculate EC scores" << endl;
-    exit(COMMAND_LINE_ERROR);
-  }
+	// ---------------------------------------------------------------------------
+	// FINALLY! run EC algorithm
+	cout << Timestamp() << "Running EC" << endl;
+	EvaporativeCooling ec(ds, vm, analysisType);
+	if(!ec.ComputeECScores()) {
+		cerr << "ERROR: Failed to calculate EC scores" << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
 //  struct rusage s;
 //  struct rusage*p = &s;
 //  getrusage(RUSAGE_SELF, p);
@@ -516,54 +559,54 @@ int main(int argc, char** argv) {
 //         << " MB" << endl;
   cout << Timestamp() << "EC done" << endl;
 
-  // ---------------------------------------------------------------------------
-  // write the scores to the same name as the dataset with
-  // <metric>.relieff suffix
-  string resultsFilename = outputFilesPrefix;
-  switch(ec.GetAlgorithmType()) {
-    case EC_ALL:
-      resultsFilename += ".ec";
-      break;
-    case EC_RJ:
-      resultsFilename += ".rj";
-      break;
-    case EC_RF:
-      resultsFilename += ".rf";
-      break;
-    default:
-      // we should not get here by the CLI front end but it is possible to call
-      // this from other programs in the future or when used as a library
-      cerr << "ERROR: Attempting to write attribute scores before the algorithm "
-              << "type was determined. " << endl;
-      return false;
-  }
+	// ---------------------------------------------------------------------------
+	// write the scores to the same name as the dataset with
+	// <metric>.relieff suffix
+	string resultsFilename = outputFilesPrefix;
+	switch(ec.GetAlgorithmType()) {
+		case EC_ALL:
+			resultsFilename += ".ec";
+			break;
+		case EC_RJ:
+			resultsFilename += ".rj";
+			break;
+		case EC_RF:
+			resultsFilename += ".rf";
+			break;
+		default:
+			// we should not get here by the CLI front end but it is possible to call
+			// this from other programs in the future or when used as a library
+			cerr << "ERROR: Attempting to write attribute scores before the algorithm "
+							<< "type was determined. " << endl;
+			return false;
+	}
 
-  cout << Timestamp() << "Writing EC scores to [" + resultsFilename + "]" << endl;
-  ec.WriteAttributeScores(outputFilesPrefix);
+	cout << Timestamp() << "Writing EC scores to [" + resultsFilename + "]" << endl;
+	ec.WriteAttributeScores(outputFilesPrefix);
 
-  /// write the ReliefF filtered attributes as a new data set
-  switch(outputDatasetType) {
-    case TAB_DELIMITED_DATASET:
-      ds->WriteNewDataset(outputDatasetFilename, TAB_DELIMITED_DATASET);
-      break;
-    case CSV_DELIMITED_DATASET:
-      ds->WriteNewDataset(outputDatasetFilename, CSV_DELIMITED_DATASET);
-      break;
-    case ARFF_DATASET:
-      ds->WriteNewDataset(outputDatasetFilename, ARFF_DATASET);
-      break;
-    case NO_OUTPUT_DATASET:
-    default:
-      break;
-  }
+	/// write the ReliefF filtered attributes as a new data set
+	switch(outputDatasetType) {
+		case TAB_DELIMITED_DATASET:
+			ds->WriteNewDataset(outputDatasetFilename, TAB_DELIMITED_DATASET);
+			break;
+		case CSV_DELIMITED_DATASET:
+			ds->WriteNewDataset(outputDatasetFilename, CSV_DELIMITED_DATASET);
+			break;
+		case ARFF_DATASET:
+			ds->WriteNewDataset(outputDatasetFilename, ARFF_DATASET);
+			break;
+		case NO_OUTPUT_DATASET:
+		default:
+			break;
+	}
 
-  // ---------------------------------------------------------------------------
-  cout << Timestamp() << "Clean up and shutdown" << endl;
-  // delete ds;
+	// ---------------------------------------------------------------------------
+	cout << Timestamp() << "Clean up and shutdown" << endl;
+	// delete ds;
 
-  /// Remove temporary Random Jungle files if they exist
-  if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
-  	cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
+	/// Remove temporary Random Jungle files if they exist
+	if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
+		cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
 		vector<string> tempFilenames;
 		tempFilenames.push_back(outputFilesPrefix + ".log");
 		tempFilenames.push_back(outputFilesPrefix + ".verbose");
@@ -574,12 +617,12 @@ int main(int argc, char** argv) {
 				it != tempFilenames.end(); ++it) {
 			unlink((*it).c_str());
 		}
-  }
+	}
 
-  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-  cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
+	float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
+	cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
 
-  cout << Timestamp() << argv[0] << " done" << endl;
+	cout << Timestamp() << argv[0] << " done" << endl;
 
-  return 0;
+	return 0;
 }

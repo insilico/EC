@@ -161,7 +161,7 @@ bool RandomJungle::ComputeAttributeScores() {
 		} else {
 			if (dataset->HasGenotypes()) {
 				// nominal/nominal
-				rjParams.treeType = 1;
+				rjParams.treeType = 2;
 				// rjParams.treeType = 2;
 				treeTypeDesc = "Classification trees: discrete/discrete";
 			} else {
@@ -228,7 +228,9 @@ bool RandomJungle::ComputeAttributeScores() {
 				data->set(i, j,
 						dataset->GetInstance(instanceIndex)->GetPredictedValueTau());
 			} else {
-				data->set(i, j,
+				data->set(
+						i,
+						j,
 						static_cast<NumericLevel>(dataset->GetInstance(instanceIndex)->GetClass()));
 			}
 			// happy lights

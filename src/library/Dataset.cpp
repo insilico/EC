@@ -54,6 +54,7 @@ Dataset::Dataset() {
 	hasGenotypes = false;
 	hasNumerics = false;
 	hasAlternatePhenotypes = false;
+	hasPhenotypes = true;
 	hasContinuousPhenotypes = false;
 
 	classColumn = 0;
@@ -194,6 +195,8 @@ bool Dataset::LoadDataset(string snpsFilename, string numericsFilename,
 		}
 	}
 
+	hasPhenotypes = true;
+
 	// create and seed a random number generator for random sampling
 	rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
 
@@ -235,6 +238,7 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 		dsi->SetClass(thisClass);
 		classIndexes[thisClass].push_back(instanceIndex);
 	}
+	hasPhenotypes = true;
 
 	cout << Timestamp() << "Read " << NumNumerics() << " numeric attributes"
 			<< " from DGE counts data" << endl;
@@ -297,6 +301,10 @@ bool Dataset::LoadDataset(BirdseedData* birdseedData) {
 
 		if(!birdseedData->HasPhenotypes()) {
 			cout << Timestamp() << "Birdseed data DOES NOT have phenotypes." << endl;
+			hasPhenotypes = false;
+		}
+		else {
+			hasPhenotypes = true;
 		}
 
 		hasGenotypes = true;
@@ -880,6 +888,10 @@ string Dataset::GetAlternatePhenotypesFilename() {
 
 bool Dataset::HasContinuousPhenotypes() {
 	return hasContinuousPhenotypes;
+}
+
+bool Dataset::HasPhenotypes() {
+	return hasPhenotypes;
 }
 
 pair<double, double> Dataset::GetMinMaxForContinuousPhenotype() {
@@ -1836,28 +1848,65 @@ map<string, double> >& results) {
 
 }
 
-bool Dataset::CalculateGainMatrix(double** gainMatrix) {
+bool Dataset::CalculateGainMatrix(double** gainMatrix, string matrixFilename) {
 	if (!HasGenotypes() || HasNumerics()) {
-		cerr << "Dataset::CalculateInteractionInformation only works on SNP data"
+		cerr << "Dataset::CalculateGainMatrix only works on SNP data"
 				<< endl;
 		return false;
 	}
 
+	if ((!HasPhenotypes()) || (NumClasses() != 2)) {
+		cerr << "Dataset::CalculateGainMatrix only works with case-control phenotypes"
+				<< endl;
+		return false;
+	}
+
+	map<string, unsigned int> attributeMask =
+			MaskGetAttributeMask(DISCRETE_TYPE);
+  vector<string> attributeNames = MaskGetAllVariableNames();
+  int numAttributes = attributeNames.size();
+
 	/// Calculate the interaction information from entropies
 	map<pair<int, int> , map<string, double> > results;
 	CalculateInteractionInformation(results);
-	vector<string> attrNames = GetAttributeNames();
 	/// Populate the GAIN matrix
 	vector<AttributeLevel> c;
 	vector<AttributeLevel> a;
 	GetClassValues(c);
-	for (int i = 0; i < (int) NumAttributes(); i++) {
-		GetAttributeValues(attrNames[i], a);
+	for (int i = 0; i < numAttributes; i++) {
+		GetAttributeValues(attributeNames[i], a);
 		gainMatrix[i][i] = SelfEntropy(a, c);
-		for (int j = i + 1; j < (int) NumAttributes(); j++) {
+		for (int j = i + 1; j < numAttributes; j++) {
 			map<string, double> r = results[make_pair(i, j)];
 			gainMatrix[i][j] = gainMatrix[j][i] = r["I_3_paper"];
 		}
+	}
+
+	if(matrixFilename != "") {
+		cout << Timestamp() << "Writing GAIN matrix to file ["
+				<< matrixFilename << "]" << endl;
+		ofstream outFile(matrixFilename.c_str());
+		/// write header
+		for(int i=0; i < numAttributes; ++i) {
+			if(i) {
+				outFile << "\t" << attributeNames[i];
+			}
+			else {
+				outFile << attributeNames[i];
+			}
+		}
+		outFile << endl;
+		/// write all m-by-m matrix entries
+		for(int i=0; i < numAttributes; ++i) {
+			for(int j=0; j < numAttributes; ++j) {
+				if(j)
+					outFile << "\t" << gainMatrix[i][j];
+				else
+					outFile << gainMatrix[i][j];
+			}
+			outFile << endl;
+		}
+		outFile.close();
 	}
 
 	return true;
@@ -1869,29 +1918,29 @@ Dataset::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
   double distance = 0;
   //cout << "ComputeInstanceToInstanceDistance: " << dsi1 << ", " << dsi2 << endl;
 
-  if(HasGenotypes()) {
-    vector<unsigned int> attributeIndices =
-      MaskGetAttributeIndices(DISCRETE_TYPE);
-    for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
-      distance += snpDiff(attributeIndices[i], dsi1, dsi2);
-    }
-    // cout << "SNP distance = " << distance << endl;
-  }
+	if(HasGenotypes()) {
+		vector<unsigned int> attributeIndices =
+			MaskGetAttributeIndices(DISCRETE_TYPE);
+		for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
+			distance += snpDiff(attributeIndices[i], dsi1, dsi2);
+		}
+		// cout << "SNP distance = " << distance << endl;
+	}
 
-  // added 6/16/11
-  // compute numeric distances
-  if(HasNumerics()) {
-  	//cout << "Computing numeric instance-to-instance distance..." << endl;
-    vector<unsigned int> numericIndices =
-      MaskGetAttributeIndices(NUMERIC_TYPE);
-    //cout << "\tNumber of numerics: " << numericIndices.size() << endl;
-    for(unsigned int i = 0; i < numericIndices.size(); ++i) {
-    	//cout << "\t\tNumeric index: " << numericIndices[i] << endl;
-      double numDistance = numDiff(numericIndices[i], dsi1, dsi2);
-      //cout << "Numeric distance " << i << " => " << numDistance << endl;
-      distance += numDistance;
-    }
-  }
+	// added 6/16/11
+	// compute numeric distances
+	if(HasNumerics()) {
+		//cout << "Computing numeric instance-to-instance distance..." << endl;
+		vector<unsigned int> numericIndices =
+			MaskGetAttributeIndices(NUMERIC_TYPE);
+		//cout << "\tNumber of numerics: " << numericIndices.size() << endl;
+		for(unsigned int i = 0; i < numericIndices.size(); ++i) {
+			//cout << "\t\tNumeric index: " << numericIndices[i] << endl;
+			double numDistance = numDiff(numericIndices[i], dsi1, dsi2);
+			//cout << "Numeric distance " << i << " => " << numDistance << endl;
+			distance += numDistance;
+		}
+	}
 
   return distance;
 }
@@ -1901,17 +1950,6 @@ bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFile
   map<string, unsigned int> instanceMask = MaskGetInstanceMask();
   vector<string> instanceIds = MaskGetInstanceIds();
   int numInstances = instanceIds.size();
-
-  // create a distance matrix
-  cout << Timestamp() << "Allocating distance matrix";
-  distanceMatrix = new double*[numInstances];
-  for(int i = 0; i < numInstances; ++i) {
-    distanceMatrix[i] = new double[numInstances];
-    for(int j = 0; j < numInstances; ++j) {
-      distanceMatrix[i][j] = 0.0;
-    }
-  }
-  cout << " done" << endl;
 
   // populate the matrix - upper triangular
   // NOTE: make complete symmetric matrix for neighbor-to-neighbor sums
