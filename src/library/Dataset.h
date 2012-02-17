@@ -364,8 +364,10 @@ public:
   void HasAlternatePhenotypes(bool setHasAlternatePhenotypes);
   /// Get the alternate phenotype filename.
   std::string GetAlternatePhenotypesFilename();
-  // Does the data set have continuous phenotypes?
+  /// Does the data set have continuous phenotypes?
   bool HasContinuousPhenotypes();
+  /// Does the data set have any valid phenotypes?
+  bool HasPhenotypes();
   /*************************************************************************//**
    * Get the minumum and maximum values for the continuous phenotype.
    * \return minimum/maximum pair
@@ -552,7 +554,8 @@ public:
    *                         n = number of attributes
    * \return success
    ****************************************************************************/
-  bool CalculateGainMatrix(double** gainMatrix);
+  bool CalculateGainMatrix(double** gainMatrix,
+  		std::string matrixFilename="");
   /*************************************************************************//**
    * Calculate the instance-to-instance distance matrix for this data set.
    * Uses OpenMP to calculate matrix entries in parallel threads.
@@ -562,7 +565,7 @@ public:
    * \return success
    ****************************************************************************/
   bool CalculateDistanceMatrix(double** distanceMatrix,
-  		std::string matrixFilename);
+  		std::string matrixFilename="");
   /*************************************************************************//**
    * Compute the distance between two DatasetInstances.
    * \param [in] dsi1 pointer to DatasetInstance 1
@@ -681,6 +684,8 @@ protected:
   /// continuous attribute names read from file
   std::vector<std::string> numericsNames;
 
+  /// Does the data set contain phenotypes?
+  bool hasPhenotypes;
   /// file from which the alternate phenotypes (class labels) were read
   std::string alternatePhenotypesFilename;
   /// does the data set contain alternate phenotypes?

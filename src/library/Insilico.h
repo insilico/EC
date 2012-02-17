@@ -29,7 +29,6 @@ typedef std::map<std::string, std::string> ConfigMap;
 typedef enum
 {
   SNP_ONLY_ANALYSIS, /**< discrete analysis */
-  SNP_CLEAN_ANALYSIS, /**< discrete analysis - no filtering */
   NUMERIC_ONLY_ANALYSIS, /**< continuous attributes */
   INTEGRATED_ANALYSIS, /**< discrete and continuous analysis  */
   DIAGNOSTIC_ANALYSIS, /**< diagnostic mode - no ReliefF analysis */
