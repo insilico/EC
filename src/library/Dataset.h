@@ -36,6 +36,8 @@ class BirdseedData;
 const static int INVALID_DISTANCE = INT_MAX;
 /// return value for invalid index into attributes
 const static int INVALID_INDEX = INT_MAX;
+/// return value for invalid index into attributes
+const static unsigned int INVALID_INT_VALUE = UINT_MAX;
 
 /// invalid attribute value
 const static AttributeLevel INVALID_ATTRIBUTE_VALUE = INT_MIN;
@@ -59,7 +61,7 @@ const static NumericLevel MISSING_NUMERIC_CLASS_VALUE = -9;
  * \enum ValueType.
  * Return types for determing a value's type.
  */
-typedef enum
+typedef enum ValueType
 {
   NUMERIC_VALUE, /**< continuous numeric value */
   DISCRETE_VALUE, /**< discrete genotype value */
@@ -71,7 +73,7 @@ typedef enum
  * \enum AttributeType.
  * Type of attributes that are stored in data set instances.
  */
-typedef enum
+typedef enum AttributeType
 {
   NUMERIC_TYPE, /**< continuous numeric type */
   DISCRETE_TYPE, /**< discrete genotype type */
@@ -82,7 +84,7 @@ typedef enum
  * \enum ClassType.
  * Type of classes that are stored in data set instances.
  */
-typedef enum
+typedef enum ClassType
 {
   CONTINUOUS_CLASS_TYPE, /**< continuous numeric type */
   CASE_CONTROL_CLASS_TYPE, /**< discrete case-control type */
@@ -94,7 +96,7 @@ typedef enum
  * \enum AttributeMutationType.
  * Type of attribute mutation.
  */
-typedef enum
+typedef enum AttributeMutationType
 {
   TRANSITION_MUTATION, /**< transition within family */
   TRANSVERSION_MUTATION, /**< transversion between families */
@@ -105,7 +107,7 @@ typedef enum
  * \enum OutputDatasetType.
  * Type of data set to write filtered output.
  */
-typedef enum
+typedef enum OutputDatasetType
 {
   TAB_DELIMITED_DATASET, /**< tab-delimited .txt file */
   CSV_DELIMITED_DATASET, /**< comma separated values .csv file */
@@ -266,6 +268,8 @@ public:
   unsigned int GetAttributeIndexFromName(std::string attributeName);
   /// Does the data set have genotype variables?
   bool HasGenotypes();
+  /// Does the data set have allelic information for genotypes?
+  bool HasAllelicInfo();
   /*************************************************************************//**
    * Get attribute value for attribute name at instance index.
    * \param [in] instanceIndex instance index
@@ -375,12 +379,6 @@ public:
   std::pair<double, double> GetMinMaxForContinuousPhenotype();
   /// Print the entire data set in compact format.
   void Print();
-  /*************************************************************************//**
-   * Print the passed recode map to stdout.
-   * \see DoRecodeA()
-   * \param [in] recodeMap recoding map
-   ****************************************************************************/
-  void PrintRecodeMap(std::vector<std::map<unsigned int, unsigned int> > recodeMap);
   /// Print basic statstics abou the data set - discrete/SNPs only.
   void PrintStats();
   /// Print statistics about the data set including numerics.
@@ -509,7 +507,7 @@ public:
    * \param genotypeCounts vector of genotype counts: AA, Aa, aa
    * \return counts are in HWE?
    ****************************************************************************/
-  bool CheckHardyWeinbergEquilibrium(std::vector<unsigned int> genotypeCounts);
+  bool CheckHardyWeinbergEquilibrium(std::vector<unsigned int> chkGenotypeCounts);
   /*************************************************************************//**
    * This code implements an exact SNP test of Hardy-Weinberg Equilibrium.
    * As described in Wigginton, JE, Cutler, DJ, and Abecasis, GR (2005) A Note
@@ -666,6 +664,8 @@ protected:
   std::vector<std::map<char, unsigned int> > attributeAlleleCounts;
   /// minor allele, minor allele frequency
   std::vector<std::pair<char, double> > attributeMinorAllele;
+  /// Does this data set have alelelic information?
+  bool hasAllelicInfo;
   /// genotype->count
   std::vector<std::map<std::string, unsigned int> > genotypeCounts;
   /// Keep mutation type for all attributes.

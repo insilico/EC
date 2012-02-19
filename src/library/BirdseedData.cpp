@@ -188,9 +188,6 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 
 	/// read SNP genotypes across all SNPs and all subjects
 	std::vector<std::vector<std::string> > genotypes;
-	std::vector<std::map<char, int> > alleleCounts;
-	std::vector<std::map<string, int> > genotypeCounts;
-
 	cout << Timestamp()
 			<< "Reading and encoding SNP data for all subjects" << endl;
 	unsigned int lineNumber = 0;
@@ -242,12 +239,15 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		vector<string> genotypesStrings;
 		vector<string>::const_iterator it =
 				birdseedLineParts.begin() + 7;
-		map<char, int> thisSnpAlleles;
-		map<string, int> thisSnpGenotypes;
+		map<char, unsigned int> thisSnpAlleles;
+		map<string, unsigned int> thisSnpGenotypes;
 		char allele1, allele2;
 		for (; it != birdseedLineParts.end()-1; it += 7) {
 			string thisStringGenotype = *it;
 			genotypesStrings.push_back(thisStringGenotype);
+			if(thisStringGenotype == "---") {
+				continue;
+			}
 			++thisSnpGenotypes[thisStringGenotype];
 			allele1 = thisStringGenotype[0];
 			allele2 = thisStringGenotype[1];
@@ -258,7 +258,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		}
 //			cout << endl;
 		/// save the allelic distribution for this SNP
-		alleleCounts.push_back(thisSnpAlleles);
+		snpAlleleCounts.push_back(thisSnpAlleles);
 		genotypeCounts.push_back(thisSnpGenotypes);
 
 		/// save this gene's counts to the counts class member variable
@@ -276,16 +276,16 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	int monomorphs = 0;
 	int newSnpIndex = 0;
 	for(int snpIndex=0; snpIndex < numSnps; ++snpIndex) {
-		map<char, int> thisAlleleCounts = alleleCounts[snpIndex];
-		map<string, int> thisGenotypeMap = genotypeCounts[snpIndex];
+		map<char, unsigned int> thisAlleleCounts = snpAlleleCounts[snpIndex];
+		map<string, unsigned int> thisGenotypeMap = genotypeCounts[snpIndex];
 		if(thisGenotypeMap.size() == 1) {
-//			cout << Timestamp() << "WARNING: SNP " << snpNames[snpIndex]
-//						<< " is monomorphic - skipping" << endl;
+			cout << Timestamp() << "WARNING: SNP " << snpNames[snpIndex]
+						<< " is monomorphic - skipping" << endl;
 			++monomorphs;
 			continue;
 		}
 		snpNames.push_back(tmpSnpNames[snpIndex]);
-		map<char, int>::const_iterator thisAlleleCountsIt = thisAlleleCounts.begin();
+		map<char, unsigned int>::const_iterator thisAlleleCountsIt = thisAlleleCounts.begin();
 		char allele1 = thisAlleleCountsIt->first;
 		int allele1Count = thisAlleleCountsIt->second;
 		++thisAlleleCountsIt;
@@ -309,12 +309,20 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		thisGenotypeStringMap[majorAllele + minorAllele] = 1;
 		thisGenotypeStringMap[minorAllele + minorAllele] = 2;
 
+		snpAlleleCounts.push_back(thisAlleleCounts);
+		snpMajorMinorAlleles.push_back(make_pair(majorAllele[0], minorAllele[0]));
+
 		/// map genotype string vector to genotype int vector
 		vector<string> thisSnpGenotypes = genotypes[snpIndex];
 		vector<int> thisSnpGenotypesInt;
 		for(size_t sampleIndex=0; sampleIndex < thisSnpGenotypes.size(); ++sampleIndex) {
 			string thisGenotypeString = thisSnpGenotypes[sampleIndex];
-			thisSnpGenotypesInt.push_back(thisGenotypeStringMap[thisGenotypeString]);
+			if(thisGenotypeString == "---") {
+				thisSnpGenotypesInt.push_back(MISSING_ATTRIBUTE_VALUE);
+			}
+			else {
+				thisSnpGenotypesInt.push_back(thisGenotypeStringMap[thisGenotypeString]);
+			}
 		}
 		snpGenotypes.push_back(thisSnpGenotypesInt);
 
@@ -456,3 +464,46 @@ bool BirdseedData::HasPhenotypes() {
 	return hasPhenotypes;
 }
 
+pair<char, char> BirdseedData::GetMajorMinorAlleles(int snpIndex) {
+	pair<char, char> returnPair;
+	if((snpIndex >= 0) && snpIndex < (int) snpMajorMinorAlleles.size()) {
+		returnPair = snpMajorMinorAlleles[snpIndex];
+	}
+	else {
+		cerr << "ERROR: SNP index out of range" << snpIndex << endl;
+	}
+	return returnPair;
+}
+
+double BirdseedData::GetMajorAlleleFrequency(int snpIndex) {
+	double returnFreq = -1;
+	if((snpIndex >= 0) && snpIndex < (int) snpMajorAlleleFreq.size()) {
+		returnFreq = snpMajorAlleleFreq[snpIndex];
+	}
+	else {
+		cerr << "ERROR: SNP index out of range" << snpIndex << endl;
+	}
+	return returnFreq;
+}
+
+map<char, unsigned int> BirdseedData::GetAlleleCounts(int snpIndex) {
+	map<char, unsigned int> returnMap;
+	if((snpIndex >= 0) && snpIndex < (int) snpAlleleCounts.size()) {
+		returnMap = snpAlleleCounts[snpIndex];
+	}
+	else {
+		cerr << "ERROR: SNP index out of range" << snpIndex << endl;
+	}
+	return returnMap;
+}
+
+map<string, unsigned int> BirdseedData::GetGenotypeCounts(int snpIndex) {
+	map<string, unsigned int> returnMap;
+	if((snpIndex >= 0) && snpIndex < (int) genotypeCounts.size()) {
+		returnMap = genotypeCounts[snpIndex];
+	}
+	else {
+		cerr << "ERROR: SNP index out of range" << snpIndex << endl;
+	}
+	return returnMap;
+}

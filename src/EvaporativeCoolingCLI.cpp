@@ -438,20 +438,36 @@ int main(int argc, char** argv) {
 			}
 			break;
 		case DIAGNOSTIC_ANALYSIS:
-			cout << Timestamp() << "Performing SNP diagnostics on the data set" << endl;
-			if(snpsFilename == "") {
+			cout << Timestamp() << "Performing SNP diagnostics" << endl;
+			if(snpsFilename == "" && birdseedFilename == "") {
 				cerr << "Cannot run diagnostics without a SNP file specified with "
-								<< "--snp-data or --snp-data-clean flag" << endl;
+								<< "--snp-data or --birdseed-snps-data" << endl;
 				exit(COMMAND_LINE_ERROR);
 			}
-			ds = ChooseSnpsDatasetByExtension(snpsFilename);
-			ds->LoadDataset(snpsFilename, numericsFilename,
-											altPhenotypeFilename, indIds);
-			ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
-			if(diagnosticLevelsCountsFilename != "") {
-				ds->WriteLevelCounts(diagnosticLevelsCountsFilename + ".counts");
+			if(snpsFilename != "") {
+				ds = ChooseSnpsDatasetByExtension(snpsFilename);
+				datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
+												altPhenotypeFilename, indIds);
 			}
-			cout << argv[0] << " done" << endl;
+			else {
+				if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
+						birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
+						birdseedExcludeSnpsFilename)) {
+					ds = new Dataset();
+					datasetLoaded = ds->LoadDataset(birdseed);
+				}
+			}
+			if(!datasetLoaded) {
+				cerr << "ERROR: Failure to load dataset for diagnostic analysis"
+						<< endl << endl;
+				exit(COMMAND_LINE_ERROR);
+			}
+			ds->RunSnpDiagnosticTests(diagnosticLogFilename);
+			if(diagnosticLevelsCountsFilename != "") {
+				ds->WriteLevelCounts(diagnosticLevelsCountsFilename);
+			}
+			cout << Timestamp() << argv[0] << " done" << endl;
+			delete ds;
 			return 0;
 			break;
 		case NO_ANALYSIS:
@@ -490,7 +506,7 @@ int main(int argc, char** argv) {
 			break;
 	}
 
-	/// distance matrix calculation(s) do their work then exit main()
+	/// distance matrix calculation(s) do their work, then exit main() before EC
 	if(vm.count("distance-matrix") || vm.count("gain-matrix")) {
 		if(vm.count("distance-matrix")) {
 			double** distanceMatrix = 0;
@@ -550,7 +566,7 @@ int main(int argc, char** argv) {
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;
-		exit(COMMAND_LINE_ERROR);
+		exit(EXIT_FAILURE);
 	}
 //  struct rusage s;
 //  struct rusage*p = &s;

@@ -13,6 +13,10 @@
 #ifndef BIRDSEEDDATA_H_
 #define BIRDSEEDDATA_H_
 
+#include <vector>
+#include <string>
+#include <map>
+
 class BirdseedData {
 public:
 	BirdseedData();
@@ -42,6 +46,14 @@ public:
 	void PrintInfo();
 	/// Does this data have phenotypes?
 	bool HasPhenotypes();
+	/// Get the major and minor alleles for a SNP
+	std::pair<char, char> GetMajorMinorAlleles(int snpIndex);
+	/// Get the major allele frequency for a SNP
+	double GetMajorAlleleFrequency(int snpIndex);
+	/// Get the allele counts for a SNP
+	std::map<char, unsigned int> GetAlleleCounts(int snpIndex);
+	/// Get the original string genotype counts for a SNP
+	std::map<std::string, unsigned int> GetGenotypeCounts(int snpIndex);
 private:
 	/// Filename containing birdseed-called SNPs
 	std::string snpsFilename;
@@ -62,10 +74,15 @@ private:
 	std::vector<std::string> snpNames;
 	/// SNP genotypes
 	std::vector<std::vector<int> > snpGenotypes;
+	/// SNP genotype->count
+	std::vector<std::map<std::string, unsigned int> > genotypeCounts;
+
 	/// SNP genotypes alleles
-	std::vector<std::string> snpMajorAllele;
+	std::vector<std::pair<char, char> > snpMajorMinorAlleles;
 	/// SNP genotypes major allele frequency
 	std::vector<double> snpMajorAlleleFreq;
+  /// SNP allele->count
+  std::vector<std::map<char, unsigned int> > snpAlleleCounts;
 
 	/// Sample phenotypes
 	/// Filename containing subject phenotypes
