@@ -34,6 +34,20 @@ AC_PROG_LIBTOOL
 # Use libtool for all builds
 LT_INIT
 
+# Checks for header files.
+AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
+
+# makeinfo
+AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find required program: makeinfo]))
+
+AC_MSG_NOTICE([--------------------------------------------------])
+
 # add parameter(s)
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
 
@@ -49,30 +63,11 @@ CXXFLAGS="$CXXFLAGS -D__NOPLUGIN__ -I/usr/local/include"
 CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
 CPPFLAGS="$CPPFLAGS -D__NOPLUGIN__ -I/usr/local/include"
 CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
-LIBS="-lm -lgfortran $LIBS"
-LIBDIR="$LIBDIR -L/usr/local/lib"
-
-# Checks for header files.
-AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_INLINE
-AC_TYPE_SIZE_T
-AC_FUNC_ERROR_AT_LINE
-AC_FUNC_STRTOD
-AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
-AC_CHECK_SIZEOF(void *)
-
-# makeinfo
-AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find required program: makeinfo]))
-
-AC_MSG_NOTICE([--------------------------------------------------])
 
 # OpenMP
 CPPFLAGS="$CPPFLAGS -fopenmp"
 CXXFLAGS="$CXXFLAGS -fopenmp"
-LDFLAGS="$LDFLAGS -fopenmp -lgomp -lpthread"
+LDFLAGS="$LDFLAGS -fopenmp -lgomp"
 
 # check for RandomJungle dependency
 AC_CHECK_LIB([rjungle], [main])
@@ -170,6 +165,9 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg])
 
 ######################################################################
+
+#LIBS="$LIBS -lm -lgfortran"
+#LIBDIR="$LIBDIR -L/usr/local/lib"
 
 AC_MSG_NOTICE([--------------------------------------------------])
 
