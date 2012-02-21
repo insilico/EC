@@ -54,6 +54,11 @@ public:
 	std::map<char, unsigned int> GetAlleleCounts(int snpIndex);
 	/// Get the original string genotype counts for a SNP
 	std::map<std::string, unsigned int> GetGenotypeCounts(int snpIndex);
+	/// get the missing value indices for the subject name
+	bool GetMissingValues(std::string subjectName,
+			std::vector<unsigned int>& missingValueIndices);
+	/// Print the allele counts for each SNP to the console
+	void PrintAlleleCounts();
 private:
 	/// Filename containing birdseed-called SNPs
 	std::string snpsFilename;
@@ -83,6 +88,9 @@ private:
 	std::vector<double> snpMajorAlleleFreq;
   /// SNP allele->count
   std::vector<std::map<char, unsigned int> > snpAlleleCounts;
+
+  /// subject name -> attribute indices
+  std::map<std::string, std::vector<unsigned int> > missingValues;
 
 	/// Sample phenotypes
 	/// Filename containing subject phenotypes

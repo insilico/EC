@@ -450,6 +450,7 @@ int main(int argc, char** argv) {
 												altPhenotypeFilename, indIds);
 			}
 			else {
+				birdseed = new BirdseedData();
 				if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
 						birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
 						birdseedExcludeSnpsFilename)) {
@@ -458,7 +459,7 @@ int main(int argc, char** argv) {
 				}
 			}
 			if(!datasetLoaded) {
-				cerr << "ERROR: Failure to load dataset for diagnostic analysis"
+				cerr << "ERROR: Failure to load data set for diagnostic analysis"
 						<< endl << endl;
 				exit(COMMAND_LINE_ERROR);
 			}

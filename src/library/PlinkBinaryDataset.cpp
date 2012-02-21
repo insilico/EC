@@ -358,6 +358,7 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   UpdateAllLevelCounts();
 
   hasGenotypes = true;
+  hasAllelicInfo = true;
 
   return true;
 }

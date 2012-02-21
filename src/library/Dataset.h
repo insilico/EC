@@ -384,7 +384,7 @@ public:
   /// Print statistics about the data set including numerics.
   void PrintNumericsStats();
   /// Print very simple statistics abou the data set with no formatting.
-  void PrintStatsSimple();
+  void PrintStatsSimple(std::ostream& outStream=std::cout);
   /// Print class index information.
   void PrintClassIndexInfo();
   /// Print missing value statistics.

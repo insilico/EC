@@ -307,6 +307,8 @@ bool PlinkDataset::LoadSnps(string filename) {
       majorAllele[0] = allele1;
     }
 
+    attributeAlleles[attrIdx] = make_pair(majorAllele[0], minorAllele[0]);
+
     /// set the mutation type
     attributeMutationTypes[attrIdx] =
             attributeMutationMap[make_pair(minorAllele[0],
@@ -373,6 +375,7 @@ bool PlinkDataset::LoadSnps(string filename) {
   UpdateAllLevelCounts();
 
   hasGenotypes = true;
+  hasAllelicInfo = true;
 
   cout << Timestamp() << "Dataset read and transformed into integer encoding"
           << endl;

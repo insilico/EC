@@ -187,11 +187,11 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	}
 
 	/// read SNP genotypes across all SNPs and all subjects
-	std::vector<std::vector<std::string> > genotypes;
+	vector<vector<string> > fileGenotypes;
 	cout << Timestamp()
 			<< "Reading and encoding SNP data for all subjects" << endl;
 	unsigned int lineNumber = 0;
-	vector<string> tmpSnpNames;
+	vector<string> tmpSelectedSnpNames;
 	int numExcludedSnps = 0;
 	int numIncludedSnps = 0;
 	while (getline(genotypesStream, line)) {
@@ -218,14 +218,14 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		/// check for the inclusion/exclusion of this snpID
 		if(hasExcludedSnps) {
 			if(find(excludeSnps.begin(), excludeSnps.end(), snpID) != excludeSnps.end()) {
-				/// skip this SNP
+				/// found - skip this SNP
 				++numExcludedSnps;
 				continue;
 			}
 		}
 		if(hasIncludedSnps) {
 			if(find(includeSnps.begin(), includeSnps.end(), snpID) == includeSnps.end()) {
-				/// skip this SNP
+				/// not found - skip this SNP
 				continue;
 			}
 			else {
@@ -233,112 +233,161 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 			}
 		}
 
-		tmpSnpNames.push_back(snpID);
-//		cout << Timestamp() << "Splitting SNP [" << snpID
-//				<< "] line into genotypes and allele counts" << endl;
-		vector<string> genotypesStrings;
-		vector<string>::const_iterator it =
-				birdseedLineParts.begin() + 7;
+		tmpSelectedSnpNames.push_back(snpID);
+		//cout << Timestamp() << "Splitting SNP [" << snpID
+		//		<< "] line into genotypes and allele counts" << endl;
+		vector<string> thisSnpGenotypes;
 		map<char, unsigned int> thisSnpAlleles;
-		map<string, unsigned int> thisSnpGenotypes;
+		map<string, unsigned int> thisSnpGenotypeCounts;
 		char allele1, allele2;
-		for (; it != birdseedLineParts.end()-1; it += 7) {
-			string thisStringGenotype = *it;
-			genotypesStrings.push_back(thisStringGenotype);
-			if(thisStringGenotype == "---") {
-				continue;
+		int count = 0;
+		for (unsigned int colIdx = COLUMNS_PER_SUBJECT;
+				colIdx < birdseedLineParts.size();
+				colIdx += COLUMNS_PER_SUBJECT) {
+			string thisStringGenotype = birdseedLineParts[colIdx];
+			thisSnpGenotypes.push_back(thisStringGenotype);
+			++count;
+			/// skip missing genotypes for allele updates
+			if(thisStringGenotype != "---") {
+				++thisSnpGenotypeCounts[thisStringGenotype];
+				allele1 = thisStringGenotype[0];
+				allele2 = thisStringGenotype[1];
+				++thisSnpAlleles[allele1];
+				++thisSnpAlleles[allele2];
+//				if(snpID == "SNP_A-1978185") {
+//					cout << colIdx << ": " << count << ": " << thisStringGenotype << "("
+//							<< allele1 << "," << allele2 << ")" << endl;
+//				}
 			}
-			++thisSnpGenotypes[thisStringGenotype];
-			allele1 = thisStringGenotype[0];
-			allele2 = thisStringGenotype[1];
-			++thisSnpAlleles[allele1];
-			++thisSnpAlleles[allele2];
-//			cout << "|" << thisStringGenotype << "("
-//					<< allele1 << "," << allele2 << ")";
+			else {
+				/// missing data detected
+				//cout << "MISSING!" << endl;
+			}
 		}
-//			cout << endl;
-		/// save the allelic distribution for this SNP
-		snpAlleleCounts.push_back(thisSnpAlleles);
-		genotypeCounts.push_back(thisSnpGenotypes);
+		// cout << endl;
 
-		/// save this gene's counts to the counts class member variable
-		genotypes.push_back(genotypesStrings);
+		/// save the genotypic/allelic distribution for this SNP
+		snpAlleleCounts.push_back(thisSnpAlleles);
+		genotypeCounts.push_back(thisSnpGenotypeCounts);
+		fileGenotypes.push_back(thisSnpGenotypes);
 	}
 	cout << Timestamp() << lineNumber << endl;
 	genotypesStream.close();
 
-	int numSnps = tmpSnpNames.size();
-	cout << Timestamp() << "Read " << numSnps
-			<< " SNPs from Birdseed file" << endl;
+	int numSnps = tmpSelectedSnpNames.size();
+	if((int) snpAlleleCounts.size() != numSnps) {
+		cerr << "Allele counts vector not equal to number of SNPs" << endl;
+		return false;
+	}
+	if((int) genotypeCounts.size() != numSnps) {
+		cerr << "Genotype counts vector not equal to number of SNPs" << endl;
+		return false;
+	}
+	cout << Timestamp() << "Read " << numSnps << " SNPs from Birdseed file" << endl;
+
+	// --------------------------------------------------------------------------
 
 	/// for each SNP, map two-allele genotypes to integers using allele frequencies
 	cout << Timestamp() << "Mapping genotype strings to integers" << endl;
 	int monomorphs = 0;
-	int newSnpIndex = 0;
 	for(int snpIndex=0; snpIndex < numSnps; ++snpIndex) {
+		// cout << endl << "Getting SNP info for index: " << snpIndex << endl;
 		map<char, unsigned int> thisAlleleCounts = snpAlleleCounts[snpIndex];
 		map<string, unsigned int> thisGenotypeMap = genotypeCounts[snpIndex];
-		if(thisGenotypeMap.size() == 1) {
-			cout << Timestamp() << "WARNING: SNP " << snpNames[snpIndex]
-						<< " is monomorphic - skipping" << endl;
-			++monomorphs;
-			continue;
-		}
-		snpNames.push_back(tmpSnpNames[snpIndex]);
-		map<char, unsigned int>::const_iterator thisAlleleCountsIt = thisAlleleCounts.begin();
-		char allele1 = thisAlleleCountsIt->first;
-		int allele1Count = thisAlleleCountsIt->second;
-		++thisAlleleCountsIt;
-		char allele2 = thisAlleleCountsIt->first;
-		int allele2Count = thisAlleleCountsIt->second;
 		string majorAllele = " ";
 		string minorAllele = " ";
+		map<string, int> thisGenotypeStringMap;
 		int majorAlleleCount = 0;
-		if(allele1Count > allele2Count) {
-			majorAllele[0] = allele1;
-			minorAllele[0] = allele2;
-			majorAlleleCount = allele1Count;
+		// cout << "allele map size: " << thisAlleleCounts.size() << endl;
+		// cout << "genotype map size: " << thisGenotypeMap.size() << endl;
+		if(thisGenotypeMap.size() == 0) {
+			// all missing SNPs
+			cout << Timestamp() << "WARNING: SNP " << tmpSelectedSnpNames[snpIndex]
+						<< " has all missing data - skipping" << endl;
+			continue;
+		}
+		if(thisGenotypeMap.size() == 1) {
+			cout << Timestamp() << "WARNING: SNP " << tmpSelectedSnpNames[snpIndex]
+						<< " is monomorphic - keeping" << endl;
+			map<char, unsigned int>::const_iterator monoIt = thisAlleleCounts.begin();
+			char onlyAllele = monoIt->first;
+			unsigned int onlyAlleleCount = monoIt->second;
+			majorAllele[0] = onlyAllele;
+			minorAllele[0] = onlyAllele;
+			majorAlleleCount = onlyAlleleCount;
+			++monomorphs;
+			thisGenotypeStringMap[majorAllele + majorAllele] = 0;
+			thisGenotypeStringMap[majorAllele + minorAllele] = 0;
+			thisGenotypeStringMap[minorAllele + minorAllele] = 0;
 		}
 		else {
-			majorAllele[0] = allele2;
-			minorAllele[0] = allele1;
-			majorAlleleCount = allele2Count;
+			map<char, unsigned int>::const_iterator thisAlleleCountsIt =
+					thisAlleleCounts.begin();
+			char allele1 = thisAlleleCountsIt->first;
+			int allele1Count = thisAlleleCountsIt->second;
+			++thisAlleleCountsIt;
+			char allele2 = thisAlleleCountsIt->first;
+			int allele2Count = thisAlleleCountsIt->second;
+			if(allele1Count > allele2Count) {
+				majorAllele[0] = allele1;
+				minorAllele[0] = allele2;
+				majorAlleleCount = allele1Count;
+			}
+			else {
+				majorAllele[0] = allele2;
+				minorAllele[0] = allele1;
+				majorAlleleCount = allele2Count;
+			}
+			thisGenotypeStringMap[majorAllele + majorAllele] = 0;
+			thisGenotypeStringMap[majorAllele + minorAllele] = 1;
+			thisGenotypeStringMap[minorAllele + majorAllele] = 1;
+			thisGenotypeStringMap[minorAllele + minorAllele] = 2;
 		}
-		map<string, int> thisGenotypeStringMap;
-		thisGenotypeStringMap[majorAllele + majorAllele] = 0;
-		thisGenotypeStringMap[majorAllele + minorAllele] = 1;
-		thisGenotypeStringMap[minorAllele + minorAllele] = 2;
+		// cout << tmpSelectedSnpNames[snpIndex] << endl;
+		snpNames.push_back(tmpSelectedSnpNames[snpIndex]);
 
-		snpAlleleCounts.push_back(thisAlleleCounts);
 		snpMajorMinorAlleles.push_back(make_pair(majorAllele[0], minorAllele[0]));
-
+		// cout << majorAllele << "/" << minorAllele << endl;
+		// cout << "mapping strings to ints through map" << endl;
 		/// map genotype string vector to genotype int vector
-		vector<string> thisSnpGenotypes = genotypes[snpIndex];
+		vector<string> thisSnpGenotypes = fileGenotypes[snpIndex];
 		vector<int> thisSnpGenotypesInt;
 		for(size_t sampleIndex=0; sampleIndex < thisSnpGenotypes.size(); ++sampleIndex) {
 			string thisGenotypeString = thisSnpGenotypes[sampleIndex];
 			if(thisGenotypeString == "---") {
 				thisSnpGenotypesInt.push_back(MISSING_ATTRIBUTE_VALUE);
+				missingValues[subjectNames[sampleIndex]].push_back(snpIndex);
 			}
 			else {
-				thisSnpGenotypesInt.push_back(thisGenotypeStringMap[thisGenotypeString]);
+				// check to see if the genotype string is in the map
+				if(thisGenotypeStringMap.find(thisGenotypeString) ==
+						thisGenotypeStringMap.end()) {
+					cerr << "ERROR: " << snpNames[snpIndex]
+					     << ", genotype [" << thisGenotypeString
+							 << "] not found in lookup map" << endl;
+					exit(EXIT_FAILURE);
+				}
+				int thisGenotypeInt = thisGenotypeStringMap[thisGenotypeString];
+				thisSnpGenotypesInt.push_back(thisGenotypeInt);
 			}
 		}
 		snpGenotypes.push_back(thisSnpGenotypesInt);
 
-		double majorAlleleFreq = majorAlleleCount / (thisSnpGenotypesInt.size() * 2);
+		double majorAlleleFreq = ((double) majorAlleleCount) /
+				(thisSnpGenotypesInt.size() * 2);
+		// cout << "MAF: " << majorAlleleFreq << endl;
 		snpMajorAlleleFreq.push_back(majorAlleleFreq);
-
-		++newSnpIndex;
 
 		if(snpIndex && (snpIndex % 100000 == 0)) {
 			cout << Timestamp() << snpIndex << endl;
 		}
 	}
+
 	cout << Timestamp() << subjectNames.size() << " subjects read and encoded" << endl;
 	cout << Timestamp() << snpGenotypes.size() << " SNPs read and encoded" << endl;
+	cout << Timestamp() << missingValues.size() << " subjects had missing value(s)" << endl;
 	if(monomorphs) {
-		cout << Timestamp() << monomorphs << " monomorphic SNPs detected and skipped"
+		cout << Timestamp() << monomorphs << " monomorphic SNPs detected"
 				<< endl;
 	}
 
@@ -506,4 +555,22 @@ map<string, unsigned int> BirdseedData::GetGenotypeCounts(int snpIndex) {
 		cerr << "ERROR: SNP index out of range" << snpIndex << endl;
 	}
 	return returnMap;
+}
+
+bool BirdseedData::GetMissingValues(std::string subjectName,
+		std::vector<unsigned int>& missingValueIndices) {
+	if(missingValues.find(subjectName) != missingValues.end()) {
+		missingValueIndices = missingValues[subjectName];
+	}
+	return true;
+}
+
+void BirdseedData::PrintAlleleCounts() {
+	for(unsigned int i=0; i < genotypeCounts.size(); ++i) {
+		cout << "--------------------------------------------------" << endl;
+		map<string, unsigned int>::const_iterator it = genotypeCounts[i].begin();
+		for(; it != genotypeCounts[i].end(); ++it) {
+			cout << it->first << " " << it->second << endl;
+		}
+	}
 }
