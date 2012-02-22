@@ -10,9 +10,6 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
 
-/* Define to 1 if you have the `floor' function. */
-#define HAVE_FLOOR 1
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
@@ -27,18 +24,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
-
-/* Define to 1 if you have the `memset' function. */
-#define HAVE_MEMSET 1
-
-/* Define to 1 if you have the `pow' function. */
-#define HAVE_POW 1
-
-/* Define to 1 if you have the `round' function. */
-#define HAVE_ROUND 1
-
-/* Define to 1 if you have the `sqrt' function. */
-#define HAVE_SQRT 1
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #define HAVE_STDBOOL_H 1
@@ -88,6 +73,9 @@
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "http://insilico.utulsa.edu/evaporative-cooling"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"

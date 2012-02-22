@@ -34,14 +34,14 @@ AC_PROG_LIBTOOL
 # Use libtool for all builds
 LT_INIT
 
-# Checks for header files.
-AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
-
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_SIZE_T
-AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
+
+# Checks for header files.
+AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
+# AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
 
 # makeinfo
 AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find required program: makeinfo]))
