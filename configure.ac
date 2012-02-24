@@ -172,5 +172,5 @@ DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg])
 AC_MSG_NOTICE([--------------------------------------------------])
 
 # Process makefiles
-AC_CONFIG_FILES([Makefile src/library/Makefile src/Makefile examples/Makefile doc/Makefile])
+AC_CONFIG_FILES([Makefile src/library/Makefile src/Makefile examples/Makefile])
 AC_OUTPUT
