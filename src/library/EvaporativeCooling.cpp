@@ -583,8 +583,17 @@ bool EvaporativeCooling::PrintKendallTaus() {
 
 bool EvaporativeCooling::RunReliefF() {
 
-	reliefF->ComputeAttributeScores();
-	rfScores = reliefF->GetScores();
+	if(reliefF->ComputeAttributeScores()) {
+		rfScores = reliefF->GetScores();
+		if(rfScores.size() == 0) {
+			cerr << "ERROR: RunReliefF: No scores computed" << endl;
+			return false;
+		}
+	}
+	else {
+		cerr << "ERROR: RunReliefF: ComputeAttributeScores failed" << endl;
+		return false;
+	}
 
 	cout << Timestamp() << "Normalizing ReliefF scores to 0-1" << endl;
 	pair<double, string> firstScore = rfScores[0];
@@ -603,7 +612,7 @@ bool EvaporativeCooling::RunReliefF() {
 
 	// normalize attribute scores
 	if (minRFScore == maxRFScore) {
-		cout << Timestamp() << "WARNING: Relief-F min and max scores are the same"
+		cout << Timestamp() << "WARNING: Relief-F min and max scores are the same. "
 				<< "No normalization necessary" << endl;
 		return true;
 	}

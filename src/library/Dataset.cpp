@@ -77,28 +77,13 @@ Dataset::Dataset() {
 	attributeMutationMap[make_pair('G', 'C')] = TRANSVERSION_MUTATION;
 
 	snpMetric = "gm";
+  snpDiff = diffGMM;
+
 	numMetric = "manhattan";
+  numDiff = diffManhattan;
 
-	if(to_upper(snpMetric) == "GM") {
-    snpDiff = diffGMM;
-  } else {
-    if(to_upper(snpMetric) == "AM") {
-      snpDiff = diffAMM;
-    } else {
-      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
-      exit(1);
-    }
-  }
-
-  if(to_upper(numMetric) == "MANHATTAN") {
-    numDiff = diffManhattan;
-  } else {
-    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
-    exit(1);
-  }
-
-  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
-  cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
+  cout << Timestamp() << "Default SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "Default continuous distance metric: " << numMetric << endl;
 
 	rng = NULL;
 }
@@ -775,6 +760,24 @@ AttributeLevel Dataset::GetAttribute(unsigned instanceIndex, string name) {
 				<< instanceIndex << " not found" << endl;
 		exit(1);
 	}
+}
+
+pair<char, char> Dataset::GetAttributeAlleles(unsigned int attributeIndex) {
+	if(!hasAllelicInfo) {
+		cerr << "ERROR: GetAttributeAlleles: This data set does not have "
+				<< "allelic information." << endl;
+		exit(EXIT_FAILURE);
+	}
+	pair<char, char> returnPair = make_pair(' ', ' ');
+	if ((attributeIndex >= 0) && (attributeIndex < attributeAlleles.size())) {
+		returnPair = attributeAlleles[attributeIndex];
+	}
+	else {
+		cerr << "ERROR: GetAttributeAlleles: attribute index out of range: "
+				<< attributeIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+	return returnPair;
 }
 
 pair<char, double> Dataset::GetAttributeMAF(unsigned int attributeIndex) {
@@ -2128,6 +2131,41 @@ Dataset::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
 	}
 
   return distance;
+}
+
+bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
+	/// set the SNP metric function pointer
+  bool snpMetricFunctionUnset = true;
+	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "GM") {
+    snpDiff = diffGMM;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "AM") {
+		snpDiff = diffAMM;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "NCA") {
+		snpDiff = diffNCA;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset) {
+		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
+		return false;
+  }
+	snpMetric = to_upper(newSnpMetric);
+
+  if(to_upper(numMetric) == "MANHATTAN") {
+    numDiff = diffManhattan;
+  } else {
+    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
+    return false;
+  }
+	numMetric = to_upper(newNumMetric);
+
+	cout << Timestamp() << "New SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "New continuous distance metric: " << numMetric << endl;
+
+  return true;
 }
 
 bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {

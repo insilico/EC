@@ -278,6 +278,12 @@ public:
    ****************************************************************************/
   AttributeLevel GetAttribute(unsigned instanceIndex, std::string name);
   /*************************************************************************//**
+   * Get attribute major and minor alleles
+   * \param [in] attribute index
+   * \return pair (major allele, minor allele frequency)
+   ****************************************************************************/
+  std::pair<char, char> GetAttributeAlleles(unsigned int attributeIndex);
+  /*************************************************************************//**
    * Get attribute minor allele and frequency.
    * \param [in] attribute index
    * \return pair (minor allele, minor allele frequency)
@@ -572,7 +578,14 @@ public:
    ****************************************************************************/
   double ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
                                            DatasetInstance* dsi2);
-  /// bool SetMetric(std::string newMetricString);
+  /*************************************************************************//**
+   * Set the he distance metrics used to compute instance-to-instance distances.
+   * \param [in] snpMetric name of SNP metric
+   * \param [in] numMetric name of the numeric metric
+   * \return distance
+   ****************************************************************************/
+  bool SetDistanceMetrics(std::string newSnpMetric,
+  		std::string newNumMetric="manhattan");
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.

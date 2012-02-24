@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 		(
 		"snp-metric,S",
 		po::value<string > (&snpMetric)->default_value(snpMetric),
-		"metric for determining the difference between SNPs (gm|am)"
+		"metric for determining the difference between SNPs (gm|am|nca)"
 		)
 		(
 		"numeric-metric,N",
@@ -482,6 +482,12 @@ int main(int argc, char** argv) {
 
 	if(!datasetLoaded) {
 		cerr << "ERROR: Failure to load dataset for analysis" << endl << endl;
+		exit(COMMAND_LINE_ERROR);
+	}
+
+	if(!ds->SetDistanceMetrics(snpMetric, numMetric)) {
+		cerr << "Could not set distance metrics for the data set, "
+				<< "SNP: " << snpMetric << ", Numeric: " << numMetric << endl;
 		exit(COMMAND_LINE_ERROR);
 	}
 

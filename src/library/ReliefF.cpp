@@ -67,7 +67,8 @@ public:
 };
 
 ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
-  cout << Timestamp() << "ReliefF initialization" << endl;
+  cout << Timestamp() << "ReliefF default initialization without "
+  		<< "configuration parameters" << endl;
   if(ds) {
     dataset = ds;
   } else {
@@ -79,7 +80,9 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
   k = 10;
   weightByDistanceMethod = "equal";
   snpMetric = "gm";
+  snpDiff = diffGMM;
   numMetric = "manhattan";
+  numDiff = diffManhattan;
   removePerIteration = 0;
 
   cout << Timestamp() << "Number of samples: m = " << m << endl;
@@ -99,23 +102,6 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
 
   one_over_m_times_k =
           1.0 / ((double) m * (double) k);
-  if(to_upper(snpMetric) == "GM") {
-    snpDiff = diffGMM;
-  } else {
-    if(to_upper(snpMetric) == "AM") {
-      snpDiff = diffAMM;
-    } else {
-      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
-      exit(1);
-    }
-  }
-
-  if(to_upper(numMetric) == "MANHATTAN") {
-    numDiff = diffManhattan;
-  } else {
-    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
-    exit(1);
-  }
 
   cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
   cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
@@ -133,7 +119,8 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
 }
 
 ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
-  cout << Timestamp() << "ReliefF initialization:" << endl;
+  cout << Timestamp() << "ReliefF initialization with boost command "
+  		<< "line parameters:" << endl;
   if(ds) {
     dataset = ds;
   } else {
@@ -182,7 +169,7 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
     removePerIteration = vm["iter-remove-n"].as<unsigned int>();
     if((removePerIteration < 1) ||
        (removePerIteration >= dataset->NumAttributes())) {
-      cerr << "ERROR: Number to remove per iteratopn ["
+      cerr << "ERROR: Number to remove per iteration ["
               << removePerIteration << "] not in valid range" << endl;
       exit(-1);
     }
@@ -224,15 +211,23 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
           1.0 / (((double) m) * ((double) k));
   //                                  m           *                  k
 
-  if(to_upper(snpMetric) == "GM") {
+	/// set the SNP metric function pointer
+  bool snpMetricFunctionUnset = true;
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "GM") {
     snpDiff = diffGMM;
-  } else {
-    if(to_upper(snpMetric) == "AM") {
-      snpDiff = diffAMM;
-    } else {
-      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
-      exit(1);
-    }
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "AM") {
+		snpDiff = diffAMM;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA") {
+		snpDiff = diffNCA;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset) {
+		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
+		exit(EXIT_FAILURE);
   }
 
   if(to_upper(numMetric) == "MANHATTAN") {
@@ -242,8 +237,8 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
     exit(1);
   }
 
-  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
-  cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
+  cout << Timestamp() << "ReliefF SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "ReliefF continuous distance metric: " << numMetric << endl;
 
   weightByDistanceMethod = vm["weight-by-distance-method"].as<string > ();
   if((weightByDistanceMethod != "exponential") &&
@@ -273,7 +268,7 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
 }
 
 ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
-  cout << Timestamp() << "ReliefF initialization:" << endl;
+  cout << Timestamp() << "ReliefF initialization with configuration map:" << endl;
   if(ds) {
     dataset = ds;
   } else {
@@ -371,15 +366,23 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
           1.0 / (((double) m) * ((double) k));
   //                                  m           *                  k
 
-  if(to_upper(snpMetric) == "GM") {
+	/// set the SNP metric function pointer
+  bool snpMetricFunctionUnset = true;
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "GM") {
     snpDiff = diffGMM;
-  } else {
-    if(to_upper(snpMetric) == "AM") {
-      snpDiff = diffAMM;
-    } else {
-      cerr << "ERROR: [" << snpMetric << "] is not a valid SNP metric type" << endl;
-      exit(EXIT_FAILURE);
-    }
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "AM") {
+		snpDiff = diffAMM;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA") {
+		snpDiff = diffNCA;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset) {
+		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
+		exit(EXIT_FAILURE);
   }
 
   if(to_upper(numMetric) == "MANHATTAN") {
@@ -389,8 +392,8 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
     exit(EXIT_FAILURE);
   }
 
-  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
-  cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
+  cout << Timestamp() << "ReliefF SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "ReliefF continuous distance metric: " << numMetric << endl;
 
   if(GetConfigValue(configMap, "weight-by-distance-method", configValue)) {
 		weightByDistanceMethod = configValue;

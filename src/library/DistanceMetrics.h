@@ -66,6 +66,16 @@ double diffGMM(unsigned int attributeIndex,
                DatasetInstance* dsi1,
                DatasetInstance* dsi2);
 /***************************************************************************//**
+ * Nucleotide count array (NCA) metric.
+ * \param [in] attributeIndex index into the vector of attributes
+ * \param [in] dsi1 data set instance 1
+ * \param [in] dsi2 data set instance 2
+ * \return diff(erence) considering nucleotide counts
+ ****************************************************************************/
+double diffNCA(unsigned int attributeIndex,
+               DatasetInstance* dsi1,
+               DatasetInstance* dsi2);
+/***************************************************************************//**
  * "Manhattan" distance between continuous attributes.
  * \param [in] attributeIndex index into the vector of attributes
  * \param [in] dsi1 data set instance 1
