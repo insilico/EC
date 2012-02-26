@@ -8,11 +8,17 @@ myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/$(LIBDIR)
 mycppflags = $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 
 # make ec and ecm (iMproved!)
-bin_PROGRAMS = ec ecm
+bin_PROGRAMS = ec ecm ec_static
 
 ec_SOURCES=EvaporativeCoolingCLI.cpp
 # libtool libraries
 ec_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
+
+ec_static_SOURCES=EvaporativeCoolingCLI.cpp
+# libtool libraries
+ec_static_LDFLAGS=-all-static
+ec_static_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
 
 ecm_SOURCES=EvaporativeCoolingCLINewAPI.cpp

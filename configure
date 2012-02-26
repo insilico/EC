@@ -23760,7 +23760,7 @@ esac
 echo "$as_me: --------------------------------------------------" >&6;}
 
 # Process makefiles
-ac_config_files="$ac_config_files Makefile src/library/Makefile src/Makefile examples/Makefile doc/Makefile"
+ac_config_files="$ac_config_files Makefile src/library/Makefile src/Makefile examples/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -24961,7 +24961,6 @@ do
     "src/library/Makefile") CONFIG_FILES="$CONFIG_FILES src/library/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
-    "doc/Makefile") CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

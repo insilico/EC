@@ -32,7 +32,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT)
+bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT) ec_static$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,6 +54,12 @@ am_ec_OBJECTS = EvaporativeCoolingCLI.$(OBJEXT)
 ec_OBJECTS = $(am_ec_OBJECTS)
 am__DEPENDENCIES_1 =
 ec_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_ec_static_OBJECTS = EvaporativeCoolingCLI.$(OBJEXT)
+ec_static_OBJECTS = $(am_ec_static_OBJECTS)
+ec_static_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+ec_static_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(ec_static_LDFLAGS) $(LDFLAGS) -o $@
 am_ecm_OBJECTS = EvaporativeCoolingCLINewAPI.$(OBJEXT)
 ecm_OBJECTS = $(am_ecm_OBJECTS)
 ecm_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -69,8 +75,8 @@ CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(ec_SOURCES) $(ecm_SOURCES)
-DIST_SOURCES = $(ec_SOURCES) $(ecm_SOURCES)
+SOURCES = $(ec_SOURCES) $(ec_static_SOURCES) $(ecm_SOURCES)
+DIST_SOURCES = $(ec_SOURCES) $(ec_static_SOURCES) $(ecm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -253,6 +259,12 @@ ec_SOURCES = EvaporativeCoolingCLI.cpp
 ec_LDADD = $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
 
+ec_static_SOURCES = EvaporativeCoolingCLI.cpp
+# libtool libraries
+ec_static_LDFLAGS = -all-static
+ec_static_LDADD = $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
+-L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
+
 ecm_SOURCES = EvaporativeCoolingCLINewAPI.cpp
 # libtool libraries
 ecm_LDADD = $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
@@ -328,6 +340,9 @@ clean-binPROGRAMS:
 ec$(EXEEXT): $(ec_OBJECTS) $(ec_DEPENDENCIES) 
 	@rm -f ec$(EXEEXT)
 	$(CXXLINK) $(ec_OBJECTS) $(ec_LDADD) $(LIBS)
+ec_static$(EXEEXT): $(ec_static_OBJECTS) $(ec_static_DEPENDENCIES) 
+	@rm -f ec_static$(EXEEXT)
+	$(ec_static_LINK) $(ec_static_OBJECTS) $(ec_static_LDADD) $(LIBS)
 ecm$(EXEEXT): $(ecm_OBJECTS) $(ecm_DEPENDENCIES) 
 	@rm -f ecm$(EXEEXT)
 	$(CXXLINK) $(ecm_OBJECTS) $(ecm_LDADD) $(LIBS)
