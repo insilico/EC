@@ -17,7 +17,7 @@ ec_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 
 ec_static_SOURCES=EvaporativeCoolingCLI.cpp
 # libtool libraries
-ec_static_LDFLAGS=-all-static
+ec_static_LDFLAGS=-all-static -static-libgcc -static-libstdc++
 ec_static_LDADD=$(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS) \
 -L$(top_srcdir)/src/$(LIBDIR) $(RJ_LIBS) -lec
 
