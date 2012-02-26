@@ -87,6 +87,9 @@ GSL_LIBS='-lgsl -lgslcblas'
 AC_SUBST([GSL_LIBS])
 LDFLAGS="$LDFLAGS -lgsl -lgslcblas"
 
+# zlib.m4
+CHECK_ZLIB()
+
 # libxml2.m4
 AM_PATH_XML2(2.0.0,, AC_MSG_ERROR([could not find required version of XML2]))
 #

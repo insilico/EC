@@ -19,6 +19,9 @@
 /* Define to 1 if you have the `rjungle' library (-lrjungle). */
 #define HAVE_LIBRJUNGLE 1
 
+/* Define to 1 if you have the `z' library (-lz). */
+#define HAVE_LIBZ 1
+
 /* Define to 1 if you have the <math.h> header file. */
 #define HAVE_MATH_H 1
 
