@@ -25,95 +25,13 @@
 #include <climits>
 
 #include "DatasetInstance.h"
+#include "Insilico.h"
 
 // GSL random number generator base class
 #include "GSLRandomFlat.h"
 
 class DgeData;
 class BirdseedData;
-
-/// return value for invalid distance
-const static int INVALID_DISTANCE = INT_MAX;
-/// return value for invalid index into attributes
-const static int INVALID_INDEX = INT_MAX;
-/// return value for invalid index into attributes
-const static unsigned int INVALID_INT_VALUE = UINT_MAX;
-
-/// invalid attribute value
-const static AttributeLevel INVALID_ATTRIBUTE_VALUE = INT_MIN;
-/// invalid attribute value
-const static NumericLevel INVALID_NUMERIC_VALUE = INT_MIN;
-/// stored value for missing discrete class
-const static ClassLevel INVALID_DISCRETE_CLASS_VALUE = INT_MIN;
-/// stored value for missing numeric class
-const static NumericLevel INVALID_NUMERIC_CLASS_VALUE = INT_MIN;
-
-/// stored value for missing discrete attribute
-const static AttributeLevel MISSING_ATTRIBUTE_VALUE = -9;
-/// stored value for missing numeric attribute
-const static NumericLevel MISSING_NUMERIC_VALUE = -9;
-/// stored value for missing discrete class
-const static ClassLevel MISSING_DISCRETE_CLASS_VALUE = -9;
-/// stored value for missing numeric class
-const static NumericLevel MISSING_NUMERIC_CLASS_VALUE = -9;
-
-/**
- * \enum ValueType.
- * Return types for determing a value's type.
- */
-typedef enum ValueType
-{
-  NUMERIC_VALUE, /**< continuous numeric value */
-  DISCRETE_VALUE, /**< discrete genotype value */
-  MISSING_VALUE, /**< missing value */
-  NO_VALUE /**< default no value type */
-} ValueType;
-
-/**
- * \enum AttributeType.
- * Type of attributes that are stored in data set instances.
- */
-typedef enum AttributeType
-{
-  NUMERIC_TYPE, /**< continuous numeric type */
-  DISCRETE_TYPE, /**< discrete genotype type */
-  NO_TYPE /**< default no type */
-} AttributeType;
-
-/**
- * \enum ClassType.
- * Type of classes that are stored in data set instances.
- */
-typedef enum ClassType
-{
-  CONTINUOUS_CLASS_TYPE, /**< continuous numeric type */
-  CASE_CONTROL_CLASS_TYPE, /**< discrete case-control type */
-  MULTI_CLASS_TYPE, /**< multiclass type */
-  NO_CLASS_TYPE /**< default no type */
-} ClassType;
-
-/**
- * \enum AttributeMutationType.
- * Type of attribute mutation.
- */
-typedef enum AttributeMutationType
-{
-  TRANSITION_MUTATION, /**< transition within family */
-  TRANSVERSION_MUTATION, /**< transversion between families */
-  UNKNOWN_MUTATION /**< unknown - no allele information */
-} AttributeMutationType;
-
-/**
- * \enum OutputDatasetType.
- * Type of data set to write filtered output.
- */
-typedef enum OutputDatasetType
-{
-  TAB_DELIMITED_DATASET, /**< tab-delimited .txt file */
-  CSV_DELIMITED_DATASET, /**< comma separated values .csv file */
-  ARFF_DATASET, /**< WEKA ARFF format .arff file */
-  NO_OUTPUT_DATASET /**< no output data set specified */
-} OutputDatasetType;
 
 class Dataset
 {
@@ -294,7 +212,8 @@ public:
    * \param [in] attribute index
    * \return mutation type (transition, transversion, unknown)
    ****************************************************************************/
-  virtual AttributeMutationType GetAttributeMutationType(unsigned int attributeIndex);
+  virtual AttributeMutationType
+  GetAttributeMutationType(unsigned int attributeIndex);
   /*************************************************************************//**
    * Get integer value for string genotype.
    * \param [in] genotype genotype string
@@ -417,14 +336,16 @@ public:
    * \param [in] attrType attribute type
    * \return success
    ****************************************************************************/
-  bool MaskRemoveVariableType(std::string variableName, AttributeType varType);
+  bool MaskRemoveVariableType(std::string variableName,
+  		AttributeType varType);
   /*************************************************************************//**
    * Determines if the named variable is in the current masked data set.
    * \param [in] attributeName attribute name
    * \param [in] attributeType attribute type
    * \return true if discrete attribute name is being considered in operations.
    ****************************************************************************/
-  bool MaskSearchVariableType(std::string variableName, AttributeType attrType);
+  bool MaskSearchVariableType(std::string variableName,
+  		AttributeType attrType);
   /*************************************************************************//**
    * Mark all attributes for inclusion in data set operations.
    * \param [in] attrType attribute type

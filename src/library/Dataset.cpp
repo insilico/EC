@@ -35,7 +35,6 @@
 #include "DatasetInstance.h"
 #include "StringUtils.h"
 #include "Statistics.h"
-#include "Debugging.h"
 #include "Insilico.h"
 #include "DgeData.h"
 #include "BirdseedData.h"
@@ -463,7 +462,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 		unsigned instanceIndex = 0;
 		GetInstanceIndexForID(instanceIds[iIdx], instanceIndex);
 		// write discrete attribute values
-		vector<unsigned int> attrIndices = MaskGetAttributeIndices(DISCRETE_TYPE);
+		vector<unsigned int> attrIndices =
+				MaskGetAttributeIndices(DISCRETE_TYPE);
 		for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
 			AttributeLevel A = instances[instanceIndex]->GetAttribute(
 					attrIndices[aIdx]);
@@ -491,7 +491,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 			}
 		}
 		/// write continuous attribute values
-		vector<unsigned int> numIndices = MaskGetAttributeIndices(NUMERIC_TYPE);
+		vector<unsigned int> numIndices =
+				MaskGetAttributeIndices(NUMERIC_TYPE);
 		for (unsigned int nIdx = 0; nIdx < numIndices.size(); nIdx++) {
 			NumericLevel N = instances[instanceIndex]->GetNumeric(numIndices[nIdx]);
 			switch (outputDatasetType) {

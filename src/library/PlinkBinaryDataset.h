@@ -17,6 +17,7 @@
 #define	PLINKBINARYDATASET_H
 
 #include "Dataset.h"
+#include "Insilico.h"
 
 class PlinkBinaryDataset : public Dataset
 {

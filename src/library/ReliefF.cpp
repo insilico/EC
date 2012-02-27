@@ -25,7 +25,6 @@
 #include "DatasetInstance.h"
 #include "StringUtils.h"
 #include "DistanceMetrics.h"
-#include "best_n.h"
 #include "Insilico.h"
 
 namespace po = boost::program_options;

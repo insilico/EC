@@ -20,19 +20,7 @@
 #include <map>
 #include <algorithm>
 
-/// type of discrete attribute values
-typedef int AttributeLevel;
-/// type of continuous attributes
-typedef double NumericLevel;
-/// type of instance class labels
-typedef int ClassLevel;
-
-/// distance pair type: distance, instance ID
-typedef std::pair<double, std::string> DistancePair;
-/// vector of distance pairs represents distances to nearest neighbors
-typedef std::vector<DistancePair> DistancePairs;
-/// distance pairs iterator
-typedef DistancePairs::const_iterator DistancePairsIt;
+#include "Insilico.h"
 
 /// forward reference to avoid circular include problems
 class Dataset;
@@ -111,7 +99,8 @@ public:
    ****************************************************************************/
   void SetDistanceSums(unsigned int kNearestNeighbors,
                        DistancePairs& sameClassSums,
-                       std::map<ClassLevel, DistancePairs>& diffClassSums);
+                       std::map<ClassLevel,
+                       DistancePairs>& diffClassSums);
   /*************************************************************************//**
    * Set the best kNearestNeighbors from all other instances/neighbors.
    * SIDE_EFFECT: Sorts and loads neighborSums from the instanceSums

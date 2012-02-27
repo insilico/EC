@@ -17,13 +17,12 @@
 #include "Dataset.h"
 #include "DatasetInstance.h"
 #include "StringUtils.h"
-#include "FilesystemUtils.h"
 #include "PlinkBinaryDataset.h"
 #include "Insilico.h"
 
 using namespace std;
-using namespace insilico;
 using namespace boost;
+using namespace insilico;
 
 /*****************************************************************************
  * Method: (constructor)
@@ -552,8 +551,7 @@ pair<char, double> PlinkBinaryDataset::GetAttributeMAF(unsigned int attributeInd
   return returnPair;
 }
 
-AttributeMutationType
-PlinkBinaryDataset::GetAttributeMutationType(unsigned int attributeIndex) {
+AttributeMutationType PlinkBinaryDataset::GetAttributeMutationType(unsigned int attributeIndex) {
   AttributeMutationType returnType = UNKNOWN_MUTATION;
   if(attributeIndex < NumAttributes()) {
     returnType = attributeMutationTypes[attributeIndex];

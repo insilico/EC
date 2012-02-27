@@ -20,6 +20,7 @@
 #include <string>
 
 #include "Dataset.h"
+#include "Insilico.h"
 
  /**
  * \enum MapFileType.

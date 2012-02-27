@@ -14,19 +14,82 @@
 #define	INSILICO_H
 
 #include <cstdlib>
+#include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <iterator>
 
-/// Forward reference to Dataset class.
-#include "Dataset.h"
+class Dataset;
 
+/// T Y P E D E F S
+
+/// type of discrete attribute values
+typedef int AttributeLevel;
+/// type of continuous attributes
+typedef double NumericLevel;
+/// type of instance class labels
+typedef int ClassLevel;
+
+/// distance pair type: distance, instance ID
+typedef std::pair<double, std::string> DistancePair;
+/// vector of distance pairs represents distances to nearest neighbors
+typedef std::vector<DistancePair> DistancePairs;
+/// distance pairs iterator
+typedef DistancePairs::const_iterator DistancePairsIt;
+
+/// Configuration map as an alternative to Boost::program_options
 typedef std::map<std::string, std::string> ConfigMap;
+
+/// C O N S T A N T S
+
+/// Error codes.
+const static int COMMAND_LINE_ERROR = EXIT_FAILURE;
+
+/// return value for invalid distance
+const static int INVALID_DISTANCE = INT_MAX;
+/// return value for invalid index into attributes
+const static int INVALID_INDEX = INT_MAX;
+/// return value for invalid index into attributes
+const static unsigned int INVALID_INT_VALUE = UINT_MAX;
+
+/// invalid attribute value
+const static AttributeLevel INVALID_ATTRIBUTE_VALUE = INT_MIN;
+/// invalid attribute value
+const static NumericLevel INVALID_NUMERIC_VALUE = INT_MIN;
+/// stored value for missing discrete class
+const static ClassLevel INVALID_DISCRETE_CLASS_VALUE = INT_MIN;
+/// stored value for missing numeric class
+const static NumericLevel INVALID_NUMERIC_CLASS_VALUE = INT_MIN;
+
+/// stored value for missing discrete attribute
+const static AttributeLevel MISSING_ATTRIBUTE_VALUE = -9;
+/// stored value for missing numeric attribute
+const static NumericLevel MISSING_NUMERIC_VALUE = -9;
+/// stored value for missing discrete class
+const static ClassLevel MISSING_DISCRETE_CLASS_VALUE = -9;
+/// stored value for missing numeric class
+const static NumericLevel MISSING_NUMERIC_CLASS_VALUE = -9;
+
+/// E N U M S
+
+/**
+ * \enum OutputDatasetType.
+ * Type of data set to write filtered output.
+ */
+enum OutputDatasetType {
+	TAB_DELIMITED_DATASET, /**< tab-delimited .txt file */
+	CSV_DELIMITED_DATASET, /**< comma separated values .csv file */
+	ARFF_DATASET, /**< WEKA ARFF format .arff file */
+	NO_OUTPUT_DATASET /**< no output data set specified */
+};
 
 /**
  * \enum AnalysisType.
  * Type of analysis to perform.
  */
-typedef enum
+enum AnalysisType
 {
   SNP_ONLY_ANALYSIS, /**< discrete analysis */
   NUMERIC_ONLY_ANALYSIS, /**< continuous attributes */
@@ -37,10 +100,53 @@ typedef enum
   BIRDSEED_ANALYSIS, /**< Birdseed called SNPs analysis */
   DISTANCE_MATRIX_ANALYSIS, /**< distance matrix calculation */
   NO_ANALYSIS /**< no analysis specified */
-} AnalysisType;
+};
 
-/// Error codes.
-const static int COMMAND_LINE_ERROR = EXIT_FAILURE;
+/**
+ * \enum ValueType.
+ * Return types for determing a value's type.
+ */
+enum ValueType
+{
+  NUMERIC_VALUE, /**< continuous numeric value */
+  DISCRETE_VALUE, /**< discrete genotype value */
+  MISSING_VALUE, /**< missing value */
+  NO_VALUE /**< default no value type */
+};
+
+/**
+ * \enum AttributeType.
+ * Type of attributes that are stored in data set instances.
+ */
+enum AttributeType
+{
+  NUMERIC_TYPE, /**< continuous numeric type */
+  DISCRETE_TYPE, /**< discrete genotype type */
+  NO_TYPE /**< default no type */
+};
+
+/**
+ * \enum ClassType.
+ * Type of classes that are stored in data set instances.
+ */
+enum ClassType
+{
+  CONTINUOUS_CLASS_TYPE, /**< continuous numeric type */
+  CASE_CONTROL_CLASS_TYPE, /**< discrete case-control type */
+  MULTI_CLASS_TYPE, /**< multiclass type */
+  NO_CLASS_TYPE /**< default no type */
+};
+
+/**
+ * \enum AttributeMutationType.
+ * Type of attribute mutation.
+ */
+enum AttributeMutationType
+{
+  TRANSITION_MUTATION, /**< transition within family */
+  TRANSVERSION_MUTATION, /**< transversion between families */
+  UNKNOWN_MUTATION /**< unknown - no allele information */
+};
 
 /***************************************************************************//**
  * Return a timestamp string for logging purposes.
@@ -102,7 +208,32 @@ ClassType DetectClassType(std::string filename, int classColumn, bool hasHeader)
  * \param [out] parameter value
  * \return true if key found, false if not found
  ******************************************************************************/
-///
 bool GetConfigValue(ConfigMap& configMap, std::string key, std::string& value);
+/***************************************************************************//**
+ * Get the full filename without the extension.
+ * \param [in] fullFilename complete filename
+ * \return path/filename without extension
+ ******************************************************************************/
+std::string GetFileBasename(std::string fullFilename);
+/***************************************************************************//**
+ * Get the filename extension.
+ * \param [in] fullFilename complete filename
+ * \return filename extension
+ ******************************************************************************/
+std::string GetFileExtension(std::string fullFilename);
+/***************************************************************************//**
+ * Print a vector of T values with optional title.
+ * \param [in] vec vector of T type values
+ * \param [in] title optional title to print before the vector
+ ******************************************************************************/
+template <class T> void PrintVector(std::vector<T> vec, std::string title="");
+template <class T> void PrintVector(std::vector<T> vec, std::string title) {
+  if(title != "") {
+    std::cout << title << ": ";
+  }
+  std::cout << "[ ";
+  std::copy(vec.begin(), vec.end(), std::ostream_iterator<T>(std::cout, " "));
+  std::cout << "]" << std::endl;
+}
 
 #endif	/* INSILICO_H */

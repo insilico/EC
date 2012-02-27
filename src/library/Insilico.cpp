@@ -21,7 +21,6 @@
 #include "PlinkRawDataset.h"
 #include "PlinkBinaryDataset.h"
 #include "StringUtils.h"
-#include "FilesystemUtils.h"
 #include "Insilico.h"
 
 using namespace std;
@@ -310,4 +309,14 @@ bool GetConfigValue(ConfigMap& configMap, std::string key, std::string& value) {
 		return true;
 	}
 	return false;
+}
+
+string GetFileBasename(string fileName) {
+  size_t pos = fileName.rfind('.');
+  return fileName.substr(0, pos);
+}
+
+string GetFileExtension(string fileName) {
+  size_t pos = fileName.rfind('.');
+  return fileName.substr(pos + 1, fileName.size() - 1);
 }

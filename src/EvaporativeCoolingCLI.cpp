@@ -30,7 +30,6 @@
 
 #include "EvaporativeCooling.h"
 #include "Insilico.h"
-#include "FilesystemUtils.h"
 
 /// data types
 #include "Dataset.h"
@@ -540,8 +539,9 @@ int main(int argc, char** argv) {
 		}
 		if(vm.count("gain-matrix")) {
 			double** gainMatrix = 0;
-		  /// create an attribute interactiom matrix
-		  vector<unsigned int> attributeIds = ds->MaskGetAttributeIndices(DISCRETE_TYPE);
+		  /// create an attribute interaction matrix
+		  vector<unsigned int> attributeIds =
+		  		ds->MaskGetAttributeIndices(DISCRETE_TYPE);
 		  int numAttributes = attributeIds.size();
 		  gainMatrix = new double*[numAttributes];
 		  for(int i = 0; i < numAttributes; ++i) {

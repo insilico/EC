@@ -13,8 +13,7 @@
 #include "Dataset.h"
 #include "DatasetInstance.h"
 #include "StringUtils.h"
-#include "best_n.h"
-#include "Debugging.h"
+#include "BestN.h"
 
 using namespace std;
 using namespace insilico;

@@ -62,9 +62,9 @@ am_libec_la_OBJECTS = libec_la-Dataset.lo libec_la-ArffDataset.lo \
 	libec_la-PlinkDataset.lo libec_la-PlinkBinaryDataset.lo \
 	libec_la-PlinkRawDataset.lo libec_la-DgeData.lo \
 	libec_la-BirdseedData.lo libec_la-DatasetInstance.lo \
-	libec_la-DistanceMetrics.lo libec_la-FilesystemUtils.lo \
-	libec_la-Statistics.lo libec_la-ChiSquared.lo \
-	libec_la-Insilico.lo libec_la-ReliefF.lo libec_la-RReliefF.lo \
+	libec_la-DistanceMetrics.lo libec_la-Statistics.lo \
+	libec_la-ChiSquared.lo libec_la-Insilico.lo \
+	libec_la-ReliefF.lo libec_la-RReliefF.lo \
 	libec_la-RandomJungle.lo libec_la-EvaporativeCooling.lo
 libec_la_OBJECTS = $(am_libec_la_OBJECTS)
 libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
@@ -258,17 +258,17 @@ lib_LTLIBRARIES = libec.la
 libec_la_SOURCES = \
 Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
 PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp DistanceMetrics.cpp \
-FilesystemUtils.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
+Statistics.cpp ChiSquared.cpp Insilico.cpp \
 ReliefF.cpp RReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
 
 
 # the list of header files that belong to the library
 libec_la_HEADERS = \
 ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h \
-Debugging.h DistanceMetrics.h EvaporativeCooling.h FilesystemUtils.h \
+DistanceMetrics.h EvaporativeCooling.h \
 GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
 PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
-StringUtils.h best_n.h BirdseedData.h
+StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
 libec_la_LDFLAGS = -release 1.0.0
@@ -352,7 +352,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-DgeData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-DistanceMetrics.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-EvaporativeCooling.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-FilesystemUtils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Insilico.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-PlinkBinaryDataset.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-PlinkDataset.Plo@am__quote@
@@ -445,13 +444,6 @@ libec_la-DistanceMetrics.lo: DistanceMetrics.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='DistanceMetrics.cpp' object='libec_la-DistanceMetrics.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-DistanceMetrics.lo `test -f 'DistanceMetrics.cpp' || echo '$(srcdir)/'`DistanceMetrics.cpp
-
-libec_la-FilesystemUtils.lo: FilesystemUtils.cpp
-@am__fastdepCXX_TRUE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-FilesystemUtils.lo -MD -MP -MF $(DEPDIR)/libec_la-FilesystemUtils.Tpo -c -o libec_la-FilesystemUtils.lo `test -f 'FilesystemUtils.cpp' || echo '$(srcdir)/'`FilesystemUtils.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libec_la-FilesystemUtils.Tpo $(DEPDIR)/libec_la-FilesystemUtils.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='FilesystemUtils.cpp' object='libec_la-FilesystemUtils.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-FilesystemUtils.lo `test -f 'FilesystemUtils.cpp' || echo '$(srcdir)/'`FilesystemUtils.cpp
 
 libec_la-Statistics.lo: Statistics.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-Statistics.lo -MD -MP -MF $(DEPDIR)/libec_la-Statistics.Tpo -c -o libec_la-Statistics.lo `test -f 'Statistics.cpp' || echo '$(srcdir)/'`Statistics.cpp

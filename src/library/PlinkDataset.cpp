@@ -15,7 +15,6 @@
 #include <boost/lexical_cast.hpp>
 
 #include "StringUtils.h"
-#include "FilesystemUtils.h"
 #include "PlinkDataset.h"
 #include "Insilico.h"
 
