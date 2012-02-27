@@ -2086,11 +2086,15 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix, string matrixFilename) {
 		outFile << endl;
 		/// write all m-by-m matrix entries
 		for(int i=0; i < numAttributes; ++i) {
-			for(int j=0; j < numAttributes; ++j) {
-				if(j)
-					outFile << "\t" << gainMatrix[i][j];
+			for(int j=i; j < numAttributes; ++j) {
+				if(j == i) { // fill in symmetric entries, replacing j < i with tabs					string tabs = "";
+					string tabs = "";
+					for (int k = 0; k < j; k++)
+						tabs += "\t";
+					outFile << tabs << gainMatrix[i][j];
+				}
 				else
-					outFile << gainMatrix[i][j];
+					outFile << "\t" << gainMatrix[i][j];
 			}
 			outFile << endl;
 		}
