@@ -231,9 +231,11 @@ bool PlinkRawDataset::LoadSnps(string filename) {
             << " classes in the data set" << endl;
   }
 
+  hasGenotypes = true;
   UpdateAllLevelCounts();
 
-  hasGenotypes = true;
+  CreateDummyAlleles();
+  hasAllelicInfo = true;
 
   return true;
 }

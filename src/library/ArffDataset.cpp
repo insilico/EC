@@ -366,6 +366,7 @@ bool ArffDataset::LoadSnps(string filename) {
 
 	if (hasGenotypes) {
 		UpdateAllLevelCounts();
+		CreateDummyAlleles();
 	}
 
 	return true;

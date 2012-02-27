@@ -1088,7 +1088,7 @@ void Dataset::PrintStatsSimple(ostream& outStream) {
 					<< continuousPhenotypeMinMax.second << endl;
 		} else {
 			outStream << Timestamp() << "classes:        " << numClasses << endl;
-			PrintClassIndexInfo();
+			PrintClassIndexInfo(outStream);
 		}
 	}
 	else {
@@ -1098,19 +1098,19 @@ void Dataset::PrintStatsSimple(ostream& outStream) {
 	outStream << Timestamp() << "total elements: " << numElements << endl;
 }
 
-void Dataset::PrintClassIndexInfo() {
+void Dataset::PrintClassIndexInfo(ostream& outStream) {
 	if(hasPhenotypes) {
-		cout << Timestamp() << "Data Set Class Index" << endl;
-		cout << Timestamp() << "Index has [" << classIndexes.size() << "] entries:"
+		outStream << Timestamp() << "Data Set Class Index" << endl;
+		outStream << Timestamp() << "Index has [" << classIndexes.size() << "] entries:"
 				<< endl;
 		map<ClassLevel, vector<unsigned int> >::const_iterator mit =
 				classIndexes.begin();
 		for (; mit != classIndexes.end(); ++mit) {
-			cout << Timestamp() << (*mit).first << ": " << (*mit).second.size() << endl;
+			outStream << Timestamp() << (*mit).first << ": " << (*mit).second.size() << endl;
 		}
 	}
 	else {
-		cout << Timestamp() << "No index info since no phenotypes" << endl;
+		outStream << Timestamp() << "No index info since no phenotypes" << endl;
 	}
 }
 
@@ -1513,7 +1513,7 @@ void Dataset::RunSnpDiagnosticTests(string logFilename,
 			<<  logFilename << "]" << endl;
 
 	if (!hasGenotypes) {
-		cout << Timestamp() << "ERROR: This dataset does not have any SNPs - "
+		cout << Timestamp() << "ERROR: This data set does not have any SNPs - "
 				<< "Cannot perform diagnostic tests" << endl;
 		return;
 	}
@@ -1652,7 +1652,34 @@ void Dataset::RunSnpDiagnosticTests(string logFilename,
 				<< endl;
 	}
 
+	// ---------------------------------------------------------------------------
+	cout << Timestamp() << "Hardy-Weinberg Equilibrium (HWE) check" << endl;
+	outFile << Timestamp() << "Hardy-Weinberg Equilibrium (HWE) check" << endl;
+	unsigned int badHWE = 0;
+	for (unsigned int attributeIndex = 0; attributeIndex < NumAttributes();
+				attributeIndex++) {
+		// get the vector of genotype counts
+		map<AttributeLevel, unsigned int> gcounts = levelCounts[attributeIndex];
+		vector<unsigned int> counts;
+		map<AttributeLevel, unsigned int>::const_iterator it = gcounts.begin();
+		for(; it != gcounts.end(); ++it) {
+			// cout << it->first << " " << it->second << endl;
+			counts.push_back(it->second);
+		}
+		if(!CheckHardyWeinbergEquilibrium(counts)) {
+			cout << Timestamp() << attributeNames[attributeIndex]
+			  << " fails Hardy-Weinberg Equilibrium test" << endl;
+			outFile << Timestamp() << attributeNames[attributeIndex]
+			  << " fails Hardy-Weinberg Equilibrium test" << endl;
+			++badHWE;
+		}
+	}
+	cout << Timestamp() << badHWE << " SNPs failed HWE checks" << endl;
+	outFile << Timestamp() << badHWE << " SNPs failed HWE checks" << endl;
+
 	/// write diagnostic log information collected in screwySnps to file
+	cout << Timestamp() << "Writing bad SNP information to log file" << endl;
+	outFile << Timestamp() << "Writing bad SNP information to log file" << endl;
 	if(screwySnps.size()) {
 		map<string, vector<string> >::const_iterator it = screwySnps.begin();
 		for (; it != screwySnps.end(); ++it) {
@@ -1671,22 +1698,22 @@ void Dataset::RunSnpDiagnosticTests(string logFilename,
 	outFile.close();
 }
 
-bool Dataset::CheckHardyWeinbergEquilibrium(
-		vector<unsigned int> chkGenotypeCounts) {
+bool Dataset::CheckHardyWeinbergEquilibrium(vector<unsigned int>& chkGenotypeCounts) {
 	/// observered counts
 	unsigned int AA = chkGenotypeCounts[0];
 	unsigned int Aa = chkGenotypeCounts[1];
 	unsigned int aa = chkGenotypeCounts[2];
 	unsigned int sum = AA + Aa + aa;
 	if (sum < 1) {
-		cerr << "ERROR: Hardy-Weinberg test failed to find any observed values"
+		cout << Timestamp() <<
+				"WARNING: Hardy-Weinberg test failed to find any observed values"
 				<< endl;
 		return false;
 	}
 	if (sum != NumInstances()) {
-		cerr << "ERROR: genotype counts sum [" << sum
-				<< "] does not add up to number of instances [" << NumInstances() << "]"
-				<< endl;
+		cerr << Timestamp() << "HWE FAIL: genotype counts sum [" << sum
+				<< "] does not add up to number of instances ["
+				<< NumInstances() << "]" << endl;
 		PrintLevelCounts();
 		return false;
 	}
@@ -1703,14 +1730,15 @@ bool Dataset::CheckHardyWeinbergEquilibrium(
 	double eAa = 2.0 * p * q * sum;
 	double eaa = q * q * sum;
 	if (eAA == 0 || eAa == 0 || eaa == 0) {
-		cout << "ERROR: HWE chi-square could not be computed due to zeroes "
-				<< "in expected counts" << endl;
+		cerr << Timestamp() << "HWE FAIL: HWE chi-square could not be "
+				<< "computed due to zeroes in expected counts" << endl;
 		return false;
 	}
 	unsigned int expectedSum = (unsigned int) (eAA + eAa + eaa + 0.5);
 	if (expectedSum != NumInstances()) {
-		cerr << "ERROR: HWE expected genotype counts sum [" << expectedSum
-				<< "] does not add up to number of instances [" << NumInstances() << "]"
+		cerr << Timestamp() << "HWE FAIL: HWE expected genotype counts sum ["
+				<< expectedSum << "] does not add up to number of instances ["
+				<< NumInstances() << "]"
 				<< endl;
 		return false;
 	}
@@ -1724,8 +1752,10 @@ bool Dataset::CheckHardyWeinbergEquilibrium(
 	/// one degree of freedom (# genotypes - # alleles), 5% significance level
 	double pValue = 1.0 - gsl_cdf_chisq_Q(chiSquaredSum, 1);
 	if (pValue > 0.1) {
-		cerr << "ERROR: x^2 p-value too high: [" << pValue << "]" << endl;
-		cerr << AA << " / " << Aa << " / " << aa << endl;
+		cerr << Timestamp() << "HWE FAIL: x^2 p-value too high: ["
+				<< pValue << "]" << endl;
+		cerr << Timestamp() << "Genotype counts: "
+				<< AA << " / " << Aa << " / " << aa << endl;
 		return false;
 	}
 
@@ -2447,9 +2477,10 @@ bool Dataset::LoadSnps(std::string filename) {
 				<< " classes in the data set" << endl;
 	}
 
+	hasGenotypes = true;
 	UpdateAllLevelCounts();
 
-	hasGenotypes = true;
+	CreateDummyAlleles();
 
 	return true;
 }
@@ -2499,6 +2530,56 @@ void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {
 			}
 		}
 	}
+}
+
+void Dataset::CreateDummyAlleles() {
+	attributeAlleles.clear();
+	attributeAlleleCounts.clear();
+	attributeMinorAllele.clear();
+	map<string, unsigned int>::const_iterator ait = attributesMask.begin();
+	for (; ait != attributesMask.end(); ++ait) {
+		map<string, unsigned int>::const_iterator it = instancesMask.begin();
+		map<char, unsigned int> alleleCounts;
+		for (; it != instancesMask.end(); ++it) {
+			DatasetInstance* dsi = instances[it->second];
+			unsigned int attributeIndex = ait->second;
+			AttributeLevel thisAttributeLevel = dsi->GetAttribute(attributeIndex);
+			if (thisAttributeLevel == MISSING_ATTRIBUTE_VALUE) {
+				continue;
+			}
+			else {
+				switch(thisAttributeLevel) {
+				case 0:
+					alleleCounts['X'] += 2;
+					break;
+				case 1:
+					++alleleCounts['X'];
+					++alleleCounts['Y'];
+					break;
+				case 2:
+					alleleCounts['Y'] += 2;
+					break;
+				}
+			}  // end count alleles
+		} // end all instances
+		// cout << alleleCounts['X'] << " => " << alleleCounts['Y'] << endl;
+		attributeAlleleCounts.push_back(alleleCounts);
+		/// assign major and minor alleles
+		double maf = 0;
+		char minorAllele = 'Y';
+		if(alleleCounts['X'] > alleleCounts['Y']) {
+			attributeAlleles.push_back(make_pair('X', 'Y'));
+			maf = (double) alleleCounts['Y'] / ((double) NumInstances() * 2.0);
+			minorAllele = 'Y';
+		}
+		else {
+			attributeAlleles.push_back(make_pair('Y', 'X'));
+			maf = (double) alleleCounts['X'] / ((double) NumInstances() * 2.0);
+			minorAllele = 'X';
+		}
+		attributeMinorAllele.push_back(make_pair(minorAllele, maf));
+		hasAllelicInfo = true;
+	} // end all attributes
 }
 
 bool Dataset::LoadNumerics(string filename) {

@@ -311,7 +311,7 @@ public:
   /// Print very simple statistics abou the data set with no formatting.
   void PrintStatsSimple(std::ostream& outStream=std::cout);
   /// Print class index information.
-  void PrintClassIndexInfo();
+  void PrintClassIndexInfo(std::ostream& outStream=std::cout);
   /// Print missing value statistics.
   void PrintMissingValuesStats();
   /// Prit attribute level counts.
@@ -434,7 +434,7 @@ public:
    * \param genotypeCounts vector of genotype counts: AA, Aa, aa
    * \return counts are in HWE?
    ****************************************************************************/
-  bool CheckHardyWeinbergEquilibrium(std::vector<unsigned int> chkGenotypeCounts);
+  bool CheckHardyWeinbergEquilibrium(std::vector<unsigned int>& chkGenotypeCounts);
   /*************************************************************************//**
    * This code implements an exact SNP test of Hardy-Weinberg Equilibrium.
    * As described in Wigginton, JE, Cutler, DJ, and Abecasis, GR (2005) A Note
@@ -517,6 +517,8 @@ protected:
   virtual bool LoadSnps(std::string filename);
   /// Update level counts for all instances by calling UpdateLevelCounts(inst)
   void UpdateAllLevelCounts();
+  /// Create dummy alleles from genotypes for data sets that have no allele info
+  void CreateDummyAlleles();
   /*************************************************************************//**
    * Update all attribute level counts from one data set instance.
    * Updates levelCountsByClass.
