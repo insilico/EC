@@ -64,6 +64,9 @@ CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
 CPPFLAGS="$CPPFLAGS -D__NOPLUGIN__ -I/usr/local/include"
 CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
 
+AC_CHECK_LIB(pthread, pthread_create)
+LDFLAGS="-lpthread $LDFLAGS"
+
 # OpenMP
 CPPFLAGS="$CPPFLAGS -fopenmp"
 CXXFLAGS="$CXXFLAGS -fopenmp"

@@ -46,6 +46,7 @@ Dataset* DatasetInstance::GetDatasetPtr() {
 bool
 DatasetInstance::LoadInstanceFromVector(vector<AttributeLevel> newAttributes) {
   if(!newAttributes.size()) {
+  	cerr << "ERROR: LoadInstanceFromVector: vector is empty" << endl;
     return false;
   }
   attributes.clear();

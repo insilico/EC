@@ -41,6 +41,15 @@ public:
   /// Destruct all dynamically allocated memory.
   virtual ~Dataset();
   /*************************************************************************//**
+   * Load the data set from "raw data".
+   * \param [in] dataMatrix reference to a matrix of SNP values 0-1-2-missing
+   * \param [in] classLabels reference to a vector of case-control labels
+   * \param [in] attrNames reference to a vector of attribute names
+   * \return success
+   ****************************************************************************/
+  bool LoadDataset(std::vector<std::vector<int> >& dataMatrix,
+  		std::vector<int>& classLabels, std::vector<std::string>& attrNames);
+  /*************************************************************************//**
    * Load the data set from files passed as parameters.
    * \param [in] snpFilename discrete values (SNPs) filename
    * \param [in] doRecodeA perform recodeA encoding after reading
@@ -491,6 +500,14 @@ public:
    ****************************************************************************/
   bool CalculateDistanceMatrix(double** distanceMatrix,
   		std::string matrixFilename="");
+  /*************************************************************************//**
+   * Calculate the instance-to-instance distance matrix for this data set.
+   * Uses OpenMP to calculate matrix entries in parallel threads.
+   * \param [out] distanceMatrix vector of vectors of double: m x m matrix,
+   *                         m = number of instances
+   * \return success
+   ****************************************************************************/
+  bool CalculateDistanceMatrix(std::vector<std::vector<double> >& distanceMatrix);
   /*************************************************************************//**
    * Compute the distance between two DatasetInstances.
    * \param [in] dsi1 pointer to DatasetInstance 1

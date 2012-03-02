@@ -99,6 +99,81 @@ Dataset::~Dataset() {
 	}
 }
 
+bool Dataset::LoadDataset(vector<vector<int> >& dataMatrix,
+		vector<int>& classLabels, vector<string>& attrNames) {
+
+	cout << Timestamp() << "Loading Dataset from raw data vectors" << endl;
+
+	unsigned int numInstances = dataMatrix.size();
+	unsigned int numAttributes = dataMatrix[0].size();
+	cout << Timestamp() << "Source data has " << numInstances << " rows and "
+			<< numAttributes << " columns" << endl;
+
+	if(!dataMatrix.size()) {
+		cerr << "ERROR: LoadDataset from raw data. Data matrix is empty. " << endl;
+		return false;
+	}
+	if(!dataMatrix[0].size()) {
+		cerr << "ERROR: LoadDataset from raw data. Data matrix first row is empty. "
+				<< endl;
+		return false;
+	}
+	if(dataMatrix[0].size() != numAttributes) {
+		cerr << "ERROR: LoadDataset from raw data. Number of attributes in the "
+				<< "data matrix " << dataMatrix[0].size() << " is not equal to the "
+				<< "number of attributes names" << numAttributes << endl;
+		return false;
+	}
+	if(classLabels.size() != numInstances) {
+		cerr << "ERROR: LoadDataset from raw data. Number of class labels "
+				<< classLabels.size() << " is not equal to the number of instances "
+				<< numInstances << endl;
+		return false;
+	}
+
+	for(unsigned int i=0; i < numAttributes; ++i) {
+		attributeNames.push_back(attrNames[i]);
+		attributesMask[attrNames[i]] = i;
+	}
+
+	cout << Timestamp() << attributeNames.size() << " attribute names read" << endl;
+
+	levelCounts.resize(numAttributes);
+	levelCountsByClass.resize(numAttributes);
+	attributeLevelsSeen.resize(numAttributes);
+	genotypeCounts.resize(numAttributes);
+
+	unsigned int rowIndex = 0;
+	vector<vector<int> >::const_iterator rowIt = dataMatrix.begin();
+	for(; rowIt != dataMatrix.end(); ++rowIt, ++rowIndex) {
+		vector<int> row(numAttributes);
+		copy(rowIt->begin(), rowIt->end(), row.begin());
+		string ID = zeroPadNumber(rowIndex, 8);
+		DatasetInstance* dsi = new DatasetInstance(this);
+		dsi->LoadInstanceFromVector(row);
+		dsi->SetClass(classLabels[rowIndex]);
+		classIndexes[classLabels[rowIndex]].push_back(rowIndex);
+		instances.push_back(dsi);
+		instanceIds.push_back(ID);
+		instancesMask[ID] = rowIndex;
+	}
+
+	hasGenotypes = true;
+	hasNumerics = false;
+	hasContinuousPhenotypes = false;
+	hasPhenotypes = true;
+
+	UpdateAllLevelCounts();
+	CreateDummyAlleles();
+	PrintStatsSimple();
+	// PrintLevelCounts();
+
+	// create and seed a random number generator for random sampling
+	rng = new GSLRandomFlat(getpid() * time((time_t*) 0), 0.0, NumInstances());
+
+	return true;
+}
+
 bool Dataset::LoadDataset(string snpsFilename, string numericsFilename,
 		string altPhenoFilename, vector<string> ids) {
 
@@ -2264,6 +2339,27 @@ bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFile
   return true;
 }
 
+bool Dataset::CalculateDistanceMatrix(vector<vector<double> >& distanceMatrix) {
+	map<string, unsigned int> instanceMask = MaskGetInstanceMask();
+  vector<string> instanceIds = MaskGetInstanceIds();
+  int numInstances = instanceIds.size();
+
+#pragma omp parallel for schedule(dynamic, 1)
+  for(int i = 0; i < numInstances; ++i) {
+    for(int j = i + 1; j < numInstances; ++j) {
+      unsigned int dsi1Index;
+      GetInstanceIndexForID(instanceIds[i], dsi1Index);
+      unsigned int dsi2Index;
+      GetInstanceIndexForID(instanceIds[j], dsi2Index);
+      distanceMatrix[i][j] = distanceMatrix[j][i] =
+              ComputeInstanceToInstanceDistance(GetInstance(dsi1Index),
+                                                GetInstance(dsi2Index));
+    }
+  }
+
+  return true;
+}
+
 /// ------------ Beginning of private methods ------------------
 
 bool Dataset::LoadSnps(std::string filename) {
@@ -2330,10 +2426,6 @@ bool Dataset::LoadSnps(std::string filename) {
 	levelCountsByClass.resize(numAttributes);
 	attributeLevelsSeen.resize(numAttributes);
 	genotypeCounts.resize(numAttributes);
-
-	vector<string> missingValuesToCheck;
-	missingValuesToCheck.push_back("?");
-	missingValuesToCheck.push_back("-9");
 
 	// read instance attributes from whitespace-delimited lines
 	unsigned int instanceIndex = 0;
@@ -2505,15 +2597,16 @@ void Dataset::UpdateAllLevelCounts() {
 	for (; it != instancesMask.end(); ++it) {
 		UpdateLevelCounts(instances[it->second]);
 		if (instanceCount && ((instanceCount % 100) == 0)) {
-			cout << Timestamp() << instanceCount << endl;
+			cout << Timestamp() << instanceCount << "/" << instancesMask.size() << endl;
 			cout.flush();
 		}
 		if (instanceCount && ((instanceCount % 1000) == 0)) {
-			cout << Timestamp() << instanceCount << endl;
+			cout << Timestamp() << instanceCount << "/" << instancesMask.size() << endl;
 		}
 		++instanceCount;
 	}
-	cout << Timestamp() << instanceCount << endl;
+	cout << Timestamp() << instanceCount << "/" << instancesMask.size()
+			<< " done" << endl;
 }
 
 void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {

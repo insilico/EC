@@ -15,6 +15,9 @@
 /* Define to 1 if you have the `lr' library (-llr). */
 #undef HAVE_LIBLR
 
+/* Define to 1 if you have the `pthread' library (-lpthread). */
+#undef HAVE_LIBPTHREAD
+
 /* Define to 1 if you have the `rjungle' library (-lrjungle). */
 #undef HAVE_LIBRJUNGLE
 
