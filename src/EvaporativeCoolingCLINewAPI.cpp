@@ -27,8 +27,8 @@
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
 
-#include "Insilico.h"
 #include "EvaporativeCooling.h"
+#include "Insilico.h"
 #include "Dataset.h"
 #include "DgeData.h"
 
@@ -373,7 +373,7 @@ int main(int argc, char** argv) {
       cout << Timestamp() << "Reading numerics data set from digital gene "
       << "expression (DGE) data" << endl;
     	dge = new DgeData();
-    	if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
+    	if(dge->LoadData(dgeCountsFilename, dgeNormsFilename)) {
     		ds = new Dataset();
     		datasetLoaded = ds->LoadDataset(dge);
     	}

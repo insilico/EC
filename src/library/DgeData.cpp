@@ -19,7 +19,6 @@
 #include "StringUtils.h"
 
 using namespace std;
-using namespace insilico;
 
 DgeData::DgeData() {
 	hasNormFactors = false;
@@ -28,7 +27,7 @@ DgeData::DgeData() {
 DgeData::~DgeData() {
 }
 
-bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
+bool DgeData::LoadData(string countsFile, string normsFile) {
 
 	// temporary string for reading file lines
 	string line;
@@ -46,7 +45,7 @@ bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
 		int lineNumber = 0;
 		while (getline(normsStream, line)) {
 			++lineNumber;
-			string trimmedLine = trim(line);
+			string trimmedLine = insilico::trim(line);
 			if (!trimmedLine.size()) {
 				cout << "WARNING: Blank line skipped at line number: "
 						<< lineNumber << endl;
@@ -69,58 +68,68 @@ bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
 			<< endl;
 
 
-	// read the header row - comma delimited sample names
+	// read the header row - comma delimited sample phenotypes
 	getline(countsStream, line);
 	vector<string> tokens;
-	split(tokens, line, ",");
+	insilico::split(tokens, line, ",");
 	vector<string>::const_iterator it;
+	unsigned int numPhenos = 0;
 	unsigned int numSamples = 0;
+	// skip the first column; the rest are phenotypes corresponding to subjects
 	for (it = tokens.begin(); it != tokens.end(); ++it) {
 		// Remove quotes from sample names
-		string sampleName = *it;
-		sampleName.erase(remove(sampleName.begin(), sampleName.end(), '"'), sampleName.end());
-		sampleNames.push_back(sampleName);
+		string phenoString = *it;
+		phenoString.erase(remove(phenoString.begin(), phenoString.end(), '"'), phenoString.end());
+		phenotypes.push_back(boost::lexical_cast<int>(phenoString));
+		++numPhenos;
+		// use dummy subject/sample names
+		ostringstream ss;
+		ss << "Sample" << (numSamples + 1);
+		sampleNames.push_back(ss.str());
 		++numSamples;
 	}
-	cout << Timestamp() << numSamples << " samples read" << endl;
+	cout << Timestamp() << numPhenos
+			<< " samples/phenotypes read from file header" << endl;
 
-	if(hasNormFactors && (normFactors.size() != sampleNames.size())) {
-		cerr << "Number of samples: " << sampleNames.size()
-				<< " is not equal to the number of normalization factors"
+	if(hasNormFactors && (normFactors.size() != phenotypes.size())) {
+		cerr << "Number of phenotypes: " << phenotypes.size()
+				<< " is not equal to the number of normalization factors: "
 				<< normFactors.size() << endl;
 		return false;
 	}
 
-	/// read gene counts, create dummy name for each gene
+	/// read gene counts
 	unsigned int lineNumber = 0;
 	while (getline(countsStream, line)) {
 		++lineNumber;
-		string trimmedLine = trim(line);
+		string trimmedLine = insilico::trim(line);
 		// no blank lines in the data section
 		if (!trimmedLine.size()) {
 			cout << "WARNING: Blank line skipped at line number: "
 					<< lineNumber << endl;
 			continue;
 		}
-//		string geneID = "GENE" + zeroPadNumber(lineNumber, 8);
-		stringstream ssGeneID;
-		ssGeneID << "GENE" << lineNumber;
-		string geneID = ssGeneID.str();
 		// split the line into counts vector
 		vector<string> countsStringVector;
-		split(countsStringVector, trimmedLine, ",");
-
-		if ((countsStringVector.size() == 0)
-				|| (countsStringVector.size() != numSamples)) {
-			cout << Timestamp() << "ERROR: Skipping line " << lineNumber
-					<< " samples read: " << countsStringVector.size() << " should be "
-					<< numSamples << endl;
+		insilico::split(countsStringVector, trimmedLine, ",");
+		unsigned int countsRead = countsStringVector.size() - 1;
+		if (countsRead == 0) {
+			cerr << "ERROR: Line: " << lineNumber << " could not be parsed" << endl;
+			return false;
+		}
+		if(countsRead != numSamples) {
+			cerr << "ERROR: Line: " << lineNumber
+					<< " counts read: " << countsRead
+					<< " should be " << numSamples << endl;
 			return false;
 		}
 
-		/// load all counts for this gene as doubles
+		// first column is gene ID
+		string geneID = countsStringVector[0];
 		geneNames.push_back(geneID);
-		vector<string>::const_iterator it = countsStringVector.begin();
+
+		/// load all counts for this gene as doubles
+		vector<string>::const_iterator it = countsStringVector.begin() + 1;
 		vector<double> geneCounts;
 		double minCount = 0;
 		double maxCount = 0;
@@ -183,34 +192,6 @@ bool DgeData::LoadData(string countsFile, string phenoFile, string normsFile) {
 			}
 		}
 	}
-
-	/// read phenotypes
-	phenosFilename = phenoFile;
-	ifstream phenosStream(phenosFilename.c_str());
-	if (!phenosStream.is_open()) {
-		cerr << "ERROR: Could not open phenotypes file: " << phenosFilename << endl;
-		return false;
-	}
-	cout << Timestamp() << "Reading phenotypes from [" << phenosFilename << "]"
-			<< endl;
-
-	lineNumber = 0;
-	while (getline(phenosStream, line)) {
-		++lineNumber;
-		string trimmedLine = trim(line);
-		if (!trimmedLine.size()) {
-			cout << "WARNING: Blank line skipped at line number: "
-					<< lineNumber << endl;
-			continue;
-		}
-		if((trimmedLine != "0") && (trimmedLine != "1")) {
-			cerr << "ERROR: Phenotype is not 0 or 1 on line: " << lineNumber << endl;
-			return false;
-		}
-		int thisPhenotype = boost::lexical_cast<int>(trimmedLine);
-		phenotypes.push_back(thisPhenotype);
-	}
-	phenosStream.close();
 
 	if(phenotypes.size() != numSamples) {
 		cerr << "ERROR: Number of phenotypes read: " << phenotypes.size()

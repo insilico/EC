@@ -18,7 +18,7 @@ public:
 	DgeData();
 	virtual ~DgeData();
 	/// Create a new set of DGE data with a counts file and a phenotype file
-	bool LoadData(std::string countsFile, std::string phenoFile, std::string normsFile="");
+	bool LoadData(std::string countsFile, std::string normsFile="");
 	/// Get the sample names/IDs
 	std::vector<std::string> GetSampleNames();
 	/// Get the gene names/IDs

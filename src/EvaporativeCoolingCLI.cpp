@@ -48,7 +48,6 @@ int main(int argc, char** argv) {
 	string snpExclusionFile = "";
 	string numericsFilename = "";
 	string dgeCountsFilename = "";
-	string dgePhenosFilename = "";
 	string dgeNormsFilename = "";
 	string birdseedFilename = "";
 	string birdseedPhenosFilename = "";
@@ -187,11 +186,6 @@ int main(int argc, char** argv) {
 		"dge-counts-data",
 		po::value<string > (&dgeCountsFilename),
 		"read digital gene expression counts from text file"
-		)
-		(
-		"dge-phenos-data",
-		po::value<string > (&dgePhenosFilename),
-		"read digital gene expression phenotypes from text file"
 		)
 		(
 		"dge-norm-factors",
@@ -420,7 +414,7 @@ int main(int argc, char** argv) {
 			cout << Timestamp() << "Reading numerics data set from digital gene "
 			<< "expression (DGE) data" << endl;
 			dge = new DgeData();
-			if(dge->LoadData(dgeCountsFilename, dgePhenosFilename, dgeNormsFilename)) {
+			if(dge->LoadData(dgeCountsFilename, dgeNormsFilename)) {
 				ds = new Dataset();
 				datasetLoaded = ds->LoadDataset(dge);
 			}
