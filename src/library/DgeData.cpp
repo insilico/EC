@@ -88,7 +88,7 @@ bool DgeData::LoadData(string countsFile, string normsFile) {
 		sampleNames.push_back(ss.str());
 		++numSamples;
 	}
-	cout << Timestamp() << numPhenos
+	cout << Timestamp() << phenotypes.size() << "/" << sampleNames.size()
 			<< " samples/phenotypes read from file header" << endl;
 
 	if(hasNormFactors && (normFactors.size() != phenotypes.size())) {
