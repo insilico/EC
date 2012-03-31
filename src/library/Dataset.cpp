@@ -449,9 +449,19 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 		OutputDatasetType outputDatasetType) {
 
 	switch (outputDatasetType) {
+	case PLINK_PED_DATASET:
+		if(!WriteNewPlinkPedDataset(GetFileBasename(newDatasetFilename))) {
+			cerr << "ERROR: Failed to write new PLINK ped data set";
+			return false;
+		}
+		else {
+			return true;
+		}
 	case TAB_DELIMITED_DATASET:
 	case CSV_DELIMITED_DATASET:
 	case ARFF_DATASET:
+	case PLINK_BED_DATASET:
+	case NO_OUTPUT_DATASET:
 		break;
 	default:
 		cerr << "ERROR: Output data set file type not recognized." << endl;
@@ -481,6 +491,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 		case ARFF_DATASET:
 			newDatasetStream << "@ATTRIBUTE " << ait->first << " {0,1,2}" << endl;
 			break;
+		case PLINK_PED_DATASET:
+		case PLINK_BED_DATASET:
 		case NO_OUTPUT_DATASET:
 		default:
 			cerr << "ERROR: Unrecognized output data set type: " << outputDatasetType
@@ -499,6 +511,9 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 			break;
 		case ARFF_DATASET:
 			newDatasetStream << "@ATTRIBUTE " << nit->first << " numeric" << endl;
+			break;
+		case PLINK_PED_DATASET:
+		case PLINK_BED_DATASET:
 			break;
 		case NO_OUTPUT_DATASET:
 		default:
@@ -519,6 +534,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 			newDatasetStream << "@ATTRIBUTE Class {0,1}" << endl;
 		}
 		break;
+	case PLINK_PED_DATASET:
+	case PLINK_BED_DATASET:
 	case NO_OUTPUT_DATASET:
 	default:
 		cerr << "ERROR: Unrecognized output data set type: " << outputDatasetType
@@ -558,6 +575,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 					newDatasetStream << A << ",";
 				}
 				break;
+			case PLINK_PED_DATASET:
+			case PLINK_BED_DATASET:
 			case NO_OUTPUT_DATASET:
 			default:
 				cerr << "ERROR: Unrecognized output data set type: "
@@ -586,6 +605,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 					newDatasetStream << N << ",";
 				}
 				break;
+			case PLINK_PED_DATASET:
+			case PLINK_BED_DATASET:
 			case NO_OUTPUT_DATASET:
 			default:
 				cerr << "ERROR: Unrecognized output data set type: "
@@ -644,10 +665,10 @@ bool Dataset::ExtractAttributes(string scoresFilename, unsigned int topN,
 //  }
 
 	// write top N ranked attributes to new file
-	// honor MDR format by using header row infomation - bcw - 9/13/05
+	// honor MDR format by using header row information - bcw - 9/13/05
 	ofstream newDatasetStream(newDatasetFilename.c_str());
 	if (!newDatasetStream.is_open()) {
-		cerr << "ERROR: Could not open new dataset file: " << newDatasetFilename
+		cerr << "ERROR: Could not open new data set file: " << newDatasetFilename
 				<< endl;
 		return false;
 	}
@@ -3034,4 +3055,91 @@ bool Dataset::IsLoadableInstanceID(std::string ID) {
 	} else {
 		return true;
 	}
+}
+
+bool Dataset::WriteNewPlinkPedDataset(string baseDatasetFilename) {
+	// only write ped format if it makes sense
+	if(!hasAllelicInfo) {
+		cerr << "ERROR: WriteNewPlinkPedDataset: "
+				<< "No allelic information to write new data set" << endl;
+		return false;
+	}
+	if(hasNumerics) {
+		cerr << "ERROR: WriteNewPlinkPedDataset: "
+				<< "This data set type does not handle numeric attributes" << endl;
+		return false;
+	}
+
+	// write map file
+	string mapFilename = baseDatasetFilename + ".map";
+	ofstream newMapStream(mapFilename.c_str());
+	if (!newMapStream.is_open()) {
+		cerr << "ERROR: Could not open new map file: " << baseDatasetFilename
+				<< ".map" << endl;
+		return false;
+	}
+	map<string, unsigned int>::const_iterator ait = attributesMask.begin();
+	for (; ait != attributesMask.end(); ++ait) {
+		newMapStream << "0 " << ait->first << " 0 0" << endl;
+	}
+	newMapStream.close();
+
+	// write ped file
+	string pedFilename = baseDatasetFilename + ".ped";
+	ofstream newPedStream(pedFilename.c_str());
+	if (!newPedStream.is_open()) {
+		cerr << "ERROR: Could not open new ped file: " << baseDatasetFilename
+				<< ".ped" << endl;
+		return false;
+	}
+	vector<string> instanceIds = GetInstanceIds();
+	for (unsigned int iIdx = 0; iIdx < NumInstances(); iIdx++) {
+		unsigned instanceIndex = 0;
+		string instanceId = instanceIds[iIdx];
+		GetInstanceIndexForID(instanceId, instanceIndex);
+		// write first six columns:
+		/*
+		 * Family ID
+     * Individual ID
+     * Paternal ID
+     * Maternal ID
+     * Sex (1=male; 2=female; other=unknown)
+     * Phenotype
+		 */
+		newPedStream << instanceId << " " << instanceId << " 0 0 0 ";
+		// TODO: check for missing phenotype?
+		if(hasContinuousPhenotypes) {
+			newPedStream << instances[instanceIndex]->GetPredictedValueTau() << " ";
+		}
+		else {
+			newPedStream << (instances[instanceIndex]->GetClass() + 1);
+		}
+		// write discrete attribute SNP values as pairs of alleles
+		vector<unsigned int> attrIndices = MaskGetAttributeIndices(DISCRETE_TYPE);
+		for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
+			AttributeLevel A = instances[instanceIndex]->GetAttribute(attrIndices[aIdx]);
+			// determine alleles and genotype
+			pair<char, char> alleles = GetAttributeAlleles(attrIndices[aIdx]);
+			stringstream genotype;
+			switch(A) {
+			case 0:
+				genotype << alleles.first << " " << alleles.first;
+				break;
+			case 1:
+				genotype << alleles.second << " " << alleles.first;
+				break;
+			case 2:
+				genotype << alleles.second << " " << alleles.second;
+				break;
+			case MISSING_ATTRIBUTE_VALUE:
+				genotype << "0 0";
+				break;
+			}
+			newPedStream << " " << genotype.str();
+		}
+		newPedStream << endl;
+	}
+	newPedStream.close();
+
+	return true;
 }

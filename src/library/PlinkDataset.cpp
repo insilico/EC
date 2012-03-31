@@ -123,7 +123,7 @@ bool PlinkDataset::LoadSnps(string filename) {
 		cout << "ERROR: phenotypes could not be detected" << endl;
 		break;
 	}
-	if (!classDetected) {
+	if (!classDetected && !hasAlternatePhenotypes) {
 		return false;
 	}
 
@@ -295,7 +295,7 @@ bool PlinkDataset::LoadSnps(string filename) {
     string majorAllele = " ";
     string minorAllele = " ";
     double attributeMaf = 0.0;
-    if(allele1Count <= allele2Count) {
+    if(allele1Count < allele2Count) {
       minorAllele[0] = allele1;
       attributeMaf = ((double) allele1Count) / (NumInstances() * 2.0);
       majorAllele[0] = allele2;
@@ -320,6 +320,10 @@ bool PlinkDataset::LoadSnps(string filename) {
 //            << endl;
     attributeMinorAllele[attrIdx] = make_pair(minorAllele[0], attributeMaf);
     
+    /* From PLINK documentation:
+     * Allele codes:
+     * By default, the minor allele is coded A1 and the major allele is coded A2
+     */
     string genotype0 = majorAllele + majorAllele;
     string genotype1 = minorAllele + majorAllele;
     // all heterozygotes regardless of allele order are coded 1

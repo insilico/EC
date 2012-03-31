@@ -315,7 +315,9 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   for(unsigned int attrIdx = 0; attrIdx < NumAttributes(); ++attrIdx) {
     map<char, unsigned int> thisAttrMap = attributeAlleleCounts[attrIdx];
     if(thisAttrMap.size() != 2) {
-      cerr << "ERROR: Only biallelic genotypes are supported" << endl;
+      cerr << "ERROR: Only biallelic genotypes are supported, "
+      		<< thisAttrMap.size() << " alleles detected in attribute index:"
+      		<< attrIdx << endl;
       return false;
     }
     map<char, unsigned int>::const_iterator mapIt = thisAttrMap.begin();
@@ -343,7 +345,6 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
     //            << endl;
     attributeMinorAllele[attrIdx] = make_pair(minorAllele[0], attributeMaf);
   }
-
   cout << Timestamp() << "There are " << NumInstances()
           << " instances in the data set" << endl;
   cout << Timestamp() << "There are " << instancesMask.size()
@@ -357,7 +358,8 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   UpdateAllLevelCounts();
 
   hasGenotypes = true;
-  hasAllelicInfo = true;
+  // CHANGE ME BACK TO TRUE
+  hasAllelicInfo = false;
 
   return true;
 }
@@ -452,10 +454,11 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
 		cout << "ERROR: more than two discrete phenotypes detected" << endl;
 		break;
 	case NO_CLASS_TYPE:
-		cout << "ERROR: phenotypes could not be detected" << endl;
+		cout << Timestamp() << "NOTE: phenotypes could not be detected in FAM file"
+			<< endl;
 		break;
 	}
-	if(!classDetected) {
+	if(!classDetected && !hasAlternatePhenotypes) {
 		return false;
 	}
 

@@ -572,6 +572,13 @@ protected:
    * \return [out] success
    ****************************************************************************/
   bool IsLoadableInstanceID(std::string ID);
+  /*************************************************************************//**
+   * Write the dataset to a new PLINK PED/MAP format, respecting masked
+   * attributes class/phenotype data type.
+   * \param [in] baseDatasetFilename base data set filename without extension
+   * \return success
+   ****************************************************************************/
+  bool WriteNewPlinkPedDataset(std::string baseDatasetFilename);
 
   /*************************************************************************//**
    * Compute the discrete difference in an attribute between two instances.

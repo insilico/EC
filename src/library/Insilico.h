@@ -46,6 +46,7 @@ typedef std::map<std::string, std::string> ConfigMap;
 
 /// Error codes.
 const static int COMMAND_LINE_ERROR = EXIT_FAILURE;
+const static int DATASET_LOAD_ERROR = EXIT_FAILURE;
 
 /// return value for invalid distance
 const static int INVALID_DISTANCE = INT_MAX;
@@ -82,6 +83,8 @@ enum OutputDatasetType {
 	TAB_DELIMITED_DATASET, /**< tab-delimited .txt file */
 	CSV_DELIMITED_DATASET, /**< comma separated values .csv file */
 	ARFF_DATASET, /**< WEKA ARFF format .arff file */
+	PLINK_PED_DATASET, /**< PLINK ped/map format */
+	PLINK_BED_DATASET, /**< PLINK bed/bim/fam format */
 	NO_OUTPUT_DATASET /**< no output data set specified */
 };
 
@@ -99,6 +102,7 @@ enum AnalysisType
   DGE_ANALYSIS, /**< digital gene expression (DGE) analysis */
   BIRDSEED_ANALYSIS, /**< Birdseed called SNPs analysis */
   DISTANCE_MATRIX_ANALYSIS, /**< distance matrix calculation */
+  DATASET_CONVERSION, /**< convert data set format types */
   NO_ANALYSIS /**< no analysis specified */
 };
 

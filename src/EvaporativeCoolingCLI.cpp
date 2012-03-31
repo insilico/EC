@@ -82,6 +82,7 @@ int main(int argc, char** argv) {
   desc.add_options()
 		("help", "produce help message")
 		("verbose", "verbose output")
+		("convert", "convert data set to data set - no ec")
 		(
 		"config-file,c",
 		po::value<string > (&configFilename),
@@ -267,7 +268,7 @@ int main(int argc, char** argv) {
 	/// determine the output data set type
 	OutputDatasetType outputDatasetType = NO_OUTPUT_DATASET;
 	if(outputDatasetFilename != "") {
-		// determine the dataset type
+		// determine the data set type
 		string outFileExtension = GetFileExtension(outputDatasetFilename);
 		if(outFileExtension == "txt") {
 			outputDatasetType = TAB_DELIMITED_DATASET;
@@ -278,9 +279,14 @@ int main(int argc, char** argv) {
 				if(outFileExtension == "arff") {
 					outputDatasetType = ARFF_DATASET;
 				} else {
-					cerr << "Unrecognized output data set filename extension: ["
+					if(outFileExtension == "ped") {
+						outputDatasetType = PLINK_PED_DATASET;
+					}
+					else {
+						cerr << "Unrecognized output data set filename extension: ["
 									<< outFileExtension << "]" << endl;
-					exit(COMMAND_LINE_ERROR);
+						exit(COMMAND_LINE_ERROR);
+					}
 				}
 			}
 		}
@@ -299,6 +305,11 @@ int main(int argc, char** argv) {
     analysisType = DIAGNOSTIC_ANALYSIS;
     noAnalysisFound = false;
   }
+	if(noAnalysisFound && vm.count("convert")) {
+		cout << Timestamp() << "Data set conversion requested" << endl;
+		analysisType = DATASET_CONVERSION;
+    noAnalysisFound = false;
+	}
 	if(noAnalysisFound && (vm.count("snp-data") && vm.count("numeric-data"))) {
 		cout << Timestamp() << "Integrated analysis requested" << endl;
 		analysisType = INTEGRATED_ANALYSIS;
@@ -418,6 +429,10 @@ int main(int argc, char** argv) {
 				ds = new Dataset();
 				datasetLoaded = ds->LoadDataset(dge);
 			}
+			else {
+				cerr << "ERROR: Failure to load DGE data set"
+						<< endl << endl;
+			}
 			break;
 		case BIRDSEED_ANALYSIS:
 			cout << Timestamp() << "Reading SNPs data set from Birdseed-called "
@@ -428,6 +443,10 @@ int main(int argc, char** argv) {
 					birdseedExcludeSnpsFilename)) {
 				ds = new Dataset();
 				datasetLoaded = ds->LoadDataset(birdseed);
+			}
+			else {
+				cerr << "ERROR: Failure to load Birdseed data set"
+						<< endl << endl;
 			}
 			break;
 		case DIAGNOSTIC_ANALYSIS:
@@ -454,7 +473,6 @@ int main(int argc, char** argv) {
 			if(!datasetLoaded) {
 				cerr << "ERROR: Failure to load data set for diagnostic analysis"
 						<< endl << endl;
-				exit(COMMAND_LINE_ERROR);
 			}
 			ds->RunSnpDiagnosticTests(diagnosticLogFilename);
 			if(diagnosticLevelsCountsFilename != "") {
@@ -463,6 +481,49 @@ int main(int argc, char** argv) {
 			cout << Timestamp() << argv[0] << " done" << endl;
 			delete ds;
 			return 0;
+			break;
+		case DATASET_CONVERSION:
+			if(snpsFilename != "" &&
+					numericsFilename == "" &&
+					birdseedFilename == "") {
+				ds = ChooseSnpsDatasetByExtension(snpsFilename);
+				datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
+												altPhenotypeFilename, indIds);
+				if(datasetLoaded) {
+					switch(outputDatasetType) {
+						case TAB_DELIMITED_DATASET:
+						case CSV_DELIMITED_DATASET:
+						case ARFF_DATASET:
+						case PLINK_PED_DATASET:
+							ds->WriteNewDataset(outputDatasetFilename, outputDatasetType);
+							break;
+						case PLINK_BED_DATASET:
+							cout << "PLINK BED output format not supported yet" << endl;
+							exit(COMMAND_LINE_ERROR);
+							break;
+						case NO_OUTPUT_DATASET:
+						default:
+							cerr << "No output data set specified for conversion" << endl;
+							exit(COMMAND_LINE_ERROR);
+							break;
+					}
+					cout << Timestamp() << "Conversion from " << snpsFilename
+							<< " to " << outputDatasetFilename << " successful" << endl;
+					cout << Timestamp() << "Conversion complete" << endl;
+					cout << Timestamp() << argv[0] << " done" << endl;
+					delete ds;
+					return 0;
+				}
+				else {
+					cerr << "ERROR: Failure to load data set for conversion"
+							<< endl << endl;
+				}
+			}
+			else {
+				cerr << "ERROR: Data set conversion only works with SNP data sets"
+						<< endl << endl;
+				exit(COMMAND_LINE_ERROR);
+			}
 			break;
 		case NO_ANALYSIS:
 			cerr << "Analysis type could not be determined" << endl;
@@ -475,7 +536,7 @@ int main(int argc, char** argv) {
 
 	if(!datasetLoaded) {
 		cerr << "ERROR: Failure to load dataset for analysis" << endl << endl;
-		exit(COMMAND_LINE_ERROR);
+		exit(DATASET_LOAD_ERROR);
 	}
 
 	if(!ds->SetDistanceMetrics(snpMetric, numMetric)) {
@@ -502,6 +563,7 @@ int main(int argc, char** argv) {
 		case BIRDSEED_ANALYSIS:
 			birdseed->PrintInfo();
 			break;
+		case DATASET_CONVERSION:
 		case NO_ANALYSIS:
 			break;
 	}
@@ -604,14 +666,22 @@ int main(int argc, char** argv) {
 	/// write the ReliefF filtered attributes as a new data set
 	switch(outputDatasetType) {
 		case TAB_DELIMITED_DATASET:
+			cout << Timestamp() << "Writing new TAB file" << endl;
 			ds->WriteNewDataset(outputDatasetFilename, TAB_DELIMITED_DATASET);
 			break;
 		case CSV_DELIMITED_DATASET:
+			cout << Timestamp() << "Writing new CSV file" << endl;
 			ds->WriteNewDataset(outputDatasetFilename, CSV_DELIMITED_DATASET);
 			break;
 		case ARFF_DATASET:
+			cout << Timestamp() << "Writing new ARFF file" << endl;
 			ds->WriteNewDataset(outputDatasetFilename, ARFF_DATASET);
 			break;
+		case PLINK_PED_DATASET:
+			cout << Timestamp() << "Writing new PLINK MAP/PED files" << endl;
+			ds->WriteNewDataset(outputDatasetFilename, PLINK_PED_DATASET);
+			break;
+		case PLINK_BED_DATASET:
 		case NO_OUTPUT_DATASET:
 		default:
 			break;
