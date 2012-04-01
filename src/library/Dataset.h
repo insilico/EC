@@ -534,6 +534,8 @@ protected:
   virtual bool LoadSnps(std::string filename);
   /// Update level counts for all instances by calling UpdateLevelCounts(inst)
   void UpdateAllLevelCounts();
+  /// Exclude any monomorphic SNPs, since they add no information about class
+  void ExcludeMonomorphs();
   /// Create dummy alleles from genotypes for data sets that have no allele info
   void CreateDummyAlleles();
   /*************************************************************************//**

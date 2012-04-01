@@ -257,6 +257,9 @@ bool PlinkDataset::LoadSnps(string filename) {
           ++attributeAlleleCounts[attrIdx][uppercaseGenotype[0]];
           ++attributeAlleleCounts[attrIdx][uppercaseGenotype[1]];
         }
+        else {
+        	missingValues[instanceIds[pedLineNumber-1]].push_back(attrIdx);
+        }
 //        cout << "\t" << attrIdx << ": " << littleBuff
 //                << " (" << uppercaseGenotype << ")" << endl;
         ++genotypeCounts[attrIdx][uppercaseGenotype];

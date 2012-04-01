@@ -1211,6 +1211,7 @@ void Dataset::PrintClassIndexInfo(ostream& outStream) {
 }
 
 void Dataset::PrintMissingValuesStats() {
+	unsigned attrsMissing = 0;
 	if (missingValues.size()) {
 		cout << Timestamp() << "Missing Attributes Values Detected" << endl;
 		cout << Timestamp() << "Instance # Missing" << endl;
@@ -1218,10 +1219,15 @@ void Dataset::PrintMissingValuesStats() {
 		for (mit = missingValues.begin(); mit != missingValues.end(); ++mit) {
 			cout << Timestamp() << mit->first << setw(10) << mit->second.size()
 					<< endl;
+			attrsMissing += mit->second.size();
 		}
 	} else {
 		cout << Timestamp() << "0 missing attribute values detected" << endl;
 	}
+	double genotypingRate = 1.0 -
+			(attrsMissing / ((double) instances.size() * attributeNames.size()));
+	cout << Timestamp() << "Total genotyping rate: " << genotypingRate << endl;
+
 	if (missingNumericValues.size()) {
 		cout << Timestamp() << "Missing Numeric Values Detected" << endl;
 		cout << Timestamp() << "Instance # Missing" << endl;
@@ -2628,6 +2634,10 @@ void Dataset::UpdateAllLevelCounts() {
 	}
 	cout << Timestamp() << instanceCount << "/" << instancesMask.size()
 			<< " done" << endl;
+
+	/// exclude monomorphic SNPs
+	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
+	ExcludeMonomorphs();
 }
 
 void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {
@@ -2644,6 +2654,23 @@ void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {
 			}
 		}
 	}
+}
+
+void Dataset::ExcludeMonomorphs() {
+	unsigned int attrIdx = 0;
+	unsigned int attrsExcluded = 0;
+	vector<map<AttributeLevel, unsigned int> >::const_iterator it;
+	for(it=levelCounts.begin(); it != levelCounts.end(); ++it, ++attrIdx) {
+		if(it->size() == 1) {
+			cout << Timestamp() << "WARNING: attribute " << attributeNames[attrIdx]
+			     << " is monomorphic and being marked as excluded from the analysis"
+			     << endl;
+			MaskRemoveVariable(attributeNames[attrIdx]);
+			++attrsExcluded;
+		}
+	}
+	cout << Timestamp() << attrsExcluded
+			<< " SNPs excluded as monomorphic" << endl;
 }
 
 void Dataset::CreateDummyAlleles() {
