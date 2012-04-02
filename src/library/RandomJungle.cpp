@@ -12,6 +12,8 @@
 #include "config.h"
 #endif
 
+#include <omp.h>
+
 #include "rjungle/librjungle.h"
 #include "rjungle/RJunglePar.h"
 #include "rjungle/RJungleCtrl.h"
@@ -108,7 +110,7 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	int numThreads = omp_get_num_threads();
 	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
 	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
-	rjParams.nthreads = numProcs;
+	rjParams.nthreads = 0;
 }
 
 RandomJungle::~RandomJungle() {
@@ -167,7 +169,9 @@ bool RandomJungle::ComputeAttributeScores() {
 			} else {
 				// numeric/nominal
 				if (dataset->HasNumerics()) {
-					rjParams.treeType = 5;
+					// rjParams.treeType = 5;
+					// changed to tree type 1 to see if it performs better
+					rjParams.treeType = 1;
 					treeTypeDesc = "Classification trees: continuous/discrete";
 				}
 			}
@@ -381,6 +385,43 @@ bool RandomJungle::ComputeAttributeScores() {
 	return true;
 }
 
+bool RandomJungle::ComputeAttributeScoresRjungle() {
+	string outPrefix(rjParams.outprefix);
+	string importanceFilename = outPrefix + ".importance";
+
+	/// save the current data set to a temporary file for rjungle
+	string tempFile = outPrefix + "_tmp.csv";
+	cout << Timestamp() << "Writing temporary file for RJ: " << tempFile << endl;
+	dataset->WriteNewDataset(tempFile, CSV_DELIMITED_DATASET);
+
+	/// run rjungle through a system call to the shell
+	stringstream rjCmd;
+	rjCmd << "rjungle -f " << tempFile << " -e ',' -D 'Class' -o " << outPrefix;
+	if(rjParams.verbose_flag) {
+		rjCmd << " -v";
+	}
+	cout << Timestamp() << "Running RJ command: " << rjCmd.str() << endl;
+	int systemCallReturnStatus = system(rjCmd.str().c_str());
+	if(systemCallReturnStatus == -1) {
+		cerr << "ERROR: Calling rjungle executable. -1 return code" << endl;
+		return false;
+	}
+
+	/// loads rjScores map from importance file
+	cout << Timestamp() << "Loading RJ variable importance (VI) scores "
+			<< "from [" << importanceFilename << "]" << endl;
+	if (!ReadScores(importanceFilename)) {
+		cerr << "ERROR: Could not read Random Jungle scores" << endl;
+		return false;
+	}
+
+	/// remove the temporary file
+	cout << Timestamp() << "Removing temporary file for RJ: " << tempFile << endl;
+	unlink(tempFile.c_str());
+
+	return true;
+}
+
 vector<pair<double, string> > RandomJungle::GetScores() {
 	return scores;
 }
@@ -403,7 +444,7 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 	while (getline(importanceStream, line)) {
 		++lineNumber;
 		vector<string> tokens;
-		split(tokens, line, " ");
+		split(tokens, line, ",");
 		if (tokens.size() != 4) {
 			cerr << "ERROR: EvaporativeCooling::ReadRandomJungleScores: "
 					<< "error parsing line " << lineNumber << " of " << importanceFilename

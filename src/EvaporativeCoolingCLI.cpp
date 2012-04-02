@@ -695,7 +695,7 @@ int main(int argc, char** argv) {
 	if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
 		cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
 		vector<string> tempFilenames;
-		tempFilenames.push_back(outputFilesPrefix + ".log");
+		//tempFilenames.push_back(outputFilesPrefix + ".log");
 		tempFilenames.push_back(outputFilesPrefix + ".verbose");
 		tempFilenames.push_back(outputFilesPrefix + ".importance");
 		tempFilenames.push_back(outputFilesPrefix + ".confusion");

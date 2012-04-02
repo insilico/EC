@@ -291,7 +291,7 @@ bool EvaporativeCooling::ComputeECScores() {
 		if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
 			t = clock();
 			cout << Timestamp() << "Running Random Jungle" << endl;
-			if (randomJungle->ComputeAttributeScores()) {
+			if (randomJungle->ComputeAttributeScoresRjungle()) {
 				rjScores = randomJungle->GetScores();
 			} else {
 				cerr << "ERROR: In EC algorithm: Random Jungle failed" << endl;

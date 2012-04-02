@@ -47,6 +47,8 @@ public:
   virtual ~RandomJungle();
   /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScores();
+  /// Score attributes by getting Random Jungle importance scores
+  bool ComputeAttributeScoresRjungle();
   /*************************************************************************//**
    * Get the (importance) scores as a vector of pairs: score, attribute name
    * \return vector of pairs
