@@ -81,8 +81,10 @@ Dataset::Dataset() {
 	numMetric = "manhattan";
   numDiff = diffManhattan;
 
-  cout << Timestamp() << "Default SNP distance metric: " << snpMetric << endl;
-  cout << Timestamp() << "Default continuous distance metric: " << numMetric << endl;
+  cout << Timestamp() << "Default SNP nearest neighbors distance metric: "
+  		<< snpMetric << endl;
+  cout << Timestamp() << "Default continuous distance metric: "
+  		<< numMetric << endl;
 
 	rng = NULL;
 }
@@ -907,12 +909,88 @@ pair<char, double> Dataset::GetAttributeMAF(unsigned int attributeIndex) {
 	return returnPair;
 }
 
+bool Dataset::ProcessExclusionFile(string exclusionFilename) {
+  ifstream dataStream(exclusionFilename.c_str());
+  if(!dataStream.is_open()) {
+    cerr << "ERROR: Could not open exclusion file: " << exclusionFilename << endl;
+    return false;
+  }
+
+  // temporary string for reading file lines
+  string line;
+  unsigned int lineNumber = 0;
+  while(getline(dataStream, line)) {
+    ++lineNumber;
+    string attributeName = trim(line);
+    if(!MaskRemoveVariable(attributeName)) {
+      cerr << "ERROR: attribute to exclude [" << attributeName
+              << "] on line [" << lineNumber
+              << "] in the exclusion file. It is not in the data set" << endl;
+      return false;
+    }
+  }
+  dataStream.close();
+
+  return true;
+}
+
+
 AttributeMutationType Dataset::GetAttributeMutationType(
 		unsigned int attributeIndex) {
 	if ((attributeIndex >= 0) && (attributeIndex < attributeMutationTypes.size())) {
 		return attributeMutationTypes[attributeIndex];
 	}
 	return UNKNOWN_MUTATION;
+}
+
+double Dataset::GetJukesCantorDistance(DatasetInstance* dsi1,
+		DatasetInstance* dsi2)
+{
+	double returnValue = 0.0;
+
+  double d = 0.0;
+  vector<unsigned int> attributeIndicies =
+    MaskGetAttributeIndices(DISCRETE_TYPE);
+  for(unsigned int attrIdx = 0; attrIdx < attributeIndicies.size(); ++attrIdx) {
+  	AttributeLevel dsi1Al =  dsi1->GetAttribute(attributeIndicies[attrIdx]);
+  	AttributeLevel dsi2Al =  dsi2->GetAttribute(attributeIndicies[attrIdx]);
+  	d += ((dsi1Al == dsi2Al)? 0: 1);
+  }
+
+  returnValue = (-3.0/4.0) * log(1.0 - (4.0 /3.0) * ((double) d));
+
+	return returnValue;
+}
+
+double Dataset::GetKimuraDistance(DatasetInstance* dsi1, DatasetInstance* dsi2)
+{
+  vector<unsigned int> attributeIndicies =
+    MaskGetAttributeIndices(DISCRETE_TYPE);
+  double p = 0, q = 0;
+  for(unsigned int attrIdx = 0; attrIdx < attributeIndicies.size(); ++attrIdx) {
+  	AttributeLevel dsi1Al =  dsi1->GetAttribute(attributeIndicies[attrIdx]);
+  	AttributeLevel dsi2Al =  dsi2->GetAttribute(attributeIndicies[attrIdx]);
+  	if(dsi1Al != dsi2Al) {
+  		if(GetAttributeMutationType(attributeIndicies[attrIdx]) ==
+  				TRANSITION_MUTATION) {
+  			++p;
+  		}
+  		if(GetAttributeMutationType(attributeIndicies[attrIdx]) ==
+  				TRANSVERSION_MUTATION) {
+  			++q;
+  		}
+  	}
+  }
+  double npos = (double) attributeIndicies.size();
+	double P = p / npos;
+	double Q = q / npos;
+	double w1 = 1.0 - 2.0 * P - Q;
+	double w2 = 1.0 - 2.0 * Q;
+	double kimuraDistance =
+			-0.5 * ProtectedLog(w1) -
+			0.25 * ProtectedLog(w2);
+
+  return kimuraDistance;
 }
 
 unsigned int Dataset::NumLevels(unsigned int index) {
@@ -2241,13 +2319,22 @@ double
 Dataset::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
                                            DatasetInstance* dsi2) {
   double distance = 0;
-  //cout << "ComputeInstanceToInstanceDistance: " << dsi1 << ", " << dsi2 << endl;
 
 	if(HasGenotypes()) {
-		vector<unsigned int> attributeIndices =
-			MaskGetAttributeIndices(DISCRETE_TYPE);
-		for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
-			distance += snpDiff(attributeIndices[i], dsi1, dsi2);
+		if(snpMetric == "KM") {
+			distance = GetKimuraDistance(dsi1, dsi2);
+		}
+		else {
+			if(snpMetric == "JC") {
+				distance = GetJukesCantorDistance(dsi1, dsi2);
+			}
+			else {
+				vector<unsigned int> attributeIndices =
+					MaskGetAttributeIndices(DISCRETE_TYPE);
+				for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
+					distance += snpDiff(attributeIndices[i], dsi1, dsi2);
+				}
+			}
 		}
 		// cout << "SNP distance = " << distance << endl;
 	}
@@ -2285,8 +2372,13 @@ bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
 		snpDiff = diffNCA;
     snpMetricFunctionUnset = false;
 	}
+	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "KM") {
+		snpDiff = diffKM;
+    snpMetricFunctionUnset = false;
+	}
 	if(snpMetricFunctionUnset) {
-		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
+		cerr << "ERROR: Cannot set SNP nearest neighbors metric to ["
+				<< newSnpMetric << "]" << endl;
 		return false;
   }
 	snpMetric = to_upper(newSnpMetric);
@@ -2294,15 +2386,21 @@ bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
   if(to_upper(numMetric) == "MANHATTAN") {
     numDiff = diffManhattan;
   } else {
-    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type" << endl;
+    cerr << "ERROR: [" << numMetric << "] is not a valid numeric metric type"
+    		<< endl;
     return false;
   }
 	numMetric = to_upper(newNumMetric);
 
-	cout << Timestamp() << "New SNP distance metric: " << snpMetric << endl;
+	cout << Timestamp() << "New SNP distance metric for nearest neighbors: "
+			<< snpMetric << endl;
   cout << Timestamp() << "New continuous distance metric: " << numMetric << endl;
 
   return true;
+}
+
+pair<string, string> Dataset::GetDistanceMetrics() {
+	return(make_pair(snpMetric, numMetric));
 }
 
 bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {

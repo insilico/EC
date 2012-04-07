@@ -13,8 +13,10 @@
 #include <vector>
 #include <sstream>
 #include <ctime>
+#include <cmath>
 
 #include "Dataset.h"
+#include "DatasetInstance.h"
 #include "ArffDataset.h"
 #include "ArffDataset.h"
 #include "PlinkDataset.h"
@@ -319,4 +321,13 @@ string GetFileBasename(string fileName) {
 string GetFileExtension(string fileName) {
   size_t pos = fileName.rfind('.');
   return fileName.substr(pos + 1, fileName.size() - 1);
+}
+
+double ProtectedLog(double x) {
+	if(x <= 0.0) {
+		return 0.0;
+	}
+	else {
+		return log(x);
+	}
 }

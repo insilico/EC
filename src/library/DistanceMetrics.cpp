@@ -202,6 +202,27 @@ double diffNCA(unsigned int attributeIndex,
   return distance;
 }
 
+double diffKM(unsigned int attributeIndex,
+               DatasetInstance* dsi1,
+               DatasetInstance* dsi2) {
+  double distance = 0.0;
+
+	AttributeLevel dsi1Al =  dsi1->GetAttribute(attributeIndex);
+	AttributeLevel dsi2Al =  dsi2->GetAttribute(attributeIndex);
+	if(dsi1Al != dsi2Al) {
+		if(dsi1->GetDatasetPtr()->GetAttributeMutationType(attributeIndex) ==
+				TRANSITION_MUTATION) {
+			distance = 1.0;
+		}
+		if(dsi1->GetDatasetPtr()->GetAttributeMutationType(attributeIndex) ==
+				TRANSVERSION_MUTATION) {
+			distance = 2.0;
+		}
+	}
+
+  return distance;
+}
+
 double diffManhattan(unsigned int attributeIndex,
                      DatasetInstance* dsi1,
                      DatasetInstance* dsi2) {

@@ -217,12 +217,22 @@ public:
    ****************************************************************************/
   virtual std::pair<char, double> GetAttributeMAF(unsigned int attributeIndex);
   /*************************************************************************//**
+   * Remove file of attribute names from consideration in analyses.
+   * \param [in] excusionFilename filename of attributes to exclude
+   * \return success
+   ****************************************************************************/
+  bool ProcessExclusionFile(std::string exclusionFilename);
+  /*************************************************************************//**
    * Get attribute mutation type.
    * \param [in] attribute index
    * \return mutation type (transition, transversion, unknown)
    ****************************************************************************/
   virtual AttributeMutationType
   GetAttributeMutationType(unsigned int attributeIndex);
+  /// Apply Jukes-Cantor distance
+  double GetJukesCantorDistance(DatasetInstance* dsi1, DatasetInstance* dsi2);
+  /// Get Kimura Two-Parameter distance
+  double GetKimuraDistance(DatasetInstance* dsi1, DatasetInstance* dsi2);
   /*************************************************************************//**
    * Get integer value for string genotype.
    * \param [in] genotype genotype string
@@ -517,13 +527,18 @@ public:
   double ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
                                            DatasetInstance* dsi2);
   /*************************************************************************//**
-   * Set the he distance metrics used to compute instance-to-instance distances.
+   * Set the the distance metrics used to compute instance-to-instance distances.
    * \param [in] snpMetric name of SNP metric
    * \param [in] numMetric name of the numeric metric
    * \return distance
    ****************************************************************************/
   bool SetDistanceMetrics(std::string newSnpMetric,
   		std::string newNumMetric="manhattan");
+  /*************************************************************************//**
+   * Get the the distance metrics used to compute instance-to-instance distances.
+   * \return pair<snp distance metricname, numeric distance metric name>
+   ****************************************************************************/
+  std::pair<std::string, std::string> GetDistanceMetrics();
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.
@@ -583,7 +598,8 @@ protected:
   bool WriteNewPlinkPedDataset(std::string baseDatasetFilename);
 
   /*************************************************************************//**
-   * Compute the discrete difference in an attribute between two instances.
+   * Compute the discrete difference in an attribute between two instances
+   * for determining nearest neighbors.
    * \param [in] attributeIndex index into vector of all attributes
    * \param [in] dsi1 pointer to DatasetInstance 1
    * \param [in] dsi2 pointer to DatasetInstance 2

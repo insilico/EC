@@ -240,4 +240,7 @@ template <class T> void PrintVector(std::vector<T> vec, std::string title) {
   std::cout << "]" << std::endl;
 }
 
+/// protected log function returns 0 for 0
+double ProtectedLog(double x);
+
 #endif	/* INSILICO_H */

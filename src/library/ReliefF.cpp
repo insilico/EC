@@ -128,18 +128,6 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
   }
   analysisType = anaType;
 
-  // remove any attributes from distance calculations that
-  // are in the attribute exclusion file
-  if(vm.count("snp-exclusion-file")) {
-    string snpExclusionFile = vm["snp-exclusion-file"].as<string > ();
-    cout << Timestamp() << "Processing exclusion file [" << snpExclusionFile << "]" << endl;
-    if(!ProcessExclusionFile(snpExclusionFile)) {
-      cerr << "ERROR: Could not process exclusion file" << endl;
-      exit(1);
-    }
-    cout << Timestamp() << dataset->NumVariables()
-            << " attributes after processing exclusions file" << endl;
-  }
   if(vm.count("number-random-samples")) {
     m = vm["number-random-samples"].as<unsigned int>();
     if(!m) {
@@ -153,8 +141,8 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
   } else {
     k = 10;
   }
-  if(vm.count("snp-metric")) {
-    snpMetric = vm["snp-metric"].as<string > ();
+  if(vm.count("snp-metric-weights")) {
+    snpMetric = vm["snp-metric-weights"].as<string > ();
   } else {
     snpMetric = "gm";
   }
@@ -224,6 +212,10 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
 		snpDiff = diffNCA;
     snpMetricFunctionUnset = false;
 	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "KM") {
+		snpDiff = diffKM;
+    snpMetricFunctionUnset = false;
+	}
 	if(snpMetricFunctionUnset) {
 		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
 		exit(EXIT_FAILURE);
@@ -236,8 +228,10 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
     exit(1);
   }
 
-  cout << Timestamp() << "ReliefF SNP distance metric: " << snpMetric << endl;
-  cout << Timestamp() << "ReliefF continuous distance metric: " << numMetric << endl;
+  cout << Timestamp() << "ReliefF SNP weight update metric: "
+  		<< snpMetric << endl;
+  cout << Timestamp() << "ReliefF continuous distance weight update metric: "
+  		<< numMetric << endl;
 
   weightByDistanceMethod = vm["weight-by-distance-method"].as<string > ();
   if((weightByDistanceMethod != "exponential") &&
@@ -278,18 +272,6 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
 
   string configValue;
 
-  // remove any attributes from distance calculations that
-  // are in the attribute exclusion file
-  if(GetConfigValue(configMap, "snp-exclusion-file", configValue)) {
-    cout << Timestamp() << "Processing exclusion file [" << configValue << "]"
-    		<< endl;
-    if(!ProcessExclusionFile(configValue)) {
-      cerr << "ERROR: Could not process exclusion file" << endl;
-      exit(EXIT_FAILURE);
-    }
-    cout << Timestamp() << dataset->NumVariables()
-            << " attributes after processing exclusions file" << endl;
-  }
   if(GetConfigValue(configMap, "number-random-samples", configValue)) {
     m = lexical_cast<unsigned int>(configValue);
     if(!m) {
@@ -379,11 +361,16 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
 		snpDiff = diffNCA;
     snpMetricFunctionUnset = false;
 	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "KM") {
+    cerr << "ERROR: KM is not supported as a ReliefF metric" << endl;
+    exit(EXIT_FAILURE);
+		// snpDiff = diffKM;
+    // snpMetricFunctionUnset = false;
+	}
 	if(snpMetricFunctionUnset) {
 		cerr << "ERROR: Cannot set SNP metric to [" << snpMetric << "]" << endl;
 		exit(EXIT_FAILURE);
   }
-
   if(to_upper(numMetric) == "MANHATTAN") {
     numDiff = diffManhattan;
   } else {
@@ -524,36 +511,38 @@ bool ReliefF::ComputeAttributeScores() {
     unsigned int A = 0;
     unsigned int scoresIdx = 0;
     if(dataset->HasGenotypes()) {
-      vector<unsigned int> attributeIndicies = 
-        dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
-      /// algorithm line 7
-      for(unsigned int attrIdx = 0; attrIdx < attributeIndicies.size(); ++attrIdx) {
-        A = attributeIndicies[attrIdx];
-        double hitSum = 0.0, missSum = 0.0;
-        /// algorithm line 8
-        for(unsigned int j = 0; j < k; j++) {
-          DatasetInstance* H_j = dataset->GetInstance(hits[j]);
-          hitSum += (snpDiff(A, R_i, H_j) * one_over_m_times_k);
-        }
-        /// algorithm line 9
-        map<ClassLevel, vector<unsigned int> >::const_iterator mit;
-        for(mit = misses.begin(); mit != misses.end(); ++mit) {
-          ClassLevel C = mit->first;
-          vector<unsigned int> missIds = mit->second;
-          double P_C = dataset->GetClassProbability(C);
-          double P_C_R = dataset->GetClassProbability(class_R_i);
-          double adjustmentFactor = P_C / (1.0 - P_C_R);
-          double tempSum = 0.0;
-          for(unsigned int j = 0; j < k; j++) {
-            DatasetInstance* M_j = dataset->GetInstance(missIds[j]);
-            tempSum += (snpDiff(A, R_i, M_j) * one_over_m_times_k);
-          } // nearest neighbors
-          missSum += (adjustmentFactor * tempSum);
-        }
-        W[scoresIdx] = W[scoresIdx] - hitSum + missSum;
-        ++scoresIdx;
+    	vector<unsigned int> attributeIndicies =
+				dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
+			/// algorithm line 7
+			for(unsigned int attrIdx = 0; attrIdx < attributeIndicies.size(); ++attrIdx) {
+				A = attributeIndicies[attrIdx];
+				double hitSum = 0.0, missSum = 0.0;
+				/// algorithm line 8
+				for(unsigned int j = 0; j < k; j++) {
+					DatasetInstance* H_j = dataset->GetInstance(hits[j]);
+					double rawDistance = snpDiff(A, R_i, H_j);
+					hitSum += (rawDistance * one_over_m_times_k);
+				}
+				/// algorithm line 9
+				map<ClassLevel, vector<unsigned int> >::const_iterator mit;
+				for(mit = misses.begin(); mit != misses.end(); ++mit) {
+					ClassLevel C = mit->first;
+					vector<unsigned int> missIds = mit->second;
+					double P_C = dataset->GetClassProbability(C);
+					double P_C_R = dataset->GetClassProbability(class_R_i);
+					double adjustmentFactor = P_C / (1.0 - P_C_R);
+					double tempSum = 0.0;
+					for(unsigned int j = 0; j < k; j++) {
+						DatasetInstance* M_j = dataset->GetInstance(missIds[j]);
+						double rawDistance = snpDiff(A, R_i, M_j);
+						tempSum += (rawDistance * one_over_m_times_k);
+					} // nearest neighbors
+					missSum += (adjustmentFactor * tempSum);
+				}
 
-      } // all attributes
+				W[scoresIdx] = W[scoresIdx] - hitSum + missSum;
+				++scoresIdx;
+			} // all attributes
     } // has genotypes
 
     // loop here for numeric attributes if they exist - 6/19/11
@@ -584,7 +573,6 @@ bool ReliefF::ComputeAttributeScores() {
         }
         W[scoresIdx] = W[scoresIdx] - hitSum + missSum;
         ++scoresIdx;
-
       }
     } // has numerics
 
@@ -711,64 +699,6 @@ void ReliefF::WriteAttributeScores(string baseFilename) {
   outFile.close();
 }
 
-bool ReliefF::ProcessExclusionFile(string exclusionFilename) {
-  ifstream dataStream(exclusionFilename.c_str());
-  if(!dataStream.is_open()) {
-    cerr << "ERROR: Could not open exclusion file: " << exclusionFilename << endl;
-    return false;
-  }
-
-  // temporary string for reading file lines
-  string line;
-  unsigned int lineNumber = 0;
-  while(getline(dataStream, line)) {
-    ++lineNumber;
-    string attributeName = trim(line);
-    if(!dataset->MaskRemoveVariable(attributeName)) {
-      cerr << "ERROR: attribute to exclude [" << attributeName
-              << "] on line [" << lineNumber
-              << "] in the exclusion file. It is not in the data set" << endl;
-      return false;
-    }
-  }
-  dataStream.close();
-
-  return true;
-}
-
-double
-ReliefF::ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
-                                           DatasetInstance* dsi2) {
-  double distance = 0;
-  //cout << "ComputeInstanceToInstanceDistance: " << dsi1 << ", " << dsi2 << endl;
-
-  if(dataset->HasGenotypes()) {
-    vector<unsigned int> attributeIndices = 
-      dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
-    for(unsigned int i = 0; i < attributeIndices.size(); ++i) {
-      distance += snpDiff(attributeIndices[i], dsi1, dsi2);
-    }
-    // cout << "SNP distance = " << distance << endl;
-  }
-
-  // added 6/16/11
-  // compute numeric distances
-  if(dataset->HasNumerics()) {
-  	//cout << "Computing numeric instance-to-instance distance..." << endl;
-    vector<unsigned int> numericIndices = 
-      dataset->MaskGetAttributeIndices(NUMERIC_TYPE);
-    //cout << "\tNumber of numerics: " << numericIndices.size() << endl;
-    for(unsigned int i = 0; i < numericIndices.size(); ++i) {
-    	//cout << "\t\tNumeric index: " << numericIndices[i] << endl;
-      double numDistance = numDiff(numericIndices[i], dsi1, dsi2);
-      //cout << "Numeric distance " << i << " => " << numDistance << endl;
-      distance += numDistance;
-    }
-  }
-
-  return distance;
-}
-
 bool ReliefF::PreComputeDistances() {
   cout << Timestamp() << "Precomputing instance distances" << endl;
   map<string, unsigned int> instanceMask = dataset->MaskGetInstanceMask();
@@ -801,9 +731,11 @@ bool ReliefF::PreComputeDistances() {
       dataset->GetInstanceIndexForID(instanceIds[i], dsi1Index);
       unsigned int dsi2Index;
       dataset->GetInstanceIndexForID(instanceIds[j], dsi2Index);
+      /// be sure to call Dataset::ComputeInstanceToInstanceDistance
       distanceMatrix[i][j] = distanceMatrix[j][i] =
-              ComputeInstanceToInstanceDistance(dataset->GetInstance(dsi1Index),
-                                                dataset->GetInstance(dsi2Index));
+              dataset->ComputeInstanceToInstanceDistance(
+              		dataset->GetInstance(dsi1Index),
+                  dataset->GetInstance(dsi2Index));
       // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
     }
     if(i && (i % 100 == 0)) {
@@ -924,8 +856,9 @@ bool ReliefF::PreComputeDistancesByMap() {
       pair<string, string> key = make_pair(instanceId1, instanceId2);
       pair<string, string> symkey = make_pair(instanceId2, instanceId1);
       double distance =
-              ComputeInstanceToInstanceDistance(dataset->GetInstance(dsi1Index),
-                                                dataset->GetInstance(dsi2Index));
+              dataset->ComputeInstanceToInstanceDistance(
+              		dataset->GetInstance(dsi1Index),
+                  dataset->GetInstance(dsi2Index));
 #ifdef WITH_OPENMP
 #pragma omp critical
 #endif

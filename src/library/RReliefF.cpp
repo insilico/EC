@@ -22,7 +22,12 @@ RReliefF::RReliefF(Dataset* ds) :
 	if (!ds->HasContinuousPhenotypes()) {
 		cerr << "ERROR: Attempting to construct RReliefF object without a "
 				"continuous phenotype data set" << endl;
-		exit(1);
+		exit(EXIT_FAILURE);
+	}
+	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
+	if(distanceMetrics.first == "KM") {
+		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -32,7 +37,12 @@ RReliefF::RReliefF(Dataset* ds, po::variables_map& vm) :
 	if (!ds->HasContinuousPhenotypes()) {
 		cerr << "ERROR: Attempting to construct RReliefF object without a "
 				"continuous phenotype data set" << endl;
-		exit(1);
+		exit(EXIT_FAILURE);
+	}
+	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
+	if(distanceMetrics.first == "KM") {
+		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -42,7 +52,12 @@ RReliefF::RReliefF(Dataset* ds, ConfigMap& configMap) :
 	if (!ds->HasContinuousPhenotypes()) {
 		cerr << "ERROR: Attempting to construct RReliefF object without a "
 				"continuous phenotype data set" << endl;
-		exit(1);
+		exit(EXIT_FAILURE);
+	}
+	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
+	if(distanceMetrics.first == "KM") {
+		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -126,8 +141,8 @@ bool RReliefF::ComputeAttributeScores() {
 			ndc += (diffPredicted * d_ij);
 			unsigned int scoresIndex = 0;
 			// attributes
-			vector<unsigned int> attributeIndicies = dataset->MaskGetAttributeIndices(
-					DISCRETE_TYPE);
+			vector<unsigned int> attributeIndicies =
+					dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
 			for (unsigned int attrIdx = 0; attrIdx < attributeIndicies.size();
 					++attrIdx) {
 				unsigned int A = attributeIndicies[attrIdx];

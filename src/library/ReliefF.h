@@ -75,20 +75,6 @@ public:
    * \param [in] baseFIlename filename to write score-attribute name pairs
    ****************************************************************************/
   void WriteAttributeScores(std::string baseFilename);
-  /*************************************************************************//**
-   * Remove file of attribute names from consideration in ReliefF.
-   * \param [in] excusionFilename filename of attributes to exclude
-   * \return success
-   ****************************************************************************/
-  bool ProcessExclusionFile(std::string exclusionFilename);
-  /*************************************************************************//**
-   * Compute the distance between two DatasetInstances.
-   * \param [in] dsi1 pointer to DatasetInstance 1
-   * \param [in] dsi2 pointer to DatasetInstance 2
-   * \return distance
-   ****************************************************************************/
-  double ComputeInstanceToInstanceDistance(DatasetInstance* dsi1,
-                                           DatasetInstance* dsi2);
   /// Precompute all pairwise instance-to-instance distances.
   bool PreComputeDistances();
   /// Precompute all pairwise distances homoring excluded instances.

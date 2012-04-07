@@ -64,7 +64,8 @@ int main(int argc, char** argv) {
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
-	string snpMetric = "gm";
+	string snpMetricNN = "gm";
+	string snpMetricWeights = "gm";
 	string numMetric = "manhattan";
 	string weightByDistanceMethod = "equal";
 	double weightByDistanceSigma = 2.0;
@@ -134,8 +135,13 @@ int main(int argc, char** argv) {
 		"use prefix for all output files"
 		)
 		(
-		"snp-metric,S",
-		po::value<string > (&snpMetric)->default_value(snpMetric),
+		"snp-metric-nn,B",
+		po::value<string > (&snpMetricNN)->default_value(snpMetricNN),
+		"metric for determining the difference between SNPs (gm|am|nca|km)"
+		)
+		(
+		"snp-metric-weights,W",
+		po::value<string > (&snpMetricWeights)->default_value(snpMetricWeights),
 		"metric for determining the difference between SNPs (gm|am|nca)"
 		)
 		(
@@ -539,9 +545,20 @@ int main(int argc, char** argv) {
 		exit(DATASET_LOAD_ERROR);
 	}
 
-	if(!ds->SetDistanceMetrics(snpMetric, numMetric)) {
+	if(snpExclusionFile != "") {
+		if(!ds->ProcessExclusionFile(snpExclusionFile)) {
+			cerr << "ERROR: processing exclusion file: " << snpExclusionFile << endl;
+			exit(EXIT_FAILURE);
+		}
+		cout << Timestamp() << ds->NumAttributes()
+				<< " SNPs remain after processing exclusion file" << endl;
+	}
+
+	if(!ds->SetDistanceMetrics(snpMetricNN, numMetric)) {
 		cerr << "Could not set distance metrics for the data set, "
-				<< "SNP: " << snpMetric << ", Numeric: " << numMetric << endl;
+				<< "SNP nearest neighbors: " << snpMetricNN
+				<< ", SNP ReliefF weight updates: " << snpMetricWeights
+				<< ", Numeric: " << numMetric << endl;
 		exit(COMMAND_LINE_ERROR);
 	}
 
