@@ -110,7 +110,7 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	int numThreads = omp_get_num_threads();
 	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
 	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
-	rjParams.nthreads = 0;
+	rjParams.nthreads = numProcs;
 }
 
 RandomJungle::~RandomJungle() {
@@ -396,7 +396,8 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
-	rjCmd << "rjungle -f " << tempFile << " -e ',' -D 'Class' -o " << outPrefix;
+	rjCmd << "rjungle -f " << tempFile << " -e ',' -D 'Class' -o "
+			<< outPrefix << " -U " << rjParams.nthreads;
 	if(rjParams.verbose_flag) {
 		rjCmd << " -v";
 	}

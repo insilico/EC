@@ -2725,9 +2725,6 @@ void Dataset::UpdateAllLevelCounts() {
 			cout << Timestamp() << instanceCount << "/" << instancesMask.size() << endl;
 			cout.flush();
 		}
-		if (instanceCount && ((instanceCount % 1000) == 0)) {
-			cout << Timestamp() << instanceCount << "/" << instancesMask.size() << endl;
-		}
 		++instanceCount;
 	}
 	cout << Timestamp() << instanceCount << "/" << instancesMask.size()
