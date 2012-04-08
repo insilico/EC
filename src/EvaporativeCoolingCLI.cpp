@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 		(
 		"snp-metric-nn,B",
 		po::value<string > (&snpMetricNN)->default_value(snpMetricNN),
-		"metric for determining the difference between SNPs (gm|am|nca|km)"
+		"metric for determining the difference between subjects (gm|am|nca|km)"
 		)
 		(
 		"snp-metric-weights,W",
