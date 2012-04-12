@@ -118,6 +118,11 @@ private:
 	 * \return distance
 	 ****************************************************************************/
 	bool RemoveWorstAttributes(unsigned int numToRemove = 1);
+	/// optimize the temperature coupling constant
+	double OptimizeTemperature(std::vector<double> deltas);
+	/// use Random Jungle to compute the classification error of the current
+	/// set of attributes with numToRemovePerIteration attributes removed
+	double ComputeClassificationErrorRJ();
 
 	/// pointer to a Dataset object
 	Dataset* dataset;
@@ -134,8 +139,12 @@ private:
 
 	/// pointer to a ReliefF or RReliefF algorithm object
 	ReliefF* reliefF;
-	/// pointer to a RandomJungle algorithm onject
+	/// pointer to a RandomJungle algorithm object
 	RandomJungle* randomJungle;
+
+	bool optimizeTemperature;
+	double optimalTemperature;
+	double bestClassificationError;
 
 	/// current random jungle scores
 	EcScores rjScores;
@@ -148,6 +157,9 @@ private:
 	unsigned int numRFThreads;
 	/// number of attributes to remove per iteration
 	unsigned int numToRemovePerIteration;
+	/// number of attributes to remove next iteration
+	unsigned int numToRemoveNextIteration;
+
 	/// number of target attributes
 	unsigned int numTargetAttributes;
 	/// attributes that have been evaporated so far

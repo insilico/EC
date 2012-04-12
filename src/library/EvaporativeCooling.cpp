@@ -66,6 +66,13 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	reliefF = NULL;
 	randomJungle = NULL;
 
+	optimizeTemperature = false;
+	if(paramsMap.count("optimize-temp")) {
+		optimizeTemperature = true;
+	}
+	optimalTemperature = 1.0;
+	bestClassificationError = 1.0;
+
 	// set the number of target attributes
 	numTargetAttributes = vm["ec-num-target"].as<unsigned int>();
 	if (numTargetAttributes == 0) {
@@ -127,13 +134,13 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	cout << Timestamp() << "EC will use " << numRFThreads << " threads" << endl;
 
 	// ------------------------------------------------------------- Random Jungle
-	// initialize Random Jungle
+	// create and initialize a Random Jungle
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
 		randomJungle = new RandomJungle(dataset, paramsMap);
 	}
 
 	// ------------------------------------------------------------------ Relief-F
-	// intialize Relief-F
+	// create and initialize Relief-F
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
 		cout << Timestamp() << "Initializing Relief-F" << endl;
 		if (dataset->HasContinuousPhenotypes()) {
@@ -161,8 +168,16 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	reliefF = NULL;
 	randomJungle = NULL;
 
-	// set the number of target attributes
 	string configValue;
+
+	optimizeTemperature = false;
+	if(GetConfigValue(configMap, "optimize-temp", configValue)) {
+		optimizeTemperature = true;
+	}
+	optimalTemperature = 1.0;
+	bestClassificationError = 1.0;
+
+	// set the number of target attributes
 	if(GetConfigValue(configMap, "ec-num-target", configValue)) {
 		numTargetAttributes = lexical_cast<unsigned int>(configValue);
 	}
@@ -232,13 +247,13 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	cout << Timestamp() << "EC will use " << numRFThreads << " threads" << endl;
 
 	// ------------------------------------------------------------- Random Jungle
-	// initialize Random Jungle
+	// create and initialize a Random Jungle
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
 		randomJungle = new RandomJungle(dataset, configMap);
 	}
 
 	// ------------------------------------------------------------------ Relief-F
-	// intialize Relief-F
+	// create and initialize Relief-F
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
 		cout << Timestamp() << "Initializing Relief-F" << endl;
 		if (dataset->HasContinuousPhenotypes()) {
@@ -274,9 +289,11 @@ bool EvaporativeCooling::ComputeECScores() {
 	// EC algorithm as in Figure 5, page 10 of the paper referenced
 	// at top of this file. Modified per Brett's email to not do the
 	// varying temperature and classifier accuracy optimization steps.
+	// Added temperature optimization - 4/9/12
 	unsigned int iteration = 1;
 	clock_t t;
 	float elapsedTime = 0.0;
+	optimalTemperature = 1.0;
 	while (numWorkingAttributes >= numTargetAttributes) {
 		cout << Timestamp()
 				<< "----------------------------------------------------"
@@ -293,6 +310,7 @@ bool EvaporativeCooling::ComputeECScores() {
 			cout << Timestamp() << "Running Random Jungle" << endl;
 			if (randomJungle->ComputeAttributeScoresRjungle()) {
 				rjScores = randomJungle->GetScores();
+				bestClassificationError = randomJungle->GetClassificationError();
 			} else {
 				cerr << "ERROR: In EC algorithm: Random Jungle failed" << endl;
 				return false;
@@ -337,8 +355,7 @@ bool EvaporativeCooling::ComputeECScores() {
 		// compute free energy for all attributes
 		t = clock();
 		cout << Timestamp() << "Computing free energy" << endl;
-		double temperature = 1.0;
-		if (!ComputeFreeEnergy(temperature)) {
+		if (!ComputeFreeEnergy(optimalTemperature)) {
 			cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed" << endl;
 			return false;
 		}
@@ -349,15 +366,33 @@ bool EvaporativeCooling::ComputeECScores() {
 		// PrintKendallTaus();
 
 		// -------------------------------------------------------------------------
+		// optimize the temperature by sampling a set of delta values around T
+		if(optimizeTemperature) {
+			t = clock();
+			cout << Timestamp() << "Optimizing coupling temperature T" << endl;
+			vector<double> temperatureDeltas;
+			temperatureDeltas.push_back(-0.2);
+			temperatureDeltas.push_back(0.2);
+			optimalTemperature = OptimizeTemperature(temperatureDeltas);
+			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
+			cout << Timestamp() << "T optimization: " << optimalTemperature
+					<< ", complete in " << elapsedTime << " secs" << endl;
+		}
+
+		// -------------------------------------------------------------------------
 		// remove the worst attributes and iterate
 		t = clock();
 		cout << Timestamp() << "Removing the worst attributes" << endl;
 		unsigned int numToRemove = numToRemovePerIteration;
+		numToRemoveNextIteration = numToRemove - numToRemovePerIteration;
 		if (paramsMap.count("ec-iter-remove-percent")) {
 			unsigned int iterPercentToRemove = paramsMap["ec-iter-remove-percent"].as<
 					unsigned int>();
 			numToRemove = (int) (((double) iterPercentToRemove / 100.0)
 					* dataset->NumVariables());
+			numToRemoveNextIteration = (int) (((double) iterPercentToRemove / 100.0)
+					* numToRemove);
+			numToRemovePerIteration = numToRemove;
 		}
 		if ((numWorkingAttributes - numToRemove) < numTargetAttributes) {
 			numToRemove = numWorkingAttributes - numTargetAttributes;
@@ -705,4 +740,104 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
 	}
 
 	return true;
+}
+
+double EvaporativeCooling::OptimizeTemperature(vector<double> deltas) {
+	/// for each delta, run a classifier on the best attributes according
+	/// to the free energy and update best temperature
+	vector<double>::const_iterator deltaIt = deltas.begin();
+	EcScores bestFreeEnergyScores = freeEnergyScores;
+	for(; deltaIt != deltas.end(); ++deltaIt) {
+		double thisTemp = optimalTemperature + *deltaIt;
+		ComputeFreeEnergy(thisTemp);
+		double thisClassificationError = ComputeClassificationErrorRJ();
+		cout << Timestamp()
+				<< "OPTIMIZER: Temperature: " << thisTemp
+				<< ", Classification Error: " << thisClassificationError
+				<< endl;
+		/// if classification error is lower at this delta, update best temperature
+		/// and best classification error
+		if(thisClassificationError < bestClassificationError) {
+			cout << Timestamp() << "OPTIMIZER: found better temperature" << endl;
+			bestClassificationError = thisClassificationError;
+			optimalTemperature = thisTemp;
+			bestFreeEnergyScores = freeEnergyScores;
+		}
+	}
+
+	freeEnergyScores = bestFreeEnergyScores;
+
+	return optimalTemperature;
+}
+
+double EvaporativeCooling::ComputeClassificationErrorRJ() {
+	/// get the best attribute names based on free energy score
+	unsigned int numBest = freeEnergyScores.size() - numToRemoveNextIteration;
+	if(!numBest) {
+		cerr << "ERROR: Best results calculation results in zero attributes" << endl;
+		cerr << "Number of best to use in classifier: " << numBest << endl;
+		cerr << "Free energy scores: " << freeEnergyScores.size() << endl;
+		cerr << "Number to remove next iteration: " << numToRemoveNextIteration << endl;
+		exit(EXIT_FAILURE);
+	}
+	cout << Timestamp() << "Getting best " << numBest
+			<< " attributes for temporary CSV file" << endl;
+	vector<string> bestAttributes;
+	unsigned int numCopied = 0;
+	EcScoresCIt scoreIt = freeEnergyScores.begin();
+	for(; numCopied < numBest && scoreIt != freeEnergyScores.end();
+			++numCopied, ++scoreIt) {
+		bestAttributes.push_back(scoreIt->second);
+	}
+	if(!bestAttributes.size() || (bestAttributes.size() != numBest)) {
+		cerr << "ERROR: could not get " << numBest << " attributes, got: "
+				<< bestAttributes.size() << endl;
+		exit(EXIT_FAILURE);
+	}
+	/// write new data set with worst attributes removed
+	string newDatasetFilename = outFilesPrefix + "_CE.csv";
+	bool newDatasetSuccess = dataset->WriteNewDataset(newDatasetFilename,
+			bestAttributes, CSV_DELIMITED_DATASET);
+	if(!newDatasetSuccess) {
+		cerr << "ERROR: Could not write new data set: " << newDatasetFilename
+				<< endl;
+		exit(EXIT_FAILURE);
+	}
+
+	/// create a configuration map for RandomJungle constructor
+	ConfigMap configMap;
+	stringstream ss;
+	if(paramsMap.count("rj-num-trees")) {
+		unsigned int numTrees = paramsMap["rj-num-trees"].as<unsigned int>();
+		ss << numTrees;
+		configMap.insert(make_pair("rj-num-trees", ss.str()));
+	}
+	else {
+		configMap.insert(make_pair("rj-num-trees", "1000"));
+	}
+	if(paramsMap.count("verbose")) {
+		configMap.insert(make_pair("verbose", "true"));
+	}
+	configMap.insert(make_pair("out-files-prefix", outFilesPrefix));
+	ss.str("");
+	ss << omp_get_num_procs();
+	configMap.insert(make_pair("num-threads", ss.str()));
+
+	/// run Random Jungle classifier and read classification error
+	double classifierError = 1.0;
+	bool rjSuccess = RandomJungle::RunClassifier(newDatasetFilename, configMap,
+			classifierError);
+
+	/// remove the temporary file
+	cout << Timestamp() << "Removing temporary file for RJ: "
+			<< newDatasetFilename << endl;
+	unlink(newDatasetFilename.c_str());
+
+	if(!rjSuccess) {
+		cerr << "Error running Random Jungle classifier" << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	/// return the classification error on this data
+	return classifierError;
 }

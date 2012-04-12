@@ -84,6 +84,7 @@ int main(int argc, char** argv) {
 		("help", "produce help message")
 		("verbose", "verbose output")
 		("convert", "convert data set to data set - no ec")
+		("optimize-temp,T", "optimize coupling constant T")
 		(
 		"config-file,c",
 		po::value<string > (&configFilename),

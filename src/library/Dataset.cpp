@@ -633,6 +633,213 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 	return true;
 }
 
+bool Dataset::WriteNewDataset(string newDatasetFilename,
+		vector<string> attributes,
+		OutputDatasetType outputDatasetType) {
+
+	cout << Timestamp() << "Dataset::WriteNewDataset with "
+			<< attributes.size() << " named attributes" << endl;
+	PrintStats();
+
+	if(!attributes.size()) {
+		cerr << "ERROR: Dataset::WriteNewDataset: no named attributes to write" << endl;
+		return false;
+	}
+
+	switch (outputDatasetType) {
+	case PLINK_PED_DATASET:
+		cerr << "ERROR: This version if WriteNewDataset does not support PED" << endl;
+		return false;
+	case TAB_DELIMITED_DATASET:
+	case CSV_DELIMITED_DATASET:
+	case ARFF_DATASET:
+	case PLINK_BED_DATASET:
+	case NO_OUTPUT_DATASET:
+		break;
+	default:
+		cerr << "ERROR: Output data set file type not recognized." << endl;
+		return false;
+	}
+
+	ofstream newDatasetStream(newDatasetFilename.c_str());
+	if (!newDatasetStream.is_open()) {
+		cerr << "ERROR: Could not open new dataset file: " << newDatasetFilename
+				<< endl;
+		return false;
+	}
+
+	/// write the attribute names header
+	if (outputDatasetType == ARFF_DATASET) {
+		newDatasetStream << "@RELATION dataset" << endl << endl;
+	}
+	map<string, unsigned int>::const_iterator ait = attributesMask.begin();
+	for (; ait != attributesMask.end(); ++ait) {
+		/// is this attribute in the list passed in as a parameter
+		if(find(attributes.begin(), attributes.end(), ait->first)
+				== attributes.end()) {
+			continue;
+		}
+		switch (outputDatasetType) {
+		case TAB_DELIMITED_DATASET:
+			newDatasetStream << ait->first << "\t";
+			break;
+		case CSV_DELIMITED_DATASET:
+			newDatasetStream << ait->first << ",";
+			break;
+		case ARFF_DATASET:
+			newDatasetStream << "@ATTRIBUTE " << ait->first << " {0,1,2}" << endl;
+			break;
+		case PLINK_PED_DATASET:
+		case PLINK_BED_DATASET:
+		case NO_OUTPUT_DATASET:
+		default:
+			cerr << "ERROR: Unrecognized output data set type: " << outputDatasetType
+					<< endl;
+			return false;
+		}
+	}
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for (; nit != numericsMask.end(); ++nit) {
+		switch (outputDatasetType) {
+		if(find(attributes.begin(), attributes.end(), nit->first)
+				== attributes.end()) {
+			continue;
+		}
+		case TAB_DELIMITED_DATASET:
+			newDatasetStream << nit->first << "\t";
+			break;
+		case CSV_DELIMITED_DATASET:
+			newDatasetStream << nit->first << ",";
+			break;
+		case ARFF_DATASET:
+			newDatasetStream << "@ATTRIBUTE " << nit->first << " numeric" << endl;
+			break;
+		case PLINK_PED_DATASET:
+		case PLINK_BED_DATASET:
+		case NO_OUTPUT_DATASET:
+		default:
+			cerr << "ERROR: Unrecognized output data set type: " << outputDatasetType
+					<< endl;
+			return false;
+		}
+	}
+	switch (outputDatasetType) {
+	case TAB_DELIMITED_DATASET:
+	case CSV_DELIMITED_DATASET:
+		newDatasetStream << "Class" << endl;
+		break;
+	case ARFF_DATASET:
+		if (hasContinuousPhenotypes) {
+			newDatasetStream << "@ATTRIBUTE Class numeric" << endl;
+		} else {
+			newDatasetStream << "@ATTRIBUTE Class {0,1}" << endl;
+		}
+		break;
+	case PLINK_PED_DATASET:
+	case PLINK_BED_DATASET:
+	case NO_OUTPUT_DATASET:
+	default:
+		cerr << "ERROR: Unrecognized output data set type: " << outputDatasetType
+				<< endl;
+		return false;
+	}
+
+	/// write the data, respecting the masked attributes, numerics
+	/// and masked instances - 10/28/11
+	/// write the attribute names header
+	if (outputDatasetType == ARFF_DATASET) {
+		newDatasetStream << endl << "@DATA" << endl;
+	}
+	vector<string> instanceIds = GetInstanceIds();
+	for (unsigned int iIdx = 0; iIdx < NumInstances(); iIdx++) {
+		unsigned instanceIndex = 0;
+		GetInstanceIndexForID(instanceIds[iIdx], instanceIndex);
+		// write discrete attribute values
+		vector<unsigned int> attrIndices =
+				MaskGetAttributeIndices(DISCRETE_TYPE);
+		for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
+			AttributeLevel A = instances[instanceIndex]->GetAttribute(
+					attrIndices[aIdx]);
+			if(find(attributes.begin(), attributes.end(), attributeNames[attrIndices[aIdx]])
+					== attributes.end()) {
+				continue;
+			}
+			switch (outputDatasetType) {
+			case TAB_DELIMITED_DATASET:
+				if (A == MISSING_ATTRIBUTE_VALUE) {
+					newDatasetStream << "?" << "\t";
+				} else {
+					newDatasetStream << A << "\t";
+				}
+				break;
+			case CSV_DELIMITED_DATASET:
+			case ARFF_DATASET:
+				if (A == MISSING_ATTRIBUTE_VALUE) {
+					newDatasetStream << "?" << ",";
+				} else {
+					newDatasetStream << A << ",";
+				}
+				break;
+			case PLINK_PED_DATASET:
+			case PLINK_BED_DATASET:
+			case NO_OUTPUT_DATASET:
+			default:
+				cerr << "ERROR: Unrecognized output data set type: "
+						<< outputDatasetType << endl;
+				return false;
+			}
+		}
+		/// write continuous attribute values
+		vector<unsigned int> numIndices =
+				MaskGetAttributeIndices(NUMERIC_TYPE);
+		for (unsigned int nIdx = 0; nIdx < numIndices.size(); nIdx++) {
+			NumericLevel N = instances[instanceIndex]->GetNumeric(numIndices[nIdx]);
+			if(find(attributes.begin(), attributes.end(), numericsNames[numIndices[nIdx]])
+					== attributes.end()) {
+				continue;
+			}
+			switch (outputDatasetType) {
+			case TAB_DELIMITED_DATASET:
+				if (N == MISSING_NUMERIC_VALUE) {
+					newDatasetStream << "?" << "\t";
+				} else {
+					newDatasetStream << N << "\t";
+				}
+				break;
+			case CSV_DELIMITED_DATASET:
+			case ARFF_DATASET:
+				if (N == MISSING_NUMERIC_VALUE) {
+					newDatasetStream << "?" << ",";
+				} else {
+					newDatasetStream << N << ",";
+				}
+				break;
+			case PLINK_PED_DATASET:
+			case PLINK_BED_DATASET:
+			case NO_OUTPUT_DATASET:
+			default:
+				cerr << "ERROR: Unrecognized output data set type: "
+						<< outputDatasetType << endl;
+				return false;
+			}
+		}
+		// class/phenotype
+		ClassLevel discreteClassLevel = MISSING_DISCRETE_CLASS_VALUE;
+		NumericLevel continuousClassLevel = MISSING_NUMERIC_CLASS_VALUE;
+		if (hasContinuousPhenotypes) {
+			continuousClassLevel = instances[instanceIndex]->GetPredictedValueTau();
+			newDatasetStream << continuousClassLevel << endl;
+		} else {
+			discreteClassLevel = instances[instanceIndex]->GetClass();
+			newDatasetStream << discreteClassLevel << endl;
+		}
+	}
+
+	newDatasetStream.close();
+
+	return true;
+}
+
 bool Dataset::ExtractAttributes(string scoresFilename, unsigned int topN,
 		string newDatasetFilename) {
 	// read attribute scores from file

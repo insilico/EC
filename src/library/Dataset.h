@@ -95,12 +95,25 @@ public:
   bool GetNumericRowCol(unsigned int row, unsigned int col,
                         NumericLevel& numVal);
   /*************************************************************************//**
-   * Write the dataset to a new filename, respecting masked attributes
+   * Write the data set to a new filename, respecting masked attributes
    * and numerics and class/phenotype data type.
-   * \param [in] newDatasetFilename new dataset filename
+   * \param [in] newDatasetFilename new data set filename
+   * \param [in] outputDatasetType type of file to write
    * \return success
    ****************************************************************************/
   bool WriteNewDataset(std::string newDatasetFilename,
+                       OutputDatasetType outputDatasetType);
+  /*************************************************************************//**
+   * Write the data set to a new filename, writing only the names in the passed
+   *  attributes list and also respecting masked attributes
+   * and numerics and class/phenotype data type.
+   * \param [in] newDatasetFilename new data set filename
+   * \param [in] attributes list of attribute names to write
+   * \param [in] outputDatasetType type of file to write
+   * \return success
+   ****************************************************************************/
+  bool WriteNewDataset(std::string newDatasetFilename,
+  		                 std::vector<std::string> attributes,
                        OutputDatasetType outputDatasetType);
   /*************************************************************************//**
    * Extracts top N attributes based on a file of attribute scores

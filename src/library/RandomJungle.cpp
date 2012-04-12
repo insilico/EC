@@ -32,6 +32,74 @@ using namespace std;
 using namespace insilico;
 using namespace boost;
 
+// static methods
+bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
+		double& classError) {
+	string outPrefix(vm["out-files-prefix"]);
+	string importanceFilename = outPrefix + ".importance";
+	string confusionFilename = outPrefix + ".confusion2";
+
+	/// run rjungle through a system call to the shell
+	stringstream rjCmd;
+	rjCmd << "rjungle"
+			<< " -f " << csvFile
+			<< " -e ','"
+			<< " -D 'Class'"
+		 	<< " -o " << outPrefix
+		 	<< " -U " << vm["num-threads"]
+		 	<< " -t " << vm["rj-num-trees"];
+	if(vm["verbose"] == "true") {
+		rjCmd << " -v";
+	}
+	cout << Timestamp() << "Running RJ command: " << rjCmd.str() << endl;
+	int systemCallReturnStatus = system(rjCmd.str().c_str());
+	if(systemCallReturnStatus == -1) {
+		cerr << "ERROR: Calling rjungle executable. -1 return code" << endl;
+		return false;
+	}
+
+	/// loads rj classification error from confusion file
+	cout << Timestamp() << "Loading RJ classification error "
+			<< "from [" << confusionFilename << "]" << endl;
+	if (!ReadClassificationError(confusionFilename, classError)) {
+		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
+		return false;
+	}
+
+	return true;
+}
+
+bool RandomJungle::ReadClassificationError(std::string confusionFilename,
+		double& classifierError) {
+	ifstream confusionStream(confusionFilename.c_str());
+	if (!confusionStream.is_open()) {
+		cerr << "ERROR: Could not open Random Jungle confusion file: "
+				<< confusionFilename << endl;
+		return false;
+	}
+	string line;
+	// strip the header line
+	getline(confusionStream, line);
+	getline(confusionStream, line);
+	vector<string> tokens;
+	split(tokens, line, ",");
+	if (tokens.size() != 5) {
+		cerr << "ERROR: RandomJungle::GetClassificationError: "
+				<< "error parsing " << confusionFilename
+				<< ". Read " << tokens.size() << " columns. Should " << "be 5"
+				<< endl;
+		return false;
+	}
+	classifierError = lexical_cast<double>(tokens[4]);
+
+	confusionStream.close();
+	cout << Timestamp() << "Read classification error from " << confusionFilename
+			<< ": " << classifierError << endl;
+
+	return true;
+}
+
+// standard methods
 RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 	uli_t numTrees = vm["rj-num-trees"].as<uli_t>();
 	cout << Timestamp() << "Initializing Random Jungle with " << numTrees
@@ -132,6 +200,7 @@ bool RandomJungle::ComputeAttributeScores() {
 	rjParams.depVarCol = rjParams.ncol - 1;
 	string outPrefix(rjParams.outprefix);
 	string importanceFilename = outPrefix + ".importance";
+	string confusionFilename = outPrefix + ".confusion";
 
 	// base classifier: classification or regression trees?
 	string treeTypeDesc = "";
@@ -374,11 +443,19 @@ bool RandomJungle::ComputeAttributeScores() {
 	// clean up Random Jungle run
 	io.close();
 
-	// loads rjScores map
+	/// loads rjScores map
 	cout << Timestamp() << "Loading RJ variable importance (VI) scores "
 			<< "from [" << importanceFilename << "]" << endl;
 	if (!ReadScores(importanceFilename)) {
 		cerr << "ERROR: Could not read Random Jungle scores" << endl;
+		return false;
+	}
+
+	/// loads rj classification error from confusion file
+	cout << Timestamp() << "Loading RJ classification error "
+			<< "from [" << confusionFilename << "]" << endl;
+	if (!ReadClassificationError(confusionFilename)) {
+		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
 		return false;
 	}
 
@@ -388,6 +465,7 @@ bool RandomJungle::ComputeAttributeScores() {
 bool RandomJungle::ComputeAttributeScoresRjungle() {
 	string outPrefix(rjParams.outprefix);
 	string importanceFilename = outPrefix + ".importance";
+	string confusionFilename = outPrefix + ".confusion2";
 
 	/// save the current data set to a temporary file for rjungle
 	string tempFile = outPrefix + "_tmp.csv";
@@ -396,8 +474,13 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
-	rjCmd << "rjungle -f " << tempFile << " -e ',' -D 'Class' -o "
-			<< outPrefix << " -U " << rjParams.nthreads;
+	rjCmd << "rjungle"
+			<< " -f " << tempFile
+			<< " -e ','"
+			<< " -D 'Class'"
+		 	<< " -o " << outPrefix
+		 	<< " -U " << rjParams.nthreads
+		 	<< " -t " << rjParams.ntree;
 	if(rjParams.verbose_flag) {
 		rjCmd << " -v";
 	}
@@ -416,6 +499,14 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 		return false;
 	}
 
+	/// loads rj classification error from confusion file
+	cout << Timestamp() << "Loading RJ classification error "
+			<< "from [" << confusionFilename << "]" << endl;
+	if (!ReadClassificationError(confusionFilename)) {
+		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
+		return false;
+	}
+
 	/// remove the temporary file
 	cout << Timestamp() << "Removing temporary file for RJ: " << tempFile << endl;
 	unlink(tempFile.c_str());
@@ -425,6 +516,10 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 
 vector<pair<double, string> > RandomJungle::GetScores() {
 	return scores;
+}
+
+double RandomJungle::GetClassificationError() {
+	return classificationError;
 }
 
 bool RandomJungle::ReadScores(string importanceFilename) {
@@ -500,3 +595,14 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 
 	return true;
 }
+
+bool RandomJungle::ReadClassificationError(std::string confusionFilename) {
+	double classifierError = 1.0;
+	if(!ReadClassificationError(confusionFilename, classifierError)) {
+		return false;
+	}
+	classificationError = classifierError;
+
+	return true;
+}
+

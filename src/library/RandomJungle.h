@@ -32,6 +32,13 @@ namespace po = boost::program_options;
 class RandomJungle
 {
 public:
+	/// Run Random jungle as a classifier without instantiating a Random Jungle
+  static bool RunClassifier(std::string csvFile, ConfigMap& vm,
+  		double& classError);
+  /// Read the classification error from file into variable
+  static bool ReadClassificationError(std::string confusionFilename,
+  		double& classifierError);
+
   /*************************************************************************//**
    * Construct an RandomJungle algorithm object.
    * \param [in] ds pointer to a Dataset object
@@ -54,15 +61,22 @@ public:
    * \return vector of pairs
    ****************************************************************************/
   std::vector<std::pair<double, std::string> > GetScores();
+  double GetClassificationError();
 private:
-  /// Read the importance scores as attribute rankings from file.
+  /// Read the importance scores as attribute rankings from file into member
+  /// vector scores: pair<double, string>
   bool ReadScores(std::string importanceFilename);
+  /// Read classification error from file into member variable classificationError
+  bool ReadClassificationError(std::string confusionFilename);
+
   /// RandomJungle parameters object
   RJunglePar rjParams;
   /// pointer to a Dataset object
   Dataset* dataset;
   /// vector of pairs: scores, attribute names
   std::vector<std::pair<double, std::string> > scores;
+  /// last classification error
+  double classificationError;
 };
 
 #endif	/* RANDOMJUNGLE_H */
