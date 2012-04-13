@@ -34,10 +34,15 @@ using namespace boost;
 
 // static methods
 bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
-		double& classError) {
+		bool isRegressionClassifier, double& classError) {
 	string outPrefix(vm["out-files-prefix"]);
-	string importanceFilename = outPrefix + ".importance";
-	string confusionFilename = outPrefix + ".confusion2";
+	string confusionFilename;
+	if(isRegressionClassifier) {
+		confusionFilename = outPrefix + ".confusion";
+	}
+	else {
+		confusionFilename = outPrefix + ".confusion2";
+	}
 
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
@@ -48,6 +53,9 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 		 	<< " -o " << outPrefix
 		 	<< " -U " << vm["num-threads"]
 		 	<< " -t " << vm["rj-num-trees"];
+	if(isRegressionClassifier) {
+		rjCmd << " -y 4";
+	}
 	if(vm["verbose"] == "true") {
 		rjCmd << " -v";
 	}
@@ -61,7 +69,7 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 	/// loads rj classification error from confusion file
 	cout << Timestamp() << "Loading RJ classification error "
 			<< "from [" << confusionFilename << "]" << endl;
-	if (!ReadClassificationError(confusionFilename, classError)) {
+	if (!ReadClassificationError(confusionFilename, isRegressionClassifier, classError)) {
 		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
 		return false;
 	}
@@ -70,7 +78,8 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 }
 
 bool RandomJungle::ReadClassificationError(std::string confusionFilename,
-		double& classifierError) {
+		bool isRegressionClassifier, double& classifierError) {
+	/// open the confusion file
 	ifstream confusionStream(confusionFilename.c_str());
 	if (!confusionStream.is_open()) {
 		cerr << "ERROR: Could not open Random Jungle confusion file: "
@@ -78,21 +87,37 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 		return false;
 	}
 	string line;
-	// strip the header line
-	getline(confusionStream, line);
-	getline(confusionStream, line);
-	vector<string> tokens;
-	split(tokens, line, ",");
-	if (tokens.size() != 5) {
-		cerr << "ERROR: RandomJungle::GetClassificationError: "
-				<< "error parsing " << confusionFilename
-				<< ". Read " << tokens.size() << " columns. Should " << "be 5"
-				<< endl;
-		return false;
+	/// strip the header line(s), read the error, cast to double
+	if(isRegressionClassifier) {
+		for(unsigned int i=0; i < 8; ++i) {
+			getline(confusionStream, line);
+		}
+		vector<string> tokens;
+		split(tokens, line, "=");
+		if (tokens.size() != 3) {
+			cerr << "ERROR: RandomJungle::GetClassificationError: "
+					<< "error parsing " << confusionFilename
+					<< ". Read " << tokens.size() << " columns from line 8, should be 3"
+					<< endl;
+			return false;
+		}
+		classifierError = lexical_cast<double>(trim(tokens[2]));
 	}
-	classifierError = lexical_cast<double>(tokens[4]);
-
+	else {
+		getline(confusionStream, line);
+		vector<string> tokens;
+		split(tokens, line, ",");
+		if (tokens.size() != 5) {
+			cerr << "ERROR: RandomJungle::GetClassificationError: "
+					<< "error parsing " << confusionFilename
+					<< ". Read " << tokens.size() << " columns from line 2, should be 5"
+					<< endl;
+			return false;
+		}
+		classifierError = lexical_cast<double>(trim(tokens[4]));
+	}
 	confusionStream.close();
+
 	cout << Timestamp() << "Read classification error from " << confusionFilename
 			<< ": " << classifierError << endl;
 
@@ -465,7 +490,13 @@ bool RandomJungle::ComputeAttributeScores() {
 bool RandomJungle::ComputeAttributeScoresRjungle() {
 	string outPrefix(rjParams.outprefix);
 	string importanceFilename = outPrefix + ".importance";
-	string confusionFilename = outPrefix + ".confusion2";
+	string confusionFilename;
+	if(dataset->HasContinuousPhenotypes()) {
+		confusionFilename = outPrefix + ".confusion";
+	}
+	else {
+		confusionFilename = outPrefix + ".confusion2";
+	}
 
 	/// save the current data set to a temporary file for rjungle
 	string tempFile = outPrefix + "_tmp.csv";
@@ -481,6 +512,9 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 		 	<< " -o " << outPrefix
 		 	<< " -U " << rjParams.nthreads
 		 	<< " -t " << rjParams.ntree;
+	if(dataset->HasContinuousPhenotypes()) {
+		rjCmd << " -y 4";
+	}
 	if(rjParams.verbose_flag) {
 		rjCmd << " -v";
 	}
@@ -598,7 +632,12 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 
 bool RandomJungle::ReadClassificationError(std::string confusionFilename) {
 	double classifierError = 1.0;
-	if(!ReadClassificationError(confusionFilename, classifierError)) {
+	bool isRegressionClassifier = false;
+	if(dataset->HasContinuousPhenotypes()) {
+		isRegressionClassifier = true;
+	}
+	if(!RandomJungle::ReadClassificationError(confusionFilename,
+			isRegressionClassifier, classifierError)) {
 		return false;
 	}
 	classificationError = classifierError;

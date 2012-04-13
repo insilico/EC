@@ -549,9 +549,14 @@ public:
   		std::string newNumMetric="manhattan");
   /*************************************************************************//**
    * Get the the distance metrics used to compute instance-to-instance distances.
-   * \return pair<snp distance metricname, numeric distance metric name>
+   * \return pair<snp distance metric name, numeric distance metric name>
    ****************************************************************************/
   std::pair<std::string, std::string> GetDistanceMetrics();
+  /*************************************************************************//**
+   * Get the the mutation transition and transversion counts..
+   * \return pair<number of transitions, number of transversions>
+   ****************************************************************************/
+  std::pair<unsigned int, unsigned int> GetAttributeTiTvCounts();
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.

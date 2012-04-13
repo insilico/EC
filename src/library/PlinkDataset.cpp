@@ -287,6 +287,8 @@ bool PlinkDataset::LoadSnps(string filename) {
     map<char, unsigned int> thisAttrMap = attributeAlleleCounts[attrIdx];
     if(thisAttrMap.size() != 2) {
       cerr << "ERROR: Only biallelic genotypes are supported" << endl;
+      cerr << "ERROR: attribute: " << attrIdx << " "
+      		<< attributeNames[attrIdx] << endl;
       return false;
     }
     map<char, unsigned int>::const_iterator mapIt = thisAttrMap.begin();

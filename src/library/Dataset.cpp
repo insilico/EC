@@ -74,6 +74,8 @@ Dataset::Dataset() {
 	attributeMutationMap[make_pair('T', 'A')] = TRANSVERSION_MUTATION;
 	attributeMutationMap[make_pair('C', 'G')] = TRANSVERSION_MUTATION;
 	attributeMutationMap[make_pair('G', 'C')] = TRANSVERSION_MUTATION;
+	attributeMutationMap[make_pair('X', 'Y')] = UNKNOWN_MUTATION;
+	attributeMutationMap[make_pair('Y', 'X')] = UNKNOWN_MUTATION;
 
 	snpMetric = "gm";
   snpDiff = diffGMM;
@@ -2610,6 +2612,22 @@ pair<string, string> Dataset::GetDistanceMetrics() {
 	return(make_pair(snpMetric, numMetric));
 }
 
+pair<unsigned int, unsigned int> Dataset::GetAttributeTiTvCounts() {
+	vector<unsigned int> attrIndices =
+				MaskGetAttributeIndices(DISCRETE_TYPE);
+	double tiCount = 0, tvCount = 0;
+	for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
+		if(attributeMutationTypes[aIdx] == TRANSITION_MUTATION) {
+			++tiCount;
+		}
+		else {
+			++tvCount;
+		}
+	}
+
+	return make_pair(tiCount, tvCount);
+}
+
 bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {
   cout << Timestamp() << "Calculating distance matrix" << endl;
   map<string, unsigned int> instanceMask = MaskGetInstanceMask();
@@ -3021,8 +3039,10 @@ void Dataset::CreateDummyAlleles() {
 			minorAllele = 'X';
 		}
 		attributeMinorAllele.push_back(make_pair(minorAllele, maf));
-		hasAllelicInfo = true;
+		attributeMutationTypes.push_back(UNKNOWN_MUTATION);
 	} // end all attributes
+
+	hasAllelicInfo = true;
 }
 
 bool Dataset::LoadNumerics(string filename) {

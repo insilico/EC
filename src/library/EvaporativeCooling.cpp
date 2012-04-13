@@ -295,12 +295,25 @@ bool EvaporativeCooling::ComputeECScores() {
 	float elapsedTime = 0.0;
 	optimalTemperature = 1.0;
 	while (numWorkingAttributes >= numTargetAttributes) {
+		pair<unsigned int, unsigned int> titvCounts =
+				dataset->GetAttributeTiTvCounts();
+		double titvRatio = titvCounts.first;
+		if(titvCounts.second) {
+			titvRatio = (double) titvCounts.first / (double) titvCounts.second;
+		}
+
 		cout << Timestamp()
 				<< "----------------------------------------------------"
 				<< "-------------------------" << endl;
 		cout << Timestamp() << "EC algorithm...iteration: " << iteration
 				<< ", working attributes: " << numWorkingAttributes
-				<< ", target attributes: " << numTargetAttributes << endl;
+				<< ", target attributes: " << numTargetAttributes
+				<< ", temperature: " << optimalTemperature << endl;
+		cout << Timestamp()
+				<< "transitions: " << titvCounts.first
+				<< " transversions: " << titvCounts.second
+				<< " ratio: " << titvRatio
+				<< endl;
 		cout << fixed << setprecision(1);
 
 		// -------------------------------------------------------------------------
@@ -743,6 +756,8 @@ bool EvaporativeCooling::RemoveWorstAttributes(unsigned int numToRemove) {
 }
 
 double EvaporativeCooling::OptimizeTemperature(vector<double> deltas) {
+	cout << Timestamp() << "--- OPTIMIZER BEGIN: Classification error to beat: "
+			<< bestClassificationError << endl;
 	/// for each delta, run a classifier on the best attributes according
 	/// to the free energy and update best temperature
 	vector<double>::const_iterator deltaIt = deltas.begin();
@@ -752,18 +767,23 @@ double EvaporativeCooling::OptimizeTemperature(vector<double> deltas) {
 		ComputeFreeEnergy(thisTemp);
 		double thisClassificationError = ComputeClassificationErrorRJ();
 		cout << Timestamp()
-				<< "OPTIMIZER: Temperature: " << thisTemp
-				<< ", Classification Error: " << thisClassificationError
+				<< "OPTIMIZER: Trying temperature: " << thisTemp
+				<< " => Classification Error: " << thisClassificationError
 				<< endl;
 		/// if classification error is lower at this delta, update best temperature
 		/// and best classification error
 		if(thisClassificationError < bestClassificationError) {
-			cout << Timestamp() << "OPTIMIZER: found better temperature" << endl;
+			cout << Timestamp() << "OPTIMIZER: found better temperature: "
+					<< thisTemp << endl;
 			bestClassificationError = thisClassificationError;
 			optimalTemperature = thisTemp;
 			bestFreeEnergyScores = freeEnergyScores;
 		}
 	}
+
+	cout << Timestamp() << "--- OPTIMIZER RESULTS: "
+			<< "Temperature: " << optimalTemperature
+			<< ", Classification error: " << bestClassificationError << endl;
 
 	freeEnergyScores = bestFreeEnergyScores;
 
@@ -826,7 +846,7 @@ double EvaporativeCooling::ComputeClassificationErrorRJ() {
 	/// run Random Jungle classifier and read classification error
 	double classifierError = 1.0;
 	bool rjSuccess = RandomJungle::RunClassifier(newDatasetFilename, configMap,
-			classifierError);
+			dataset->HasContinuousPhenotypes(), classifierError);
 
 	/// remove the temporary file
 	cout << Timestamp() << "Removing temporary file for RJ: "

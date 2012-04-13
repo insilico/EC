@@ -34,10 +34,10 @@ class RandomJungle
 public:
 	/// Run Random jungle as a classifier without instantiating a Random Jungle
   static bool RunClassifier(std::string csvFile, ConfigMap& vm,
-  		double& classError);
+  		bool isRegressionClassifier, double& classError);
   /// Read the classification error from file into variable
   static bool ReadClassificationError(std::string confusionFilename,
-  		double& classifierError);
+  		bool isRegressionClassifier, double& classifierError);
 
   /*************************************************************************//**
    * Construct an RandomJungle algorithm object.
