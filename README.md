@@ -164,7 +164,7 @@ For additional examples, see the [EC](http://insilico.utulsa.edu/evaporative-coo
 page on our research website.
 
 ### Contributors ###
-See AUTHORS file.
+See [AUTHORS](https://github.com/insilico/EC/blob/master/AUTHORS) file.
 
 ### References ###
 B.A. McKinney, J.E.  Crowe, Jr.,  J. Guo, and D. Tian,  ÒCapturing the
