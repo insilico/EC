@@ -52,6 +52,8 @@ AC_MSG_NOTICE([--------------------------------------------------])
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
 
 # Set variables for basic compile debug/release
+CPPFLAGS=""
+CXXFLAGS=""
 if test "$debug_ec" != 'yes' ; then
     CPPFLAGS="-O2 -g0 -Wall -DNDEBUG $CPPFLAGS"
     CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"

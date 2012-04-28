@@ -34,10 +34,10 @@ class RandomJungle
 public:
 	/// Run Random jungle as a classifier without instantiating a Random Jungle
   static bool RunClassifier(std::string csvFile, ConfigMap& vm,
-  		bool isRegressionClassifier, double& classError);
+  		RandomJungleTreeType treeType, double& classError);
   /// Read the classification error from file into variable
   static bool ReadClassificationError(std::string confusionFilename,
-  		bool isRegressionClassifier, double& classifierError);
+  		RandomJungleTreeType treeType, double& classifierError);
 
   /*************************************************************************//**
    * Construct an RandomJungle algorithm object.
@@ -61,6 +61,7 @@ public:
    * \return vector of pairs
    ****************************************************************************/
   std::vector<std::pair<double, std::string> > GetScores();
+  /// Get the classification error of the last classifier run
   double GetClassificationError();
 private:
   /// Read the importance scores as attribute rankings from file into member
@@ -71,6 +72,8 @@ private:
 
   /// RandomJungle parameters object
   RJunglePar rjParams;
+  /// RandomJungle calling style
+  RandomJungleRunMode runMode;
   /// pointer to a Dataset object
   Dataset* dataset;
   /// vector of pairs: scores, attribute names

@@ -19685,6 +19685,8 @@ fi
 
 
 # Set variables for basic compile debug/release
+CPPFLAGS=""
+CXXFLAGS=""
 if test "$debug_ec" != 'yes' ; then
     CPPFLAGS="-O2 -g0 -Wall -DNDEBUG $CPPFLAGS"
     CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"

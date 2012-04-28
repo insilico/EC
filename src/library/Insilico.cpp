@@ -28,6 +28,44 @@
 using namespace std;
 using namespace insilico;
 
+RandomJungleTreeType DetermineRandomJungleTreeType(AttributeType attributeType,
+		ClassType classType) {
+
+	RandomJungleTreeType treeType = UNKNOWN_TREE_TYPE;
+	bool treeTypeNotFound = true;
+	if(treeTypeNotFound &&
+			(classType == CASE_CONTROL_CLASS_TYPE) &&
+			(attributeType == NUMERIC_TYPE)) {
+		treeType = NOMINAL_NUMERIC_TREE;
+		treeTypeNotFound = false;
+	}
+	if(treeTypeNotFound &&
+			(classType == CASE_CONTROL_CLASS_TYPE) &&
+			(attributeType == DISCRETE_TYPE)) {
+		treeType = NOMINAL_NOMINAL_TREE;
+		treeType = NOMINAL_NUMERIC_TREE;
+		treeTypeNotFound = false;
+	}
+	if(treeTypeNotFound &&
+			(classType == CONTINUOUS_CLASS_TYPE) &&
+			(attributeType == NUMERIC_TYPE)) {
+		treeType = NUMERIC_NUMERIC_TREE;
+		treeTypeNotFound = false;
+	}
+	if(treeTypeNotFound &&
+			(classType == CONTINUOUS_CLASS_TYPE) &&
+			(attributeType == DISCRETE_TYPE)) {
+		treeType = NUMERIC_NOMINAL_TREE;
+		treeTypeNotFound = false;
+	}
+
+	if(treeTypeNotFound) {
+		cout << "WARNING: Random Jungle tree type could not be determined" << endl;
+	}
+
+	return treeType;
+}
+
 string Timestamp() {
 
 	time_t now = time(NULL);

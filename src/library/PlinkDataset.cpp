@@ -120,7 +120,14 @@ bool PlinkDataset::LoadSnps(string filename) {
 		cout << "ERROR: more than two discrete phenotypes detected" << endl;
 		break;
 	case NO_CLASS_TYPE:
-		cout << "ERROR: phenotypes could not be detected" << endl;
+		cout << Timestamp() << "LoadSnps(): WARNING: phenotypes could not be "
+				"detected. All missing? " << endl;
+		cout << Timestamp() << "You can safely ignore this warning for "
+				"certain EC functionality, e.g.: distance matrix calculations"
+			<< endl;
+		// might be calculating distance matrix, which doesn't need phenotypes
+		// so allow data set reader to continue despite missing class values
+		classDetected = true;
 		break;
 	}
 	if (!classDetected && !hasAlternatePhenotypes) {
@@ -200,9 +207,8 @@ bool PlinkDataset::LoadSnps(string filename) {
 				}
 			} else {
 				if (!hasAlternatePhenotypes) {
-					cout << Timestamp() << "Instance ID " << ID
-							<< " filtered out by missing value" << endl;
-					continue;
+					cout << Timestamp() << "WARNING: Missing phenotype for "
+							<< "instance ID: " << ID << endl;
 				}
 			}
 		} else {
@@ -210,9 +216,8 @@ bool PlinkDataset::LoadSnps(string filename) {
 				discreteClassLevel = lexical_cast<ClassLevel>(thisClassString) - 1;
 			} else {
 				if (!hasAlternatePhenotypes) {
-					cout << Timestamp() << "Instance ID " << ID
-							<< " filtered out by missing value" << endl;
-					continue;
+					cout << Timestamp() << "WARNING: Missing phenotype for "
+							<< "instance ID " << ID <<  endl;
 				}
 			}
 		}
@@ -285,12 +290,12 @@ bool PlinkDataset::LoadSnps(string filename) {
   attributeStringToInt.resize(numAttributes);
   for(attrIdx = 0; attrIdx < numAttributes; ++attrIdx) {
     map<char, unsigned int> thisAttrMap = attributeAlleleCounts[attrIdx];
-    if(thisAttrMap.size() != 2) {
-      cerr << "ERROR: Only biallelic genotypes are supported" << endl;
-      cerr << "ERROR: attribute: " << attrIdx << " "
-      		<< attributeNames[attrIdx] << endl;
-      return false;
-    }
+//    if(thisAttrMap.size() != 2) {
+//      cerr << "ERROR: Only biallelic genotypes are supported" << endl;
+//      cerr << "ERROR: attribute: " << attrIdx << " "
+//      		<< attributeNames[attrIdx] << endl;
+//      return false;
+//    }
     map<char, unsigned int>::const_iterator mapIt = thisAttrMap.begin();
     char allele1 = mapIt->first;
     unsigned int allele1Count = mapIt->second;

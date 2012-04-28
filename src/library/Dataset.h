@@ -336,7 +336,7 @@ public:
   std::pair<double, double> GetMinMaxForContinuousPhenotype();
   /// Print the entire data set in compact format.
   void Print();
-  /// Print basic statstics abou the data set - discrete/SNPs only.
+  /// Print basic statstics about the data set - discrete/SNPs only.
   void PrintStats();
   /// Print statistics about the data set including numerics.
   void PrintNumericsStats();
@@ -557,6 +557,10 @@ public:
    * \return pair<number of transitions, number of transversions>
    ****************************************************************************/
   std::pair<unsigned int, unsigned int> GetAttributeTiTvCounts();
+  /// Determine the Random Jungle tree type from data set characteristics
+  std::pair<RandomJungleTreeType, std::string> DetermineTreeType();
+  /// Dump the SNP transition/transversion information to file
+  bool WriteSnpTiTvInfo(std::string titvFilename);
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.

@@ -321,7 +321,7 @@ bool EvaporativeCooling::ComputeECScores() {
 		if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
 			t = clock();
 			cout << Timestamp() << "Running Random Jungle" << endl;
-			if (randomJungle->ComputeAttributeScoresRjungle()) {
+			if (randomJungle->ComputeAttributeScores()) {
 				rjScores = randomJungle->GetScores();
 				bestClassificationError = randomJungle->GetClassificationError();
 			} else {
@@ -331,6 +331,7 @@ bool EvaporativeCooling::ComputeECScores() {
 			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
 			cout << Timestamp() << "Random Jungle finished in " << elapsedTime
 					<< " secs" << endl;
+			// RJ standalone runs
 			if ((algorithmType == EC_RJ)
 					&& (numWorkingAttributes == numTargetAttributes)) {
 				sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
@@ -354,6 +355,7 @@ bool EvaporativeCooling::ComputeECScores() {
 			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
 			cout << Timestamp() << "ReliefF finished in " << elapsedTime << " secs"
 					<< endl;
+			// ReliefF standalone runs
 			if ((algorithmType == EC_RF)
 					&& (numWorkingAttributes == numTargetAttributes)) {
 				sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
@@ -845,8 +847,8 @@ double EvaporativeCooling::ComputeClassificationErrorRJ() {
 
 	/// run Random Jungle classifier and read classification error
 	double classifierError = 1.0;
-	bool rjSuccess = RandomJungle::RunClassifier(newDatasetFilename, configMap,
-			dataset->HasContinuousPhenotypes(), classifierError);
+	bool rjSuccess = RandomJungle::RunClassifier(newDatasetFilename,
+			configMap, dataset->DetermineTreeType().first, classifierError);
 
 	/// remove the temporary file
 	cout << Timestamp() << "Removing temporary file for RJ: "

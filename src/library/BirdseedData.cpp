@@ -41,18 +41,19 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 
 	// temporary string for reading file lines
 	string line;
+	map<string, string> labelsMap;
 
 	/// read subjects file if specified
 	if(subjectsFile != "") {
 		subjectLabelsFilename = subjectsFile;
+		cout << Timestamp() << "Reading subject names to labels map from ["
+				<< subjectLabelsFilename << "]" << endl;
 		ifstream subjectsStream(subjectLabelsFilename.c_str());
 		if (!subjectsStream.is_open()) {
 			cerr << "ERROR: Could not open subjects file: "
 					<< subjectLabelsFilename << endl;
 			return false;
 		}
-		cout << Timestamp() << "Reading subjects from ["
-				<< subjectLabelsFilename << "]" << endl;
 		int lineNumber = 0;
 		while (getline(subjectsStream, line)) {
 			++lineNumber;
@@ -62,7 +63,9 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 						<< lineNumber << endl;
 				continue;
 			}
-			subjectLabels.push_back(trimmedLine);
+			vector<string> labelKeyValue;
+			split(labelKeyValue, trimmedLine, "\t");
+			labelsMap[labelKeyValue[0]] = labelKeyValue[1];
 		}
 		subjectsStream.close();
 		hasSubjectLabels = true;
@@ -71,14 +74,14 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	/// read SNP exclusion file
 	if(excludeSnpsFile != "") {
 		excludeSnpsFilename = excludeSnpsFile;
+		cout << Timestamp() << "Reading excluded SNPs from ["
+				<< excludeSnpsFilename << "]" << endl;
 		ifstream excludeSnpsStream(excludeSnpsFilename.c_str());
 		if (!excludeSnpsStream.is_open()) {
-			cerr << "ERROR: Could not open subjects file: "
+			cerr << "ERROR: Could not open SNP exclusion file: "
 					<< excludeSnpsFilename << endl;
 			return false;
 		}
-		cout << Timestamp() << "Reading excluded SNPs from ["
-				<< excludeSnpsFilename << "]" << endl;
 		int lineNumber = 0;
 		while (getline(excludeSnpsStream, line)) {
 			++lineNumber;
@@ -99,14 +102,14 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	/// read SNP inclusion file
 	if(includeSnpsFile != "") {
 		includeSnpsFilename = includeSnpsFile;
+		cout << Timestamp() << "Reading included SNPs from ["
+				<< includeSnpsFilename << "]" << endl;
 		ifstream includeSnpsStream(includeSnpsFilename.c_str());
 		if (!includeSnpsStream.is_open()) {
-			cerr << "ERROR: Could not open subjects file: "
+			cerr << "ERROR: Could not open SNP inclusion file: "
 					<< includeSnpsFilename << endl;
 			return false;
 		}
-		cout << Timestamp() << "Reading excluded SNPs from ["
-				<< includeSnpsFilename << "]" << endl;
 		int lineNumber = 0;
 		while (getline(includeSnpsStream, line)) {
 			++lineNumber;
@@ -124,7 +127,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 				<< " SNPs in inclusion list" << endl;
 	}
 
-	/// read SNPs data from the Birdseed file
+	/// read SNPs data from the Birdsuite Birdseed SNP call file
 	snpsFilename = snpsFile;
 	ifstream genotypesStream(snpsFilename.c_str());
 	if (!genotypesStream.is_open()) {
@@ -166,6 +169,17 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		subjectName.erase(remove(subjectName.begin(), subjectName.end(), '"'), subjectName.end());
 		// add to the subjectNames list
 		subjectNames.push_back(subjectName);
+		if(hasSubjectLabels) {
+			string nameKey = subjectName.substr(0, 7);
+			if(labelsMap.find(nameKey) != labelsMap.end()) {
+				subjectLabels.push_back(labelsMap[nameKey]);
+			}
+			else {
+				cerr << "ERROR: Subject names file given but no key found for "
+						<< "subject name in data set: " << nameKey << endl;
+				return false;
+			}
+		}
 		++numSubjects;
 	}
 
@@ -328,6 +342,8 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 			++thisAlleleCountsIt;
 			char allele2 = thisAlleleCountsIt->first;
 			int allele2Count = thisAlleleCountsIt->second;
+			majorAllele[0] = allele1;
+			minorAllele[0] = allele2;
 			if(allele1Count > allele2Count) {
 				majorAllele[0] = allele1;
 				minorAllele[0] = allele2;

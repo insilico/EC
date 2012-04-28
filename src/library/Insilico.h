@@ -152,6 +152,39 @@ enum AttributeMutationType
   UNKNOWN_MUTATION /**< unknown - no allele information */
 };
 
+/**
+ * \enum RandomJungleTreeType.
+ * Type random jungle trees.
+ */
+enum RandomJungleTreeType
+{
+  UNKNOWN_TREE_TYPE=0, /**< place holder = 0 */
+  NOMINAL_NUMERIC_TREE, /**< classification trees, numeric attributes (integers) */
+  NOMINAL_NOMINAL_TREE, /**< classification trees, discrete attributes (0/1/2) */
+  NUMERIC_NUMERIC_TREE, /**< regression trees, numeric attributes (doubles) */
+  NUMERIC_NOMINAL_TREE, /**< regression trees, discrete attributes (0/1/2) */
+  NOMINAL_NUMERIC_FLOATS /**< classification trees, numeric attributes (doubles) */
+};
+
+/**
+ * \enum RandomJungleRunMode.
+ * Run mode for random jungle.
+ */
+enum RandomJungleRunMode
+{
+	UNKNOWN_RUN_MODE, /**< unknown run mode */
+	LIBRARY_RUN_MODE, /**< call Random Jungle through C++ library calls */
+	SYSTEM_CALL_RUN_MODE /**< call Random Jungle through C system() call */
+};
+
+/***************************************************************************//**
+ * Return random jungle tree type from the class and attribute types
+ * \param [in] attributeType attribute data type
+ * \param [in] classType class data type
+ * \return Random Jungle tree type
+ ******************************************************************************/
+RandomJungleTreeType DetermineRandomJungleTreeType(AttributeType attributeType,
+		ClassType classType);
 /***************************************************************************//**
  * Return a timestamp string for logging purposes.
  * \return fixed-length, formatted timestamp as a string

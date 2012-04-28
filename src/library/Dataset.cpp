@@ -1358,10 +1358,32 @@ pair<double, double> Dataset::GetMinMaxForContinuousPhenotype() {
 
 void Dataset::Print() {
 	PrintStats();
+	cout << Timestamp() << "Data set values:" << endl << endl;
 	map<string, unsigned int>::const_iterator it;
 	for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
-		instances[it->second]->Print();
+		DatasetInstance* dsi = instances[it->second];
+		cout << instanceIds[it->second];
+		map<string, unsigned int>::const_iterator ait = attributesMask.begin();
+		for(; ait != attributesMask.end(); ++ait) {
+			cout << dsi->attributes[ait->second] << "\t";
+		}
+		map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+		for(; nit != numericsMask.end(); ++nit) {
+			cout << dsi->numerics[nit->second] << "\t";
+		}
+		if(hasPhenotypes) {
+			if(hasContinuousPhenotypes) {
+				cout << dsi->GetPredictedValueTau() << endl;
+			}
+			else {
+				cout << dsi->GetClass() << endl;
+			}
+		}
+		else {
+			cout << endl;
+		}
 	}
+	cout << endl;
 }
 
 void Dataset::PrintStats() {
@@ -2627,6 +2649,77 @@ pair<unsigned int, unsigned int> Dataset::GetAttributeTiTvCounts() {
 
 	return make_pair(tiCount, tvCount);
 }
+pair<RandomJungleTreeType, string> Dataset::DetermineTreeType() {
+	pair<RandomJungleTreeType, string> returnValue;
+	// base classifier: classification or regression trees?
+	string treeTypeDesc = "";
+	RandomJungleTreeType treeType = UNKNOWN_TREE_TYPE;
+	if (HasContinuousPhenotypes()) {
+		// regression
+		if (HasNumerics() && HasGenotypes()) {
+			// integrated/numeric
+			treeType = NUMERIC_NUMERIC_TREE;
+			treeTypeDesc = "Regression trees: integrated/continuous";
+		} else {
+			if (HasGenotypes()) {
+				// nominal/numeric
+				treeType = NUMERIC_NOMINAL_TREE;
+				treeTypeDesc = "Regression trees: discrete/continuous";
+			} else {
+				// numeric/numeric
+				if (HasNumerics()) {
+					treeType = NUMERIC_NUMERIC_TREE;
+					treeTypeDesc = "Regression trees: integrated/continuous";
+				}
+			}
+		}
+	} else {
+		// classification
+		if (HasNumerics() && HasGenotypes()) {
+			// mixed/nominal
+			treeType = NOMINAL_NUMERIC_TREE;
+			treeTypeDesc = "Classification trees: integrated/discrete";
+		} else {
+			if (HasGenotypes()) {
+				// nominal/nominal
+				treeType = NOMINAL_NOMINAL_TREE;
+				treeTypeDesc = "Classification trees: discrete/discrete";
+			} else {
+				// numeric/nominal
+				if (HasNumerics()) {
+					// treeType = 5;
+					// changed to tree type 1 to see if it performs better
+					treeType = NOMINAL_NUMERIC_TREE;
+					treeTypeDesc = "Classification trees: continuous/discrete";
+				}
+			}
+		}
+	}
+
+	returnValue.first = treeType;
+	returnValue.second = treeTypeDesc;
+
+	return returnValue;
+}
+
+bool Dataset::WriteSnpTiTvInfo(string titvFilename) {
+	if(!hasAllelicInfo) {
+		cerr << "Dataset::WriteSnpTiTvInfo Cannot write transition/transversion "
+				"for data with no allelic info" << endl;
+		return false;
+	}
+
+	ofstream outFile(titvFilename.c_str());
+	vector<AttributeMutationType>::const_iterator it =
+			attributeMutationTypes.begin();
+	vector<std::string>::const_iterator nit = attributeNames.begin();
+	for(; it != attributeMutationTypes.end(); ++it,++nit) {
+		outFile << *nit << "\t" << *it << endl;
+	}
+	outFile.close();
+
+	return true;
+}
 
 bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {
   cout << Timestamp() << "Calculating distance matrix" << endl;
@@ -3461,7 +3554,12 @@ bool Dataset::WriteNewPlinkPedDataset(string baseDatasetFilename) {
 			newPedStream << instances[instanceIndex]->GetPredictedValueTau() << " ";
 		}
 		else {
-			newPedStream << (instances[instanceIndex]->GetClass() + 1);
+			if(instances[instanceIndex]->GetClass() == MISSING_DISCRETE_CLASS_VALUE) {
+				newPedStream << MISSING_DISCRETE_CLASS_VALUE;
+			}
+			else {
+				newPedStream << (instances[instanceIndex]->GetClass() + 1);
+			}
 		}
 		// write discrete attribute SNP values as pairs of alleles
 		vector<unsigned int> attrIndices = MaskGetAttributeIndices(DISCRETE_TYPE);

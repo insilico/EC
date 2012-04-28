@@ -59,8 +59,12 @@ int main(int argc, char** argv) {
 	string outputFilesPrefix = "ec_run";
 	string distanceMatrixFilename = "";
 	string gainMatrixFilename = "";
+	string titvFilename = "";
 	// Random Jungle
 	uli_t rjNumTrees = 1000;
+	uli_t rjTreeType = NOMINAL_NUMERIC_TREE;
+	uli_t rjMemoryMode = 0;
+	uli_t rjRunMode = LIBRARY_RUN_MODE;
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
@@ -151,9 +155,24 @@ int main(int argc, char** argv) {
 		"metric for determining the difference between numeric attributes (manhattan=|euclidean)"
 		)
 		(
+		"rj-run-mode,R",
+		po::value<unsigned int> (&rjRunMode)->default_value(rjRunMode),
+		"Random Jungle run mode: 1 (default=library call) / 2 (system call)"
+		)
+		(
 		"rj-num-trees,j",
 		po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
 		"Random Jungle number of trees to grow"
+		)
+		(
+		"rj-tree-type,Y",
+		po::value<unsigned int> (&rjTreeType)->default_value(rjTreeType),
+		"Random Jungle tree type: 1 (default)-5 (see RJ docs)"
+		)
+		(
+		"rj-memory-mode,M",
+		po::value<unsigned int> (&rjMemoryMode)->default_value(rjMemoryMode),
+		"Random Jungle memory mode: 0 (default=double) / 1 (float) / 2 (char)"
 		)
 		(
 		"snp-exclusion-file,x",
@@ -234,6 +253,11 @@ int main(int argc, char** argv) {
 		"gain-matrix",
 		po::value<string > (&gainMatrixFilename),
 		"create a GAIN matrix for the loaded samples and exit"
+		)
+		(
+		"dump-titv-file",
+		po::value<string > (&titvFilename),
+		"file for dumping SNP transition/transversion information"
 		)
 		;
 
@@ -490,44 +514,53 @@ int main(int argc, char** argv) {
 			return 0;
 			break;
 		case DATASET_CONVERSION:
-			if(snpsFilename != "" &&
-					numericsFilename == "" &&
-					birdseedFilename == "") {
-				ds = ChooseSnpsDatasetByExtension(snpsFilename);
-				datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
-												altPhenotypeFilename, indIds);
-				if(datasetLoaded) {
-					switch(outputDatasetType) {
-						case TAB_DELIMITED_DATASET:
-						case CSV_DELIMITED_DATASET:
-						case ARFF_DATASET:
-						case PLINK_PED_DATASET:
-							ds->WriteNewDataset(outputDatasetFilename, outputDatasetType);
-							break;
-						case PLINK_BED_DATASET:
-							cout << "PLINK BED output format not supported yet" << endl;
-							exit(COMMAND_LINE_ERROR);
-							break;
-						case NO_OUTPUT_DATASET:
-						default:
-							cerr << "No output data set specified for conversion" << endl;
-							exit(COMMAND_LINE_ERROR);
-							break;
-					}
-					cout << Timestamp() << "Conversion from " << snpsFilename
-							<< " to " << outputDatasetFilename << " successful" << endl;
-					cout << Timestamp() << "Conversion complete" << endl;
-					cout << Timestamp() << argv[0] << " done" << endl;
-					delete ds;
-					return 0;
+			if((snpsFilename != "" || birdseedFilename != "") &&
+					numericsFilename == ""
+					) {
+				if(snpsFilename != "") {
+					ds = ChooseSnpsDatasetByExtension(snpsFilename);
+					datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
+													altPhenotypeFilename, indIds);
 				}
 				else {
+					birdseed = new BirdseedData();
+					if(birdseed->LoadData(birdseedFilename, birdseedPhenosFilename,
+							birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
+							birdseedExcludeSnpsFilename)) {
+						ds = new Dataset();
+						datasetLoaded = ds->LoadDataset(birdseed);
+					}
+				}
+				if(!datasetLoaded) {
 					cerr << "ERROR: Failure to load data set for conversion"
 							<< endl << endl;
 				}
+				switch(outputDatasetType) {
+					case TAB_DELIMITED_DATASET:
+					case CSV_DELIMITED_DATASET:
+					case ARFF_DATASET:
+					case PLINK_PED_DATASET:
+						ds->WriteNewDataset(outputDatasetFilename, outputDatasetType);
+						break;
+					case PLINK_BED_DATASET:
+						cout << "PLINK BED output format not supported yet" << endl;
+						exit(COMMAND_LINE_ERROR);
+						break;
+					case NO_OUTPUT_DATASET:
+					default:
+						cerr << "No output data set specified for conversion" << endl;
+						exit(COMMAND_LINE_ERROR);
+						break;
+				}
+				cout << Timestamp() << "Conversion from " << snpsFilename
+						<< " to " << outputDatasetFilename << " successful" << endl;
+				cout << Timestamp() << "Conversion complete" << endl;
+				cout << Timestamp() << argv[0] << " done" << endl;
+				delete ds;
+				return 0;
 			}
 			else {
-				cerr << "ERROR: Data set conversion only works with SNP data sets"
+				cerr << "ERROR: Data set conversion with SNP data sets"
 						<< endl << endl;
 				exit(COMMAND_LINE_ERROR);
 			}
@@ -586,6 +619,17 @@ int main(int argc, char** argv) {
 			break;
 	}
 
+	if(vm.count("dump-titv-file")) {
+		cout << Timestamp()
+				<< "Dumping SNP transition/transversion information to ["
+				<< titvFilename << "]" << endl;
+		ds->WriteSnpTiTvInfo(titvFilename);
+	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
+	  cout << Timestamp() << "Elapsed time: " << elapsedTime << " secs" << endl;
+	  cout << Timestamp() << argv[0] << " done" << endl;
+		return 0;
+	}
+
 	/// distance matrix calculation(s) do their work, then exit main() before EC
 	if(vm.count("distance-matrix") || vm.count("gain-matrix")) {
 		if(vm.count("distance-matrix")) {
@@ -600,6 +644,7 @@ int main(int argc, char** argv) {
 		      distanceMatrix[i][j] = 0.0;
 		    }
 		  }
+		  ds->Print();
 			if(ds->CalculateDistanceMatrix(distanceMatrix, distanceMatrixFilename)) {
 				for(unsigned int i=0; i < ds->NumInstances(); ++i) {
 					delete [] distanceMatrix[i];

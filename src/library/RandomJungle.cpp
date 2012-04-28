@@ -34,10 +34,10 @@ using namespace boost;
 
 // static methods
 bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
-		bool isRegressionClassifier, double& classError) {
+		RandomJungleTreeType treeType, double& classError) {
 	string outPrefix(vm["out-files-prefix"]);
 	string confusionFilename;
-	if(isRegressionClassifier) {
+	if((treeType == NUMERIC_NUMERIC_TREE) || (treeType == NUMERIC_NOMINAL_TREE)) {
 		confusionFilename = outPrefix + ".confusion";
 	}
 	else {
@@ -52,10 +52,8 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 			<< " -D 'Class'"
 		 	<< " -o " << outPrefix
 		 	<< " -U " << vm["num-threads"]
-		 	<< " -t " << vm["rj-num-trees"];
-	if(isRegressionClassifier) {
-		rjCmd << " -y 4";
-	}
+		 	<< " -t " << vm["rj-num-trees"]
+		 	<< " -y " << treeType;
 	if(vm["verbose"] == "true") {
 		rjCmd << " -v";
 	}
@@ -69,7 +67,7 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 	/// loads rj classification error from confusion file
 	cout << Timestamp() << "Loading RJ classification error "
 			<< "from [" << confusionFilename << "]" << endl;
-	if (!ReadClassificationError(confusionFilename, isRegressionClassifier, classError)) {
+	if (!ReadClassificationError(confusionFilename, treeType, classError)) {
 		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
 		return false;
 	}
@@ -78,7 +76,7 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 }
 
 bool RandomJungle::ReadClassificationError(std::string confusionFilename,
-		bool isRegressionClassifier, double& classifierError) {
+		RandomJungleTreeType treeType, double& classifierError) {
 	/// open the confusion file
 	ifstream confusionStream(confusionFilename.c_str());
 	if (!confusionStream.is_open()) {
@@ -88,20 +86,27 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 	}
 	string line;
 	/// strip the header line(s), read the error, cast to double
-	if(isRegressionClassifier) {
+	if((treeType == NUMERIC_NUMERIC_TREE) ||
+			(treeType == NUMERIC_NOMINAL_TREE) ||
+			(treeType == NOMINAL_NUMERIC_TREE) ||
+			(treeType == NOMINAL_NUMERIC_FLOATS)) {
 		for(unsigned int i=0; i < 8; ++i) {
 			getline(confusionStream, line);
 		}
 		vector<string> tokens;
-		split(tokens, line, "=");
+		split(tokens, line, " ");
 		if (tokens.size() != 3) {
-			cerr << "ERROR: RandomJungle::GetClassificationError: "
-					<< "error parsing " << confusionFilename
-					<< ". Read " << tokens.size() << " columns from line 8, should be 3"
-					<< endl;
-			return false;
+			cout << Timestamp() << "WARNING: RandomJungle::GetClassificationError: "
+					<< "error parsing " << confusionFilename << "." << endl;
+			cout << Timestamp() << "WARNING: Read " << tokens.size()
+					<< " columns from line 8, should be 3" << endl;
 		}
-		classifierError = lexical_cast<double>(trim(tokens[2]));
+		if (tokens.size() == 3) {
+			classifierError = lexical_cast<double>(trim(tokens[2]));
+		}
+		else {
+			classifierError = lexical_cast<double>(trim(tokens[0]));
+		}
 	}
 	else {
 		getline(confusionStream, line);
@@ -109,9 +114,9 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 		split(tokens, line, ",");
 		if (tokens.size() != 5) {
 			cerr << "ERROR: RandomJungle::GetClassificationError: "
-					<< "error parsing " << confusionFilename
-					<< ". Read " << tokens.size() << " columns from line 2, should be 5"
-					<< endl;
+					<< "error parsing " << confusionFilename << "." << endl;
+			cerr << "Read " << tokens.size()
+					<< " columns from line 2, should be 5" << endl;
 			return false;
 		}
 		classifierError = lexical_cast<double>(trim(tokens[4]));
@@ -119,25 +124,43 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 	confusionStream.close();
 
 	cout << Timestamp() << "Read classification error from " << confusionFilename
-			<< ": " << classifierError << endl;
+			<< ": " << setprecision(4) << classifierError << endl;
 
 	return true;
 }
 
 // standard methods
 RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
-	uli_t numTrees = vm["rj-num-trees"].as<uli_t>();
-	cout << Timestamp() << "Initializing Random Jungle with " << numTrees
-			<< " trees" << endl;
-
 	dataset = ds;
 
+	cout << Timestamp()
+			<< "Initializing Random Jungle with Boost program options" << endl;
+
+	if (vm.count("rj-run-mode")) {
+		runMode = (RandomJungleRunMode) vm["rj-run-mode"].as<unsigned int>();
+	} else {
+		runMode = LIBRARY_RUN_MODE;
+	}
+
+	/// set rjParams
 	rjParams = initRJunglePar();
 
 	if (vm.count("rj-num-trees")) {
 		rjParams.ntree = vm["rj-num-trees"].as<uli_t>();
 	} else {
 		rjParams.ntree = 1000;
+	}
+
+	if (vm.count("rj-tree-type")) {
+		rjParams.treeType = vm["rj-tree-type"].as<unsigned int>();
+	} else {
+		rjParams.treeType = NOMINAL_NUMERIC_TREE;
+	}
+
+	if (vm.count("rj-memory-mode")) {
+		rjParams.memMode = vm["rj-memory-mode"].as<unsigned int>();
+	} else {
+		rjParams.memMode = 0;
 	}
 
 	rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -156,15 +179,14 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 	rjParams.outprefix = (char*) outFilesPrefix.c_str();
 
 	int numProcs = omp_get_num_procs();
-	int numThreads = omp_get_num_threads();
-	cout << Timestamp() << numProcs << " OpenMP processors available" << endl;
-	cout << Timestamp() << numThreads << " OpenMP threads running" << endl;
+	cout << Timestamp() << "Using all " << numProcs
+			<< " OpenMP processors available" << endl;
 	rjParams.nthreads = numProcs;
 }
 
 RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 
-	cout << Timestamp() << "Initializing Random Jungle" << endl;
+	cout << Timestamp() << "Initializing Random Jungle with ConfigMap" << endl;
 
 	dataset = ds;
 
@@ -214,6 +236,16 @@ RandomJungle::~RandomJungle() {
 
 bool RandomJungle::ComputeAttributeScores() {
 
+	cout << Timestamp() << "Computing Random Jungle variable importance scores"
+			<< endl;
+
+	if(runMode == SYSTEM_CALL_RUN_MODE) {
+		return ComputeAttributeScoresRjungle();
+	}
+
+	cout << Timestamp() << "Running Random Jungle using C++ librjungle calls"
+			<< endl;
+
 	vector<uli_t>* colMaskVec = NULL;
 	time_t start, end;
 	clock_t startgrow, endgrow;
@@ -227,56 +259,11 @@ bool RandomJungle::ComputeAttributeScores() {
 	string importanceFilename = outPrefix + ".importance";
 	string confusionFilename = outPrefix + ".confusion";
 
-	// base classifier: classification or regression trees?
-	string treeTypeDesc = "";
-	if (dataset->HasContinuousPhenotypes()) {
-		// regression
-		if (dataset->HasNumerics() && dataset->HasGenotypes()) {
-			// integrated/numeric
-			rjParams.treeType = 3;
-			treeTypeDesc = "Regression trees: integrated/continuous";
-		} else {
-			if (dataset->HasGenotypes()) {
-				// nominal/numeric
-				rjParams.treeType = 1;
-				treeTypeDesc = "Regression trees: discrete/continuous";
-			} else {
-				// numeric/numeric
-				if (dataset->HasNumerics()) {
-					rjParams.treeType = 3;
-					treeTypeDesc = "Regression trees: integrated/continuous";
-				}
-			}
-		}
-	} else {
-		// classification
-		if (dataset->HasNumerics() && dataset->HasGenotypes()) {
-			// mixed/nominal
-			rjParams.treeType = 5;
-			treeTypeDesc = "Classification trees: integrated/discrete";
-		} else {
-			if (dataset->HasGenotypes()) {
-				// nominal/nominal
-				rjParams.treeType = 2;
-				// rjParams.treeType = 2;
-				treeTypeDesc = "Classification trees: discrete/discrete";
-			} else {
-				// numeric/nominal
-				if (dataset->HasNumerics()) {
-					// rjParams.treeType = 5;
-					// changed to tree type 1 to see if it performs better
-					rjParams.treeType = 1;
-					treeTypeDesc = "Classification trees: continuous/discrete";
-				}
-			}
-		}
-	}
-	cout << Timestamp() << treeTypeDesc << ": " << rjParams.treeType << endl;
-
 	RJungleIO io;
 	io.open(rjParams);
 	unsigned int numInstances = dataset->NumInstances();
 	vector<string> variableNames = dataset->GetVariableNames();
+	variableNames.push_back(rjParams.depVarName);
 	vector<string> instanceIds = dataset->GetInstanceIds();
 
 //  cout << "Variables names from the data set:" << endl;
@@ -288,13 +275,8 @@ bool RandomJungle::ComputeAttributeScores() {
 			|| (rjParams.treeType == 4) || (rjParams.treeType == 5)) {
 		// regression
 		cout << Timestamp() << "Preparing regression trees Random Jungle" << endl;
-		//rjParams.memMode = 0;
-		//rjParams.impMeasure = 2;
-//    rjParams.backSel = 3;
-//    rjParams.numOfImpVar = 2;
 		DataFrame<NumericLevel>* data = new DataFrame<NumericLevel>(rjParams);
 		data->setDim(rjParams.nrow, rjParams.ncol);
-		variableNames.push_back(rjParams.depVarName);
 		data->setVarNames(variableNames);
 		data->setDepVarName(rjParams.depVarName);
 		data->setDepVar(rjParams.depVarCol);
@@ -370,13 +352,8 @@ bool RandomJungle::ComputeAttributeScores() {
 	} else {
 		cout << Timestamp() << "Preparing SNP classification trees Random Jungle"
 				<< endl;
-		rjParams.memMode = 2;
-		rjParams.impMeasure = 1;
-		// set tree type to 1; works better with SNPs for some reason???
-		rjParams.treeType = 1;
 		DataFrame<char>* data = new DataFrame<char>(rjParams);
 		data->setDim(rjParams.nrow, rjParams.ncol);
-		variableNames.push_back(rjParams.depVarName);
 		data->setVarNames(variableNames);
 		data->setDepVarName(rjParams.depVarName);
 		data->setDepVar(rjParams.depVarCol);
@@ -476,7 +453,7 @@ bool RandomJungle::ComputeAttributeScores() {
 		return false;
 	}
 
-	/// loads rj classification error from confusion file
+	/// loads rj classification error from confusion file - 4/11/12
 	cout << Timestamp() << "Loading RJ classification error "
 			<< "from [" << confusionFilename << "]" << endl;
 	if (!ReadClassificationError(confusionFilename)) {
@@ -488,6 +465,8 @@ bool RandomJungle::ComputeAttributeScores() {
 }
 
 bool RandomJungle::ComputeAttributeScoresRjungle() {
+	cout << Timestamp() << "Running rjungle through C system() call" << endl;
+
 	string outPrefix(rjParams.outprefix);
 	string importanceFilename = outPrefix + ".importance";
 	string confusionFilename;
@@ -503,6 +482,15 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 	cout << Timestamp() << "Writing temporary file for RJ: " << tempFile << endl;
 	dataset->WriteNewDataset(tempFile, CSV_DELIMITED_DATASET);
 
+	// base classifier: classification or regression trees?
+	pair<RandomJungleTreeType, string> treeTypeResult;
+	treeTypeResult = dataset->DetermineTreeType();
+	cout << Timestamp() << treeTypeResult.second << ": "
+			<< treeTypeResult.first << endl;
+	rjParams.treeType = treeTypeResult.first;
+	cout << Timestamp() << treeTypeResult.second << ": "
+			<< rjParams.treeType << endl;
+
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
 	rjCmd << "rjungle"
@@ -511,10 +499,8 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 			<< " -D 'Class'"
 		 	<< " -o " << outPrefix
 		 	<< " -U " << rjParams.nthreads
-		 	<< " -t " << rjParams.ntree;
-	if(dataset->HasContinuousPhenotypes()) {
-		rjCmd << " -y 4";
-	}
+		 	<< " -t " << rjParams.ntree
+		 	<< " -y " << rjParams.treeType;
 	if(rjParams.verbose_flag) {
 		rjCmd << " -v";
 	}
@@ -574,7 +560,7 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 	while (getline(importanceStream, line)) {
 		++lineNumber;
 		vector<string> tokens;
-		split(tokens, line, ",");
+		split(tokens, line, " ");
 		if (tokens.size() != 4) {
 			cerr << "ERROR: EvaporativeCooling::ReadRandomJungleScores: "
 					<< "error parsing line " << lineNumber << " of " << importanceFilename
@@ -632,12 +618,8 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 
 bool RandomJungle::ReadClassificationError(std::string confusionFilename) {
 	double classifierError = 1.0;
-	bool isRegressionClassifier = false;
-	if(dataset->HasContinuousPhenotypes()) {
-		isRegressionClassifier = true;
-	}
 	if(!RandomJungle::ReadClassificationError(confusionFilename,
-			isRegressionClassifier, classifierError)) {
+			(RandomJungleTreeType) rjParams.treeType, classifierError)) {
 		return false;
 	}
 	classificationError = classifierError;
