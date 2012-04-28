@@ -54,7 +54,7 @@ To build EC, first run the bootstrap script
 
     ./bootstrap.sh
 
-Ignore any extranneous warnings. This calls autoreconf and generates the 
+Ignore any extraneous warnings. This calls autoreconf and generates the 
 configure script.  From this point, a standard
 
     ./configure && make && sudo make install
@@ -67,72 +67,84 @@ are installed in `$PREFIX/include`, binary in `$PREFIX/bin`, and the library in
 The resulting binary src/ec_static.exe will run as a command-line tool.
 
 ### Usage ###
-Allowed options:
-  --help                                produce help message
-  --verbose                             verbose output
-  -c [ --config-file ] arg              read configuration options from file - 
-                                        command line overrides these
-  -s [ --snp-data ] arg                 read SNP attributes from genotype 
-                                        filename: txt, ARFF, plink (map/ped, 
-                                        binary, raw)
-  -n [ --numeric-data ] arg             read continuous attributes from 
-                                        PLINK-style covar file
-  -a [ --alternate-pheno-file ] arg     specifies an alternative 
-                                        phenotype/class label file; one value 
-                                        per line
-  -g [ --ec-algorithm-steps ] arg (=all)
-                                        EC steps to run (all|rj|rf)
-  -t [ --ec-num-target ] arg (=0)       EC N_target - target number of 
-                                        attributes to keep
-  -r [ --ec-iter-remove-n ] arg (=0)    Evaporative Cooling number of 
-                                        attributes to remove per iteration
-  -p [ --ec-iter-remove-percent ] arg   Evaporative Cooling precentage of 
-                                        attributes to remove per iteration
-  -O [ --out-dataset-filename ] arg     write a new tab-delimited data set with
-                                        EC filtered attributes
-  -o [ --out-files-prefix ] arg (=ec_run)
-                                        use prefix for all output files
-  -S [ --snp-metric ] arg (=gm)         metric for determining the difference 
-                                        between SNPs (gm|am|nca)
-  -N [ --numeric-metric ] arg (=manhattan)
-                                        metric for determining the difference 
-                                        between numeric attributes 
-                                        (manhattan=|euclidean)
-  -j [ --rj-num-trees ] arg (=1000)     Random Jungle number of trees to grow
-  -x [ --snp-exclusion-file ] arg       file of SNP names to be excluded
-  -k [ --k-nearest-neighbors ] arg (=10)
-                                        set k nearest neighbors
-  -m [ --number-random-samples ] arg (=0)
-                                        number of random samples (0=all|1 <= n 
-                                        <= number of samples)
-  -b [ --weight-by-distance-method ] arg (=equal)
-                                        weight-by-distance method 
-                                        (equal|one_over_k|exponential)
-  --weight-by-distance-sigma arg (=2)   weight by distance sigma
-  -d [ --diagnostic-tests ] arg         performs diagnostic tests and sends 
-                                        output to filename without running EC
-  -D [ --diagnostic-levels-file ] arg   write diagnostic attribute level counts
-                                        to filename
-  --dge-counts-data arg                 read digital gene expression counts 
-                                        from text file
-  --dge-phenos-data arg                 read digital gene expression phenotypes
-                                        from text file
-  --dge-norm-factors arg                read digital gene expression 
-                                        normalization factors from text file
-  --birdseed-snps-data arg              read SNP data from a birdseed formatted
-                                        file
-  --birdseed-phenos-data arg            read birdseed subjects phenotypes from 
-                                        text file
-  --birdseed-subjects-labels arg        read subject labels from filename to 
-                                        override names from data file
-  --birdseed-include-snps arg           read data SNPs data only for the 
-                                        subject IDs in file
-  --birdseed-exclude-snps arg           read data SNPs data only for the 
-                                        subject IDs in file
-  --distance-matrix arg                 create a distance matrix for the loaded
-                                        samples and exit
-  --gain-matrix arg                     create a GAIN matrix for the loaded 
-                                        samples and exit
+
+		Allowed options:
+		  --help                                produce help message
+		  --verbose                             verbose output
+		  --convert                             convert data set to data set - no ec
+		  -T [ --optimize-temp ]                optimize coupling constant T
+		  -c [ --config-file ] arg              read configuration options from file - 
+		                                        command line overrides these
+		  -s [ --snp-data ] arg                 read SNP attributes from genotype 
+		                                        filename: txt, ARFF, plink (map/ped, 
+		                                        binary, raw)
+		  -n [ --numeric-data ] arg             read continuous attributes from 
+		                                        PLINK-style covar file
+		  -a [ --alternate-pheno-file ] arg     specifies an alternative 
+		                                        phenotype/class label file; one value 
+		                                        per line
+		  -g [ --ec-algorithm-steps ] arg (=all)
+		                                        EC steps to run (all|rj|rf)
+		  -t [ --ec-num-target ] arg (=0)       EC N_target - target number of 
+		                                        attributes to keep
+		  -r [ --ec-iter-remove-n ] arg (=0)    Evaporative Cooling number of 
+		                                        attributes to remove per iteration
+		  -p [ --ec-iter-remove-percent ] arg   Evaporative Cooling precentage of 
+		                                        attributes to remove per iteration
+		  -O [ --out-dataset-filename ] arg     write a new tab-delimited data set with
+		                                        EC filtered attributes
+		  -o [ --out-files-prefix ] arg (=ec_run)
+		                                        use prefix for all output files
+		  -B [ --snp-metric-nn ] arg (=gm)      metric for determining the difference 
+		                                        between subjects (gm|am|nca|km)
+		  -W [ --snp-metric-weights ] arg (=gm) metric for determining the difference 
+		                                        between SNPs (gm|am|nca)
+		  -N [ --numeric-metric ] arg (=manhattan)
+		                                        metric for determining the difference 
+		                                        between numeric attributes 
+		                                        (manhattan=|euclidean)
+		  -R [ --rj-run-mode ] arg (=1)         Random Jungle run mode: 1 
+		                                        (default=library call) / 2 (system 
+		                                        call)
+		  -j [ --rj-num-trees ] arg (=1000)     Random Jungle number of trees to grow
+		  -Y [ --rj-tree-type ] arg (=1)        Random Jungle tree type: 1 (default)-5 
+		                                        (see RJ docs)
+		  -M [ --rj-memory-mode ] arg (=0)      Random Jungle memory mode: 0 
+		                                        (default=double) / 1 (float) / 2 (char)
+		  -x [ --snp-exclusion-file ] arg       file of SNP names to be excluded
+		  -k [ --k-nearest-neighbors ] arg (=10)
+		                                        set k nearest neighbors
+		  -m [ --number-random-samples ] arg (=0)
+		                                        number of random samples (0=all|1 <= n 
+		                                        <= number of samples)
+		  -b [ --weight-by-distance-method ] arg (=equal)
+		                                        weight-by-distance method 
+		                                        (equal|one_over_k|exponential)
+		  --weight-by-distance-sigma arg (=2)   weight by distance sigma
+		  -d [ --diagnostic-tests ] arg         performs diagnostic tests and sends 
+		                                        output to filename without running EC
+		  -D [ --diagnostic-levels-file ] arg   write diagnostic attribute level counts
+		                                        to filename
+		  --dge-counts-data arg                 read digital gene expression counts 
+		                                        from text file
+		  --dge-norm-factors arg                read digital gene expression 
+		                                        normalization factors from text file
+		  --birdseed-snps-data arg              read SNP data from a birdseed formatted
+		                                        file
+		  --birdseed-phenos-data arg            read birdseed subjects phenotypes from 
+		                                        text file
+		  --birdseed-subjects-labels arg        read subject labels from filename to 
+		                                        override names from data file
+		  --birdseed-include-snps arg           read data SNPs data only for the 
+		                                        subject IDs in file
+		  --birdseed-exclude-snps arg           read data SNPs data only for the 
+		                                        subject IDs in file
+		  --distance-matrix arg                 create a distance matrix for the loaded
+		                                        samples and exit
+		  --gain-matrix arg                     create a GAIN matrix for the loaded 
+		                                        samples and exit
+		  --dump-titv-file arg                  file for dumping SNP 
+		                                        transition/transversion information
 
 All commands will include an input file (`-s/--snp-data`), and, optionally, 
 an output file prefix (`-o/--output-files-prefix`).
@@ -155,8 +167,10 @@ page on our research website.
 See AUTHORS file.
 
 ### References ###
-Moore, J.H., White, B.C. Tuning ReliefF for genome-wide genetic analysis. 
-Lecture Notes in Computer Science 4447, 166-175 (2007). [Springer]
+B.A. McKinney, J.E.  Crowe, Jr.,  J. Guo, and D. Tian,  ÒCapturing the
+ spectrum of interaction effects in genetic  association  studies  by
+simulated evaporative cooling network  analysis,Ó  PLoS Genetics.
+5(3):  e1000432. doi:10.1371/journal.pgen.1000432; 2009.
 
 McKinney, B.A., Reif, D.M., White, B.C., Crowe, J.E., Moore, J.H. Evaporative 
 cooling feature selection for genotypic data involving interactions. 
