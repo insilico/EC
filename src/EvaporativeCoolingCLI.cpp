@@ -45,6 +45,7 @@ int main(int argc, char** argv) {
 	// file names
 	string configFilename = "";
 	string snpsFilename = "";
+	string snpsFileType = "";
 	string snpExclusionFile = "";
 	string numericsFilename = "";
 	string dgeCountsFilename = "";
@@ -98,6 +99,12 @@ int main(int argc, char** argv) {
 		"snp-data,s",
 		po::value<string > (&snpsFilename),
 		"read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
+		)
+		(
+		"snp-file-type",
+		po::value<string > (&snpsFileType),
+		"Ignore file extension and use type: textwhitesp, wekaarff, plinkped, "
+		"plinkbed, plinkraw, mayogeo, birdseed"
 		)
 		(
 		"numeric-data,n",
@@ -301,7 +308,7 @@ int main(int argc, char** argv) {
 	if(outputDatasetFilename != "") {
 		// determine the data set type
 		string outFileExtension = GetFileExtension(outputDatasetFilename);
-		if(outFileExtension == "txt") {
+		if((outFileExtension == "txt") || (outFileExtension == "tab")) {
 			outputDatasetType = TAB_DELIMITED_DATASET;
 		} else {
 			if(outFileExtension == "csv") {
@@ -436,7 +443,7 @@ int main(int argc, char** argv) {
 	switch(analysisType) {
 		case SNP_ONLY_ANALYSIS:
 			cout << Timestamp() << "Reading SNPs data set" << endl;
-			ds = ChooseSnpsDatasetByExtension(snpsFilename);
+			ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
 			datasetLoaded = ds->LoadDataset(snpsFilename, "",
 																			altPhenotypeFilename, indIds);
 			break;
@@ -448,7 +455,7 @@ int main(int argc, char** argv) {
 			break;
 		case INTEGRATED_ANALYSIS:
 			cout << Timestamp() << "Reading datasets for integrated analysis" << endl;
-			ds = ChooseSnpsDatasetByExtension(snpsFilename);
+			ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
 			datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
 																			altPhenotypeFilename, indIds);
 			break;
@@ -488,7 +495,7 @@ int main(int argc, char** argv) {
 				exit(COMMAND_LINE_ERROR);
 			}
 			if(snpsFilename != "") {
-				ds = ChooseSnpsDatasetByExtension(snpsFilename);
+				ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
 				datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
 												altPhenotypeFilename, indIds);
 			}
@@ -518,7 +525,7 @@ int main(int argc, char** argv) {
 					numericsFilename == ""
 					) {
 				if(snpsFilename != "") {
-					ds = ChooseSnpsDatasetByExtension(snpsFilename);
+					ds = ChooseSnpsDatasetByType(snpsFilename,snpsFileType);
 					datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
 													altPhenotypeFilename, indIds);
 				}

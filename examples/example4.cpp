@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 
     /// Create a pointer to a data set object by calling the library function
     /// to determine the data set class to use by its filename extension.
-    Dataset* example4Dataset = ChooseSnpsDatasetByExtension(*fileIt);
+    Dataset* example4Dataset = ChooseSnpsDatasetByType(*fileIt);
     vector<string> ids;
     if(!example4Dataset->LoadDataset(*fileIt, "", "", ids)) {
       cerr << "ERROR: Could not load data set." << endl;

@@ -1362,7 +1362,7 @@ void Dataset::Print() {
 	map<string, unsigned int>::const_iterator it;
 	for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
 		DatasetInstance* dsi = instances[it->second];
-		cout << instanceIds[it->second];
+		cout << instanceIds[it->second] << "\t";
 		map<string, unsigned int>::const_iterator ait = attributesMask.begin();
 		for(; ait != attributesMask.end(); ++ait) {
 			cout << dsi->attributes[ait->second] << "\t";

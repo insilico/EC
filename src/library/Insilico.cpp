@@ -71,28 +71,56 @@ string Timestamp() {
 	time_t now = time(NULL);
 	struct tm * ptm = localtime(&now);
 	char buffer[32];
-	// Format: Mo, 15.06.2009 20:20:00
+	// Format: 20091506 - 20:20:00 -
 	strftime(buffer, 32, "%Y%d%m - %H:%M:%S - ", ptm);
 	string ts(buffer);
 
 	return ts;
 }
 
-Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
-	string fileExt = "";
-	fileExt = GetFileExtension(snpsFilename);
-	// cout << "File extension: " << fileExt << endl;
+Dataset* ChooseSnpsDatasetByType(string snpsFilename, string snpsFileType) {
+	// determine the data set type from the passed SNP file type or from
+	// the file extension if the file type is the empty string
 	Dataset* ds = 0;
-	cout << Timestamp() << "Dataset detect by extension: ";
+
+	if(datasetTypeToExt.size() == 0) {
+		datasetTypeToExt["textwhitesp"] = "txt";
+		datasetTypeToExt["plinkped"] = "ped";
+		datasetTypeToExt["plinkbed"] = "bed";
+		datasetTypeToExt["plinkraw"] = "raw";
+		datasetTypeToExt["mayogeo"] = "csv";
+		datasetTypeToExt["birdseed"] = "txt";
+	}
+
+	string fileExt = "";
+	if(snpsFileType != "") {
+		map<string, string>::const_iterator foundPos =
+				datasetTypeToExt.find(snpsFileType);
+		if(foundPos != datasetTypeToExt.end()) {
+			fileExt = foundPos->second;
+		}
+		else {
+			cerr << "ERROR: ChooseSnpsDatasetByType: cannot determine SNPs file "
+					<< " type from type string: " << snpsFileType << endl;
+			return ds;
+		}
+	}
+	else {
+		fileExt = GetFileExtension(snpsFilename);
+	}
+	// cout << "File extension: " << fileExt << endl;
+
+	cout << Timestamp() << "Dataset detection for SNP file ["
+			<< snpsFilename << "]" << endl;
 	if (fileExt == "arff") {
 		cout << "ARFF" << endl;
 		ds = new ArffDataset();
 	} else {
-		if (fileExt == "tab" || fileExt == "txt") {
+		if ((fileExt == "dat") || (fileExt == "tab") || (fileExt == "txt")) {
 			cout << "Whitespace-delimited" << endl;
 			ds = new Dataset();
 		} else {
-			if (fileExt == "ped" || fileExt == "map") {
+			if ((fileExt == "ped") || (fileExt == "map")) {
 				cout << "Plink map/ped" << endl;
 				ds = new PlinkDataset();
 			} else {
@@ -100,14 +128,13 @@ Dataset* ChooseSnpsDatasetByExtension(string snpsFilename) {
 					cout << "Plink raw" << endl;
 					ds = new PlinkRawDataset();
 				} else {
-					if (fileExt == "bed" || fileExt == "bim" || fileExt == "fam") {
+					if ((fileExt == "bed") || (fileExt == "bim") || (fileExt == "fam")) {
 						cout << "Plink binary" << endl;
 						ds = new PlinkBinaryDataset();
 					} else {
 						cerr << endl;
 						cerr << "ERROR: Cannot determine data set type by extension: "
-								<< fileExt << endl;
-						exit(1);
+								<< fileExt <<  " for " << snpsFilename << endl;
 					}
 				}
 			}

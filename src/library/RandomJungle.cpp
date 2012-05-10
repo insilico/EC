@@ -12,6 +12,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include <omp.h>
 
 #include "rjungle/librjungle.h"
@@ -100,6 +102,8 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 					<< "error parsing " << confusionFilename << "." << endl;
 			cout << Timestamp() << "WARNING: Read " << tokens.size()
 					<< " columns from line 8, should be 3" << endl;
+			cout << Timestamp() << "WARNING: Attempting to read alternate "
+					<< "confusion file column" << endl;
 		}
 		if (tokens.size() == 3) {
 			classifierError = lexical_cast<double>(trim(tokens[2]));
@@ -176,7 +180,7 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 	rjParams.verbose_flag = vm.count("verbose") ? true : false;
 
 	string outFilesPrefix = vm["out-files-prefix"].as<string>();
-	rjParams.outprefix = (char*) outFilesPrefix.c_str();
+	rjParams.outprefix = strdup(outFilesPrefix.c_str());
 
 	int numProcs = omp_get_num_procs();
 	cout << Timestamp() << "Using all " << numProcs
@@ -215,11 +219,11 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	rjParams.verbose_flag =
 			GetConfigValue(configMap, "verbose", configValue)? true : false;
 
-	string outFilesPrefix = "";
+	string outFilesPrefix = "rj_run";
 	if (GetConfigValue(configMap, "out-files-prefix", configValue)) {
 		outFilesPrefix = configValue;
 	}
-	rjParams.outprefix = (char*) outFilesPrefix.c_str();
+	rjParams.outprefix = strdup(outFilesPrefix.c_str());
 
 	int numProcs = omp_get_num_procs();
 	int numThreads = omp_get_num_threads();

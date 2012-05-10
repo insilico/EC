@@ -177,6 +177,8 @@ enum RandomJungleRunMode
 	SYSTEM_CALL_RUN_MODE /**< call Random Jungle through C system() call */
 };
 
+static std::map<std::string, std::string> datasetTypeToExt;
+
 /***************************************************************************//**
  * Return random jungle tree type from the class and attribute types
  * \param [in] attributeType attribute data type
@@ -192,11 +194,13 @@ RandomJungleTreeType DetermineRandomJungleTreeType(AttributeType attributeType,
 std::string Timestamp();
 /***************************************************************************//**
  * Determines the data set type to instantiate based on the
- * data set filenames's extension.
+ * passed type string or data set filenames's extension.
  * \param [in] snpsFilename SNP data set filename
- * \return pointer to new dataset or NULL if could not match filename extension
+ * \param [in] snpsFileType SNP data set file type (overrides detect by extension)
+ * \return pointer to new data set or NULL if could not match a data set type
  ******************************************************************************/
-Dataset* ChooseSnpsDatasetByExtension(std::string snpsFilename);
+Dataset* ChooseSnpsDatasetByType(std::string snpsFilename,
+		std::string snpsFileType="");
 /***************************************************************************//**
  * Loads the individual (instance) IDs from the numerics file.
  * Returns the IDs through reference parameter retIds.

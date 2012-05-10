@@ -353,7 +353,7 @@ int main(int argc, char** argv) {
   switch(analysisType) {
     case SNP_ONLY_ANALYSIS:
       cout << Timestamp() << "Reading SNPs data set" << endl;
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      ds = ChooseSnpsDatasetByType(snpsFilename);
       datasetLoaded = ds->LoadDataset(snpsFilename, "",
                                       altPhenotypeFilename, indIds);
       break;
@@ -365,7 +365,7 @@ int main(int argc, char** argv) {
       break;
     case INTEGRATED_ANALYSIS:
       cout << Timestamp() << "Reading datasets for integrated analysis" << endl;
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      ds = ChooseSnpsDatasetByType(snpsFilename);
       datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
                                       altPhenotypeFilename, indIds);
       break;
@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
                 << "--snp-data or --snp-data-clean flag" << endl;
         exit(COMMAND_LINE_ERROR);
       }
-      ds = ChooseSnpsDatasetByExtension(snpsFilename);
+      ds = ChooseSnpsDatasetByType(snpsFilename);
       ds->LoadDataset(snpsFilename, numericsFilename,
                       altPhenotypeFilename, indIds);
       ds->RunSnpDiagnosticTests(diagnosticLevelsCountsFilename);
