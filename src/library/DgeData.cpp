@@ -128,19 +128,20 @@ bool DgeData::LoadData(string countsFile, string normsFile) {
 		string geneID = countsStringVector[0];
 		geneNames.push_back(geneID);
 
-		/// load all counts for this gene as doubles
+		/// collect minimum, maximum and sum of raw counts for each gene
 		vector<string>::const_iterator it = countsStringVector.begin() + 1;
 		vector<double> geneCounts;
 		double minCount = 0;
 		double maxCount = 0;
-		int geneIndex = 0;
-		for (; it != countsStringVector.end(); ++it, ++geneIndex) {
+		int sampleIndex = 0;
+		double geneCountSum = 0.0;
+		for (; it != countsStringVector.end(); ++it, ++sampleIndex) {
 			string thisStringCount = *it;
 			double thisDoubleCount = boost::lexical_cast<double>(thisStringCount);
 			if(hasNormFactors) {
-				thisDoubleCount *= normFactors[geneIndex];
+				thisDoubleCount *= normFactors[sampleIndex];
 			}
-			if(geneIndex == 0)  {
+			if(sampleIndex == 0)  {
 				minCount = maxCount = thisDoubleCount;
 			}
 			else {
@@ -152,8 +153,10 @@ bool DgeData::LoadData(string countsFile, string normsFile) {
 				}
 			}
 			geneCounts.push_back(thisDoubleCount);
+			geneCountSum += thisDoubleCount;
 		}
 		minMaxGeneCounts.push_back(make_pair(minCount, maxCount));
+		sumGeneCounts.push_back(geneCountSum);
 
 		/// save this gene's counts to the counts class member variable
 		counts.push_back(geneCounts);
@@ -224,6 +227,17 @@ pair<double, double> DgeData::GetGeneMinMax(int geneIndex) {
 	}
 	else {
 		cerr << "ERROR: DgeData::GetGeneMinMax, index out of range: "
+				<< geneIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+}
+
+double DgeData::GetGeneCountsSum(int geneIndex) {
+	if((geneIndex >= 0) && (geneIndex < (int) counts.size())) {
+		return sumGeneCounts[geneIndex];
+	}
+	else {
+		cerr << "ERROR: DgeData::GetGeneCountsSum, index out of range: "
 				<< geneIndex << endl;
 		exit(EXIT_FAILURE);
 	}

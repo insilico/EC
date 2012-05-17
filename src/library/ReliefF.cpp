@@ -102,7 +102,7 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
   one_over_m_times_k =
           1.0 / ((double) m * (double) k);
 
-  cout << Timestamp() << "SNP distance metric: " << snpMetric << endl;
+  cout << Timestamp() << "SNP weight update metric: " << snpMetric << endl;
   cout << Timestamp() << "Continuous distance metric: " << numMetric << endl;
 
   int numProcs = omp_get_num_procs();
@@ -141,9 +141,12 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
   } else {
     k = 10;
   }
-  if(vm.count("snp-metric-weights")) {
-    snpMetric = vm["snp-metric-weights"].as<string > ();
+  if(vm.count("snp-metric")) {
+    snpMetric = vm["snp-metric"].as<string > ();
   } else {
+    if(vm.count("snp-metric-weights")) {
+      snpMetric = vm["snp-metric-weights"].as<string > ();
+    }
     snpMetric = "gm";
   }
   if(vm.count("numeric-metric")) {
@@ -288,6 +291,9 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
   if(GetConfigValue(configMap, "snp-metric", configValue)) {
     snpMetric = configValue;
   } else {
+    if(GetConfigValue(configMap, "snp-metric-weights", configValue)) {
+      snpMetric = configValue;
+    }
     snpMetric = "gm";
   }
   if(GetConfigValue(configMap, "numeric-metric", configValue)) {

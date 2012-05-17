@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
+	string snpMetric = "gm";
 	string snpMetricNN = "gm";
 	string snpMetricWeights = "gm";
 	string numMetric = "manhattan";
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
 	unsigned int ecNumTarget = 0;
 	unsigned int ecIterNumToRemove = 0;
 	unsigned int ecIterPercentToRemove = 0;
+	// numeric data parameters
+	string numericTransform = "";
 
   /// declare the supported options
   po::options_description desc("Allowed options");
@@ -110,6 +113,11 @@ int main(int argc, char** argv) {
 		"numeric-data,n",
 		po::value<string > (&numericsFilename),
 		"read continuous attributes from PLINK-style covar file"
+		)
+		(
+		"numeric-transform,X",
+		po::value<string > (&numericTransform),
+		"perform numeric transformation: normalize, standardiz"
 		)
 		(
 		"alternate-pheno-file,a",
@@ -145,6 +153,11 @@ int main(int argc, char** argv) {
 		"out-files-prefix,o",
 		po::value<string > (&outputFilesPrefix)->default_value(outputFilesPrefix),
 		"use prefix for all output files"
+		)
+		(
+		"snp-metric",
+		po::value<string > (&snpMetricNN)->default_value(snpMetricNN),
+		"metric for determining the difference between subjects (gm|am|nca)"
 		)
 		(
 		"snp-metric-nn,B",
@@ -696,6 +709,16 @@ int main(int argc, char** argv) {
 	// ---------------------------------------------------------------------------
 	// FINALLY! run EC algorithm
 	cout << Timestamp() << "Running EC" << endl;
+	if(ds->HasNumerics() && numericTransform != "") {
+		cout << Timestamp() << "Performing numeric transformation: "
+				<< numericTransform << endl;
+		if(numericTransform == "standardize") {
+			ds->TransformNumericsStandardize();
+		}
+		if(numericTransform == "normalize") {
+			ds->TransformNumericsNormalize();
+		}
+	}
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;

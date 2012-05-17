@@ -305,6 +305,10 @@ public:
    * \return attribute index or INVALID_INDEX
    ****************************************************************************/
   unsigned int GetNumericIndexFromName(std::string numericName);
+  /// Normalize numerics by column sums.
+  bool TransformNumericsNormalize();
+  /// Standardize numerics by column - z-score.
+  bool TransformNumericsStandardize();
   /// Get the number of classes in the data set.
   unsigned int NumClasses();
   /// Get the class column as read from the file.
@@ -681,6 +685,8 @@ protected:
   std::vector<std::string> numericsIds;
   /// the minimum and maximum value for each continuous attribute
   std::vector< std::pair<NumericLevel, NumericLevel> > numericsMinMax;
+  /// the column sum for each continuous attribute
+  std::vector<double> numericsSums;
   /// continuous attribute names read from file
   std::vector<std::string> numericsNames;
 
@@ -727,7 +733,7 @@ protected:
   std::map<std::string, unsigned int> instancesMaskPushed;
   bool maskIsPushed;
 
-  /// random number generator classes use GNU Scienitifc Library (GSL)
+  /// random number generator classes use GNU Scientific Library (GSL)
   GSLRandomFlat* rng;
 };
 

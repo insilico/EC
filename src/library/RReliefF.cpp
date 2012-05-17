@@ -24,11 +24,6 @@ RReliefF::RReliefF(Dataset* ds) :
 				"continuous phenotype data set" << endl;
 		exit(EXIT_FAILURE);
 	}
-	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
-	if(distanceMetrics.first == "KM") {
-		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
-		exit(EXIT_FAILURE);
-	}
 }
 
 RReliefF::RReliefF(Dataset* ds, po::variables_map& vm) :
@@ -39,11 +34,6 @@ RReliefF::RReliefF(Dataset* ds, po::variables_map& vm) :
 				"continuous phenotype data set" << endl;
 		exit(EXIT_FAILURE);
 	}
-	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
-	if(distanceMetrics.first == "KM") {
-		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
-		exit(EXIT_FAILURE);
-	}
 }
 
 RReliefF::RReliefF(Dataset* ds, ConfigMap& configMap) :
@@ -52,11 +42,6 @@ RReliefF::RReliefF(Dataset* ds, ConfigMap& configMap) :
 	if (!ds->HasContinuousPhenotypes()) {
 		cerr << "ERROR: Attempting to construct RReliefF object without a "
 				"continuous phenotype data set" << endl;
-		exit(EXIT_FAILURE);
-	}
-	pair<string, string> distanceMetrics = ds->GetDistanceMetrics();
-	if(distanceMetrics.first == "KM") {
-		cerr << "ERROR: Kimura metric not supported in regression ReliefF" << endl;
 		exit(EXIT_FAILURE);
 	}
 }

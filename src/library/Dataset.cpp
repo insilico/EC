@@ -276,10 +276,11 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 
 	// populate numericNames, numericsMinMax and numericsMask
 	vector<string> geneNames = dgeData->GetGeneNames();
-	for (int i = 0; i < (int) geneNames.size(); ++i) {
-		numericsNames.push_back(geneNames[i]);
-		numericsMinMax.push_back(dgeData->GetGeneMinMax(i));
-		numericsMask[geneNames[i]] = i;
+	for (int geneIndex = 0; geneIndex < (int) geneNames.size(); ++geneIndex) {
+		numericsNames.push_back(geneNames[geneIndex]);
+		numericsMinMax.push_back(dgeData->GetGeneMinMax(geneIndex));
+		numericsSums.push_back(dgeData->GetGeneCountsSum(geneIndex));
+		numericsMask[geneNames[geneIndex]] = geneIndex;
 	}
 
 	// load the data set instances: set the instance numerics,
@@ -1295,6 +1296,26 @@ unsigned int Dataset::GetNumericIndexFromName(string numericName) {
 		}
 	}
 	return INVALID_INDEX;
+}
+
+bool Dataset::TransformNumericsNormalize() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for(; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
+			DatasetInstance* dsi = instances[it->second];
+			double thisVal = dsi->GetNumeric(thisNumIndex);
+			double thisColSum = numericsSums[thisNumIndex];
+			dsi->numerics[thisNumIndex] = thisVal / thisColSum;
+		}
+	}
+	return true;
+}
+
+bool Dataset::TransformNumericsStandardize() {
+	return true;
 }
 
 unsigned int Dataset::NumClasses() {
@@ -3258,6 +3279,7 @@ bool Dataset::LoadNumerics(string filename) {
 	// used in diff/distance calculation metrics
 	vector<NumericLevel> numericColumn;
 	for (unsigned int i = 0; i < NumNumerics(); ++i) {
+		double columnSum = 0.0;
 		GetNumericValues(i, numericColumn);
 		double minElement = *numericColumn.begin();
 		double maxElement = *numericColumn.begin();
@@ -3269,8 +3291,10 @@ bool Dataset::LoadNumerics(string filename) {
 			if ((*it != MISSING_NUMERIC_VALUE) && (*it > maxElement)) {
 				maxElement = *it;
 			}
+			columnSum += *it;
 		}
 		numericsMinMax.push_back(make_pair<double, double>(minElement, maxElement));
+		numericsSums.push_back(columnSum);
 	}
 
 	cout << Timestamp() << "Read " << NumNumerics() << " numeric attributes"

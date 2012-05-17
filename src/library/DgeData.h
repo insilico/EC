@@ -25,6 +25,8 @@ public:
 	std::vector<std::string> GetGeneNames();
 	/// Get the min and max values for gene at index
 	std::pair<double, double> GetGeneMinMax(int geneIndex);
+	/// Get the sum of raw counts for the gene at index
+	double GetGeneCountsSum(int geneIndex);
 	/// Get the number of samples
 	int GetNumSamples();
 	/// Get the number of genes
@@ -60,6 +62,8 @@ private:
 	std::vector<std::pair<double, double> > minMaxGeneCounts;
 	/// Min and max values for samples
 	std::vector<std::pair<double, double> > minMaxSampleCounts;
+	/// Gene count sums
+	std::vector<double> sumGeneCounts;
 	/// Zero count sample indices
 	std::vector<std::vector<int> > sampleZeroes;
 };
