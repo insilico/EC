@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
 		(
 		"numeric-transform,X",
 		po::value<string > (&numericTransform),
-		"perform numeric transformation: normalize, standardiz"
+		"perform numeric transformation: normalize, standardize, zscore, log, sqrt"
 		)
 		(
 		"alternate-pheno-file,a",
@@ -247,7 +247,7 @@ int main(int argc, char** argv) {
 		(
 		"birdseed-phenos-data",
 		po::value<string > (&birdseedPhenosFilename),
-		"read birdseed subjects phenotypes from text file"
+		"read birdseed subjects phenotypes from a text file"
 		)
 		(
 		"birdseed-subjects-labels",
@@ -257,12 +257,12 @@ int main(int argc, char** argv) {
 		(
 		"birdseed-include-snps",
 		po::value<string > (&birdseedIncludeSnpsFilename),
-		"read data SNPs data only for the subject IDs in file"
+		"include the SNP IDs listed in the text file"
 		)
 		(
 		"birdseed-exclude-snps",
 		po::value<string > (&birdseedExcludeSnpsFilename),
-		"read data SNPs data only for the subject IDs in file"
+		"exclude the SNP IDs listed the text file"
 		)
 		(
 		"distance-matrix",
@@ -718,12 +718,27 @@ int main(int argc, char** argv) {
 		if(numericTransform == "normalize") {
 			ds->TransformNumericsNormalize();
 		}
+		if(numericTransform == "log") {
+			ds->TransformNumericsLog();
+		}
+		if(numericTransform == "sqrt") {
+			ds->TransformNumericsSqrt();
+		}
+		if(numericTransform == "zscore") {
+			ds->TransformNumericsZScore();
+		}
+		cout << "DEBUG: writing debug_transformed.txt, transformed by: "
+				<< numericTransform << ", and exiting."
+				<< endl << endl;
+		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
+		exit(0);
 	}
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;
 		exit(EXIT_FAILURE);
 	}
+// IS THIS CROSS-PLATFORM/POSIX COMPATIBLE?
 //  struct rusage s;
 //  struct rusage*p = &s;
 //  getrusage(RUSAGE_SELF, p);

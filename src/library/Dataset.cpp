@@ -1303,18 +1303,91 @@ bool Dataset::TransformNumericsNormalize() {
 	for(; nit != numericsMask.end(); ++nit) {
 		string thisNumName = nit->first;
 		unsigned int thisNumIndex = nit->second;
+		double thisColSum = numericsSums[thisNumIndex];
 		map<string, unsigned int>::const_iterator it;
 		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
 			DatasetInstance* dsi = instances[it->second];
 			double thisVal = dsi->GetNumeric(thisNumIndex);
-			double thisColSum = numericsSums[thisNumIndex];
-			dsi->numerics[thisNumIndex] = thisVal / thisColSum;
+			if(thisVal != MISSING_NUMERIC_VALUE) {
+				dsi->numerics[thisNumIndex] = thisVal / thisColSum;
+			}
+		}
+	}
+	return true;
+}
+
+bool Dataset::TransformNumericsZScore() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for(; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		vector<NumericLevel> colValues;
+		GetNumericValues(thisNumIndex, colValues);
+		vector<NumericLevel> zValues;
+		ZTransform(colValues, zValues);
+		vector<NumericLevel>::const_iterator zIt = zValues.begin();
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); ++it, ++zIt) {
+			DatasetInstance* dsi = instances[it->second];
+			dsi->numerics[thisNumIndex] = *zIt;
 		}
 	}
 	return true;
 }
 
 bool Dataset::TransformNumericsStandardize() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for(; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		double thisColSum = numericsSums[thisNumIndex];
+		double thisColAvg = thisColSum / ((double) NumInstances());
+		pair<double, double> thisColMinMax = numericsMinMax[thisNumIndex];
+		double thisColRange = thisColMinMax.second - thisColMinMax.first;
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
+			DatasetInstance* dsi = instances[it->second];
+			double thisVal = dsi->GetNumeric(thisNumIndex);
+			if(thisVal != MISSING_NUMERIC_VALUE) {
+				dsi->numerics[thisNumIndex] = (thisVal - thisColAvg) / thisColRange;
+			}
+		}
+	}
+	return true;
+}
+
+bool Dataset::TransformNumericsLog() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for(; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
+			DatasetInstance* dsi = instances[it->second];
+			double thisVal = dsi->GetNumeric(thisNumIndex);
+			// handle case of thisVal == 0 by adding small value
+			if(thisVal != MISSING_NUMERIC_VALUE) {
+				dsi->numerics[thisNumIndex] = log(thisVal + 1.0);
+			}
+		}
+	}
+	return true;
+}
+
+bool Dataset::TransformNumericsSqrt() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	for(; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
+			DatasetInstance* dsi = instances[it->second];
+			double thisVal = dsi->GetNumeric(thisNumIndex);
+			if(thisVal != MISSING_NUMERIC_VALUE) {
+				dsi->numerics[thisNumIndex] = sqrt(thisVal);
+			}
+		}
+	}
 	return true;
 }
 

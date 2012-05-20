@@ -198,6 +198,13 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 
 	string configValue;
 
+	// run mode: library = 1, or system call = 2
+	if (GetConfigValue(configMap, "rj-run-mode", configValue)) {
+		runMode = (RandomJungleRunMode) lexical_cast<unsigned int>(configValue);
+	} else {
+		runMode = LIBRARY_RUN_MODE;
+	}
+
 	// how should we set this default value?
 	uli_t numTrees = 1000;
 	if (GetConfigValue(configMap, "rj-num-trees", configValue)) {

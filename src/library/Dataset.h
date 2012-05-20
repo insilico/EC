@@ -307,8 +307,14 @@ public:
   unsigned int GetNumericIndexFromName(std::string numericName);
   /// Normalize numerics by column sums.
   bool TransformNumericsNormalize();
-  /// Standardize numerics by column - z-score.
+  /// Standardize numerics by column - zero center -1 <= x <= 1.
   bool TransformNumericsStandardize();
+  /// Standardize numerics by column - z-score.
+  bool TransformNumericsZScore();
+  /// Replace numeric value x with log(x+1).
+  bool TransformNumericsLog();
+  /// Replace numeric value x with sqrt(x).
+  bool TransformNumericsSqrt();
   /// Get the number of classes in the data set.
   unsigned int NumClasses();
   /// Get the class column as read from the file.
