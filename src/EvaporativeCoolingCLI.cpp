@@ -727,11 +727,11 @@ int main(int argc, char** argv) {
 		if(numericTransform == "zscore") {
 			ds->TransformNumericsZScore();
 		}
-		cout << "DEBUG: writing debug_transformed.txt, transformed by: "
-				<< numericTransform << ", and exiting."
-				<< endl << endl;
-		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
-		exit(0);
+//		cout << "DEBUG: writing debug_transformed.txt, transformed by: "
+//				<< numericTransform << ", and exiting."
+//				<< endl << endl;
+//		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
+//		exit(0);
 	}
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
