@@ -228,14 +228,14 @@ double diffNCA6(unsigned int attributeIndex,
   	nca1['A'] = 0; nca1['T'] = 0; nca1['C'] = 0; nca1['G'] = 0;
   	++nca1[genotype1[0]];
   	++nca1[genotype1[1]];
-  	nca1['X'] = nca1['G'] + nca1['C'];
-  	nca1['Y'] = nca1['A'] + nca1['T'];
+  	nca1['X'] = nca1['A'] + nca1['G'];
+  	nca1['Y'] = nca1['C'] + nca1['T'];
   	map<char, unsigned int> nca2;
   	nca2['A'] = 0; nca2['T'] = 0; nca2['C'] = 0; nca2['G'] = 0;
   	++nca2[genotype2[0]];
   	++nca2[genotype2[1]];
-  	nca2['X'] = nca2['G'] + nca2['C'];
-  	nca2['Y'] = nca2['A'] + nca2['T'];
+  	nca2['X'] = nca2['A'] + nca2['G'];
+  	nca2['Y'] = nca2['C'] + nca2['T'];
   	map<char, unsigned int>::const_iterator nca1It = nca1.begin();
   	map<char, unsigned int>::const_iterator nca2It = nca2.begin();
   	for(; nca1It != nca1.end(); ++nca1It, ++nca2It) {
