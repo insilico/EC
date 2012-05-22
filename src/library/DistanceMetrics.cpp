@@ -202,6 +202,51 @@ double diffNCA(unsigned int attributeIndex,
   return distance;
 }
 
+double diffNCA6(unsigned int attributeIndex,
+                DatasetInstance* dsi1,
+                DatasetInstance* dsi2) {
+  double distance = 0.0;
+  pair<bool, double> checkMissing = CheckMissing(attributeIndex, dsi1, dsi2);
+  if(checkMissing.first) {
+    distance = checkMissing.second;
+  } else {
+  	pair<char, char> alleles =
+  			dsi1->GetDatasetPtr()->GetAttributeAlleles(attributeIndex);
+  	string a1 = " ";
+  	a1[0] = alleles.first;
+  	string a2 = " ";
+  	a2[0] = alleles.second;
+  	map<AttributeLevel, string> genotypeMap;
+  	genotypeMap[0] = a1 + a1;
+  	genotypeMap[1] = a1 + a2;
+  	genotypeMap[2] = a2 + a2;
+  	AttributeLevel attrLevel1 = dsi1->attributes[attributeIndex];
+  	AttributeLevel attrLevel2 = dsi2->attributes[attributeIndex];
+  	string genotype1 = genotypeMap[attrLevel1];
+  	string genotype2 = genotypeMap[attrLevel2];
+  	map<char, unsigned int> nca1;
+  	nca1['A'] = 0; nca1['T'] = 0; nca1['C'] = 0; nca1['G'] = 0;
+  	++nca1[genotype1[0]];
+  	++nca1[genotype1[1]];
+  	nca1['X'] = nca1['G'] + nca1['C'];
+  	nca1['Y'] = nca1['A'] + nca1['T'];
+  	map<char, unsigned int> nca2;
+  	nca2['A'] = 0; nca2['T'] = 0; nca2['C'] = 0; nca2['G'] = 0;
+  	++nca2[genotype2[0]];
+  	++nca2[genotype2[1]];
+  	nca2['X'] = nca2['G'] + nca2['C'];
+  	nca2['Y'] = nca2['A'] + nca2['T'];
+  	map<char, unsigned int>::const_iterator nca1It = nca1.begin();
+  	map<char, unsigned int>::const_iterator nca2It = nca2.begin();
+  	for(; nca1It != nca1.end(); ++nca1It, ++nca2It) {
+  		double nucleotideCount1 = (double) nca1It->second;
+  		double nucleotideCount2 = (double) nca2It->second;
+  		distance += abs(nucleotideCount1 - nucleotideCount2);
+  	}
+  }
+  return distance;
+}
+
 double diffKM(unsigned int attributeIndex,
                DatasetInstance* dsi1,
                DatasetInstance* dsi2) {

@@ -3,7 +3,7 @@
  * 
  * ReliefF algorithm implementation.
  *
- * Totally redone for the McKinney insilico lab in 2011.
+ * Totally redone for the McKinney In Silico Lab in 2011.
  * Using OpenMP for multi-core parallelization - April 2011.
  */
 
@@ -141,13 +141,13 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
   } else {
     k = 10;
   }
+  snpMetric = "gm";
   if(vm.count("snp-metric")) {
     snpMetric = vm["snp-metric"].as<string > ();
   } else {
     if(vm.count("snp-metric-weights")) {
       snpMetric = vm["snp-metric-weights"].as<string > ();
     }
-    snpMetric = "gm";
   }
   if(vm.count("numeric-metric")) {
     numMetric = vm["numeric-metric"].as<string > ();
@@ -213,6 +213,10 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
 	}
 	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA") {
 		snpDiff = diffNCA;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA6") {
+		snpDiff = diffNCA6;
     snpMetricFunctionUnset = false;
 	}
 	if(snpMetricFunctionUnset && to_upper(snpMetric) == "KM") {
@@ -365,6 +369,10 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
 	}
 	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA") {
 		snpDiff = diffNCA;
+    snpMetricFunctionUnset = false;
+	}
+	if(snpMetricFunctionUnset && to_upper(snpMetric) == "NCA6") {
+		snpDiff = diffNCA6;
     snpMetricFunctionUnset = false;
 	}
 	if(snpMetricFunctionUnset && to_upper(snpMetric) == "KM") {

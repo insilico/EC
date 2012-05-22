@@ -24,8 +24,7 @@ void PrintHistogram(Histogram histogram) {
 	}
 }
 
-bool ZTransform(const VectorDouble& inputValues, 
-								VectorDouble& outputValues)
+bool ZTransform(const VectorDouble& inputValues, VectorDouble& outputValues)
 {
 	// sum values in input vector
 	double inputSum = 0.0;

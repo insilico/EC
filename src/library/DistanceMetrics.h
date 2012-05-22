@@ -76,6 +76,16 @@ double diffNCA(unsigned int attributeIndex,
                DatasetInstance* dsi1,
                DatasetInstance* dsi2);
 /***************************************************************************//**
+ * Nucleotide count array + G/C sum + A/T sum (NCA6) metric.
+ * \param [in] attributeIndex index into the vector of attributes
+ * \param [in] dsi1 data set instance 1
+ * \param [in] dsi2 data set instance 2
+ * \return diff(erence) considering nucleotide counts
+ ****************************************************************************/
+double diffNCA6(unsigned int attributeIndex,
+                DatasetInstance* dsi1,
+                DatasetInstance* dsi2);
+/***************************************************************************//**
  * Kimura distance - considers transition/transversion mutation types
  * \param [in] attributeIndex index into the vector of attributes
  * \param [in] dsi1 data set instance 1

@@ -2697,6 +2697,10 @@ bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
 		snpDiff = diffNCA;
     snpMetricFunctionUnset = false;
 	}
+	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "NCA6") {
+		snpDiff = diffNCA6;
+    snpMetricFunctionUnset = false;
+	}
 	if(snpMetricFunctionUnset && to_upper(newSnpMetric) == "KM") {
 		snpDiff = diffKM;
     snpMetricFunctionUnset = false;
