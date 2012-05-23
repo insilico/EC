@@ -2875,7 +2875,24 @@ bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFile
 			outFile << endl;
 		}
 		outFile.close();
-  }
+
+	  /// write phenotypes for the instances
+	  string phenoFilename = matrixFilename + ".pheno";
+	  cout << Timestamp() << "Writing phenotypes to file ["
+				<< phenoFilename << "]" << endl;
+		ofstream phenoFile(phenoFilename.c_str());
+		for(int i=0; i < numInstances; ++i) {
+			unsigned int dsiIndex;
+			GetInstanceIndexForID(instanceIds[i], dsiIndex);
+			if(hasContinuousPhenotypes) {
+				phenoFile << instances[dsiIndex]->GetPredictedValueTau() << endl;
+			}
+			else {
+				phenoFile << instances[dsiIndex]->GetClass() << endl;
+			}
+		}
+		phenoFile.close();
+}
 
   return true;
 }

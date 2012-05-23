@@ -664,7 +664,6 @@ int main(int argc, char** argv) {
 		      distanceMatrix[i][j] = 0.0;
 		    }
 		  }
-		  ds->Print();
 			if(ds->CalculateDistanceMatrix(distanceMatrix, distanceMatrixFilename)) {
 				for(unsigned int i=0; i < ds->NumInstances(); ++i) {
 					delete [] distanceMatrix[i];
