@@ -757,6 +757,9 @@ int main(int argc, char** argv) {
 //		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
 //		exit(0);
 	}
+	if(!vm.count("rj-mtry")) {
+		vm["rj-mtry"] = sqrt((double) ds->NumVariables());
+	}
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;
