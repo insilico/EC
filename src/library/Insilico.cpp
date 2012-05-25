@@ -113,23 +113,23 @@ Dataset* ChooseSnpsDatasetByType(string snpsFilename, string snpsFileType) {
 	cout << Timestamp() << "Dataset detection for SNP file ["
 			<< snpsFilename << "]" << endl;
 	if (fileExt == "arff") {
-		cout << "ARFF" << endl;
+		cout << Timestamp() << "ARFF" << endl;
 		ds = new ArffDataset();
 	} else {
 		if ((fileExt == "dat") || (fileExt == "tab") || (fileExt == "txt")) {
-			cout << "Whitespace-delimited" << endl;
+			cout << Timestamp() << "Whitespace-delimited" << endl;
 			ds = new Dataset();
 		} else {
 			if ((fileExt == "ped") || (fileExt == "map")) {
-				cout << "Plink map/ped" << endl;
+				cout << Timestamp() << "Plink map/ped" << endl;
 				ds = new PlinkDataset();
 			} else {
 				if (fileExt == "raw") {
-					cout << "Plink raw" << endl;
+					cout << Timestamp() << "Plink raw" << endl;
 					ds = new PlinkRawDataset();
 				} else {
 					if ((fileExt == "bed") || (fileExt == "bim") || (fileExt == "fam")) {
-						cout << "Plink binary" << endl;
+						cout << Timestamp() << "Plink binary" << endl;
 						ds = new PlinkBinaryDataset();
 					} else {
 						cerr << endl;
