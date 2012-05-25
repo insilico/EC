@@ -55,7 +55,13 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 		 	<< " -o " << outPrefix
 		 	<< " -U " << vm["num-threads"]
 		 	<< " -t " << vm["rj-num-trees"]
+			<< " -B " << vm["rj-backsel"]
+			<< " -i " << vm["rj-impmeasure"]
+			<< " -j " << vm["rj-nimpvar"]
 		 	<< " -y " << treeType;
+	if(vm.find("rj-mtry") != vm.end()) {
+		rjCmd << " -m " << vm["rj-mtry"];
+	}
 	if(vm["verbose"] == "true") {
 		rjCmd << " -v";
 	}
@@ -155,6 +161,21 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 		rjParams.ntree = 1000;
 	}
 
+	// added new RJ params 5/24/12 per Scott Dudek request/experience
+	if (vm.count("rj-mtry")) {
+		rjParams.mtry = vm["rj-mtry"].as<uli_t>();
+	}
+	// TODO: default rjParams.mtry to sqrt((double) ds->NumVariables()) ???
+	if (vm.count("rj-impmeasure")) {
+		rjParams.impMeasure = vm["rj-impmeasure"].as<unsigned int>();
+	}
+	if (vm.count("rj-nimpvar")) {
+		rjParams.numOfImpVar = vm["rj-nimpvar"].as<uli_t>();
+	}
+	if (vm.count("rj-backsel")) {
+		rjParams.backSel = vm["rj-backsel"].as<unsigned int>();
+	}
+
 	if (vm.count("rj-tree-type")) {
 		rjParams.treeType = vm["rj-tree-type"].as<unsigned int>();
 	} else {
@@ -211,6 +232,21 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 		numTrees = lexical_cast<unsigned int>(configValue);
 	}
 	rjParams.ntree = numTrees;
+
+	// added new RJ params 5/24/12 per Scott Dudek request/experience
+	if (GetConfigValue(configMap, "rj-mtry", configValue)) {
+		rjParams.mtry = lexical_cast<uli_t>(configValue);
+	}
+	// TODO: default rjParams.mtry to sqrt((double) ds->NumVariables()) ???
+	if (GetConfigValue(configMap, "rj-nimpvar", configValue)) {
+		rjParams.numOfImpVar = lexical_cast<uli_t>(configValue);
+	}
+	if (GetConfigValue(configMap, "rj-impmeasure", configValue)) {
+		rjParams.impMeasure = lexical_cast<unsigned int>(configValue);
+	}
+	if (GetConfigValue(configMap, "rj-backsel", configValue)) {
+		rjParams.backSel = lexical_cast<unsigned int>(configValue);
+	}
 
 	// fill in the parameters object for the RJ run
 	rjParams.rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -508,10 +544,14 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 			<< " -f " << tempFile
 			<< " -e ','"
 			<< " -D 'Class'"
-		 	<< " -o " << outPrefix
-		 	<< " -U " << rjParams.nthreads
-		 	<< " -t " << rjParams.ntree
-		 	<< " -y " << rjParams.treeType;
+			<< " -o " << outPrefix
+			<< " -U " << rjParams.nthreads
+			<< " -t " << rjParams.ntree
+			<< " -y " << rjParams.treeType
+			<< " -m " << rjParams.mtry
+			<< " -B " << rjParams.backSel
+			<< " -i " << rjParams.impMeasure
+			<< " -j " << rjParams.numOfImpVar;
 	if(rjParams.verbose_flag) {
 		rjCmd << " -v";
 	}

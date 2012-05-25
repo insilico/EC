@@ -66,6 +66,11 @@ int main(int argc, char** argv) {
 	uli_t rjTreeType = NOMINAL_NUMERIC_TREE;
 	uli_t rjMemoryMode = 0;
 	uli_t rjRunMode = LIBRARY_RUN_MODE;
+	// added new RJ params 5/24/12 per Scott Dudek request/experience
+	uli_t rjMtry;
+  unsigned int rjImpMeasure = 1;
+  unsigned int rjBackSel = 0;
+  uli_t rjNumOfImpVar = 1;
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
@@ -183,6 +188,26 @@ int main(int argc, char** argv) {
 		"rj-num-trees,j",
 		po::value<uli_t > (&rjNumTrees)->default_value(rjNumTrees),
 		"Random Jungle number of trees to grow"
+		)
+		(
+		"rj-mtry",
+		po::value<uli_t > (&rjMtry)->default_value(rjMtry),
+		"Random Jungle size of randomly chosen variable sets, DEFAULT: sqrt(ncol)"
+		)
+		(
+		"rj-nimpvar",
+		po::value<uli_t > (&rjNumOfImpVar)->default_value(rjNumOfImpVar),
+		"Random Jungle only necessary if backsel>0. SIZE=[1-...] how many variable should remain"
+		)
+		(
+		"rj-impmeasure",
+		po::value<unsigned int> (&rjImpMeasure)->default_value(rjImpMeasure),
+		"Random Jungle importance method (see RJ docs)"
+		)
+		(
+		"rj-backsel",
+		po::value<unsigned int> (&rjBackSel)->default_value(rjBackSel),
+		"Random Jungle backward elimination (see RJ docs)"
 		)
 		(
 		"rj-tree-type,Y",
