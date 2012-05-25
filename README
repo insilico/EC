@@ -1,4 +1,6 @@
-cppec - README - Bill White - 7/12/11
+cppec - README - Bill White
+
+1/12/11
 
 C++ Evaporative Cooling
 
@@ -8,3 +10,4 @@ The project begins.
 
 Project revamped to use autotools build.
 
+See README.md
