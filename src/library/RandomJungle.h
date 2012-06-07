@@ -69,6 +69,8 @@ private:
   bool ReadScores(std::string importanceFilename);
   /// Read classification error from file into member variable classificationError
   bool ReadClassificationError(std::string confusionFilename);
+  /// Get classification error from library into member variable classificationError
+  bool GetLibraryClassificationAccuracy();
 
   /// RandomJungle parameters object
   RJunglePar rjParams;
@@ -79,7 +81,7 @@ private:
   /// vector of pairs: scores, attribute names
   std::vector<std::pair<double, std::string> > scores;
   /// last classification error
-  double classificationError;
+  double classificationAccuracy;
 };
 
 #endif	/* RANDOMJUNGLE_H */

@@ -388,6 +388,7 @@ bool RandomJungle::ComputeAttributeScores() {
 		RJungleCtrl<NumericLevel> rjCtrl;
 		cout << Timestamp() << "Running Random Jungle" << endl;
 		rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
+		classificationAccuracy = rjCtrl.getOobPredAcc();
 		endgrow = clock();
 
 		time(&end);
@@ -474,6 +475,7 @@ bool RandomJungle::ComputeAttributeScores() {
 		RJungleCtrl<char> rjCtrl;
 		cout << Timestamp() << "Running Random Jungle" << endl;
 		rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
+		classificationAccuracy = rjCtrl.getOobPredAcc();
 		endgrow = clock();
 
 		time(&end);
@@ -500,13 +502,11 @@ bool RandomJungle::ComputeAttributeScores() {
 		return false;
 	}
 
-	/// loads rj classification error from confusion file - 4/11/12
-	cout << Timestamp() << "Loading RJ classification error "
-			<< "from [" << confusionFilename << "]" << endl;
-	if (!ReadClassificationError(confusionFilename)) {
-		cerr << "ERROR: Could not read Random Jungle classification error" << endl;
-		return false;
-	}
+	/// rj classification error
+	// from confusion file - 4/11/12
+	// added the new getOob
+	cout << Timestamp() << "RJ classification accuracy: "
+			<< classificationAccuracy << endl;
 
 	return true;
 }
@@ -590,7 +590,7 @@ vector<pair<double, string> > RandomJungle::GetScores() {
 }
 
 double RandomJungle::GetClassificationError() {
-	return classificationError;
+	return classificationAccuracy;
 }
 
 bool RandomJungle::ReadScores(string importanceFilename) {
@@ -673,8 +673,14 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename) {
 			(RandomJungleTreeType) rjParams.treeType, classifierError)) {
 		return false;
 	}
-	classificationError = classifierError;
+	classificationAccuracy = classifierError;
 
 	return true;
 }
 
+bool RandomJungle::GetLibraryClassificationAccuracy() {
+	double classifierError = 1.0;
+	classificationAccuracy = classifierError;
+
+	return true;
+}
