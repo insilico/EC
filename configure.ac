@@ -84,10 +84,10 @@ LDFLAGS="$LDFLAGS -lrjungle -llr"
 # boost.m4
 BOOST_REQUIRE([1.34])
 BOOST_PROGRAM_OPTIONS
-BOOST_FIND_HEADER(boost/program_options.hpp, AC_MSG_ERROR([could not find required headers of Boost c++. Install boost c++ libraries.],))
+BOOST_FIND_HEADER(boost/program_options.hpp, AC_MSG_ERROR([could not find required headers of Boost c++. Install boost c++ libraries.]),)
 
 # gsl.m4
-AX_PATH_GSL(1.8,, AC_MSG_ERROR([could not find required version of GSL]))
+AX_PATH_GSL(1.8,, AC_MSG_ERROR([could not find required version of GSL]),)
 GSL_LIBS='-lgsl -lgslcblas'
 AC_SUBST([GSL_LIBS])
 LDFLAGS="$LDFLAGS -lgsl -lgslcblas"
@@ -118,7 +118,7 @@ if test "$with_xml" != 'no'; then
     PERSIST_LDFLAGS=$LDFLAGS
     PERSIST_CPPFLAGS=$CPPFLAGS
     xml2_config=''
-    AC_CHECK_PROGS(xml2_config,xml2-config,)dnl
+    AC_CHECK_PROGS(xml2_config,xml2-config,)
     if test -n "$xml2_config"; then
         # Debian installs libxml headers under /usr/include/libxml2/libxml with
         # the shared library installed under /usr/lib, whereas the package
