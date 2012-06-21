@@ -25,7 +25,7 @@ PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
 StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
-libec_la_LDFLAGS = -L/usr/local/lib -lxml2 -lz -lpthread -licucore -lm \
+libec_la_LDFLAGS = -L/usr/local/lib -lxml2 -lz -lpthread -lm \
 -release 1.0.0 -lgsl -lgslcblas -lgfortran -lgomp
 
 # where to install the headers on the system
