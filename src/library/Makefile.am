@@ -4,8 +4,10 @@ LIBDIR=@LIBDIR@
 LIBNAME=@LIBNAME@
 
 myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/library
-mycppflags = $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
-
+mycppflags = $(CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
+AM_CXXFLAGS = $(my_cpp_flags) -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen
+AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
+ 
 # shared library build
 lib_LTLIBRARIES=libec.la
 libec_la_SOURCES=\
@@ -23,7 +25,8 @@ PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
 StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
-libec_la_LDFLAGS = -release 1.0.0
+libec_la_LDFLAGS = -L/usr/local/lib -lxml2 -lz -lpthread -licucore -lm \
+-release 1.0.0 -lgsl -lgslcblas -lgfortran -lgomp
 
 # where to install the headers on the system
 libec_ladir=$(includedir)/ec

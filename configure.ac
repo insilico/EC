@@ -24,76 +24,52 @@ AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
 # Checks for programs.
-AC_PROG_CPP
 AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_CXX
 AC_F77_LIBRARY_LDFLAGS
 AC_PROG_LN_S
-AC_PROG_CXX
 AC_PROG_LIBTOOL
 
 # Use libtool for all builds
 LT_INIT
 
+# add parameter(s)
+AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
+
+# Set variables for basic compile debug/release
+if test "$debug_ec" == 'yes' ; then
+    CXXFLAGS="-O0 -gdwarf-2 -Wall -D__DEBUG__ $CXXFLAGS "
+fi
+
+# Checks for header files.
+AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_SIZE_T
-
-# Checks for header files.
-AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
-# AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
+AC_FUNC_ERROR_AT_LINE
+AC_FUNC_STRTOD
+AC_CHECK_SIZEOF(void *)# AC_CHECK_FUNCS([round pow sqrt floor memset], [], AC_MSG_ERROR([required function missing]))
 
 # makeinfo
 AC_CHECK_PROG([MAKEINFO], [makeinfo], [makeinfo], AC_MSG_ERROR([could not find required program: makeinfo]))
 
 AC_MSG_NOTICE([--------------------------------------------------])
 
-# add parameter(s)
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
-
-# Set variables for basic compile debug/release
-CPPFLAGS=""
-CXXFLAGS=""
-if test "$debug_ec" != 'yes' ; then
-    CPPFLAGS="-O2 -g0 -Wall -DNDEBUG $CPPFLAGS"
-    CXXFLAGS="-O2 -g0 -Wall -DNDEBUG $CXXFLAGS"
-else
-    CPPFLAGS="-O0 -gdwarf-2 -Wall $CPPFLAGS -D__DEBUG__"
-    CXXFLAGS="-O0 -gdwarf-2 -Wall $CXXFLAGS -D__DEBUG__"
-fi
-CXXFLAGS="$CXXFLAGS -D__NOPLUGIN__ -I/usr/local/include"
-CXXFLAGS="$CXXFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
-CPPFLAGS="$CPPFLAGS -D__NOPLUGIN__ -I/usr/local/include"
-CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen"
-
 AC_CHECK_LIB(pthread, pthread_create)
-LDFLAGS="-lpthread $LDFLAGS"
+LDFLAGS="$LDFLAGS -lpthread"
 
-# OpenMP
-CPPFLAGS="$CPPFLAGS -fopenmp"
-CXXFLAGS="$CXXFLAGS -fopenmp"
-LDFLAGS="$LDFLAGS -fopenmp -lgomp"
-
-# check for RandomJungle dependency
-AC_CHECK_LIB([rjungle], [main])
-AC_CHECK_LIB([lr], [mk_lr_options])
-RJ_LIBS="-lrjungle -llr" 
-AC_SUBST([RJ_LIBS])
-LDFLAGS="$LDFLAGS -lrjungle -llr"
+# zlib.m4
+CHECK_ZLIB
 
 # boost.m4
-BOOST_REQUIRE([1.34])
+BOOST_REQUIRE
 BOOST_PROGRAM_OPTIONS
 BOOST_FIND_HEADER(boost/program_options.hpp, AC_MSG_ERROR([could not find required headers of Boost c++. Install boost c++ libraries.]),)
 
 # gsl.m4
 AX_PATH_GSL(1.8,, AC_MSG_ERROR([could not find required version of GSL]),)
-GSL_LIBS='-lgsl -lgslcblas'
-AC_SUBST([GSL_LIBS])
-LDFLAGS="$LDFLAGS -lgsl -lgslcblas"
-
-# zlib.m4
-CHECK_ZLIB()
 
 # libxml2.m4
 AM_PATH_XML2(2.0.0,, AC_MSG_ERROR([could not find required version of XML2]))
@@ -157,6 +133,10 @@ fi
 AM_CONDITIONAL(XML_DELEGATE,test "$have_xml" = 'yes')
 AC_SUBST(XML_LIBS)
 
+# check for RandomJungle dependency
+AC_CHECK_LIB([rjungle], [main])
+AC_CHECK_LIB([lr], [mk_lr_options])
+
 ######################################################################
 # DOXYGEN SUPPORT
 ######################################################################
@@ -173,9 +153,6 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([$PACKAGE_NAME],[doxygen.cfg])
 
 ######################################################################
-
-#LIBS="$LIBS -lm -lgfortran"
-#LIBDIR="$LIBDIR -L/usr/local/lib"
 
 AC_MSG_NOTICE([--------------------------------------------------])
 
