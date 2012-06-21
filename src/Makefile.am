@@ -11,8 +11,8 @@ AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
 AM_FFLAGS = $(my_include_paths) -x f77-cpp-input
 
 my_ld_flags = -lrjungle -llr -lec -lgsl -lgslcblas -lboost_program_options @FLIBS@
-my_ld_paths = $(LDFLAGS) -L$(top_srcdir)/src/$(LIBDIR)
-my_ld_paths += -L/usr/local/lib
+my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR) $(LDFLAGS) 
+# my_ld_paths += -L/usr/local/lib
 
 # make ec and ecm (iMproved!)
 bin_PROGRAMS = ec ecm ec_static
