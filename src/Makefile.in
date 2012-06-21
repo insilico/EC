@@ -53,17 +53,17 @@ PROGRAMS = $(bin_PROGRAMS)
 am_ec_OBJECTS = EvaporativeCoolingCLI.$(OBJEXT)
 ec_OBJECTS = $(am_ec_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-ec_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+ec_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_ec_static_OBJECTS = EvaporativeCoolingCLI.$(OBJEXT)
 ec_static_OBJECTS = $(am_ec_static_OBJECTS)
-ec_static_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
+ec_static_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 ec_static_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(ec_static_LDFLAGS) $(LDFLAGS) -o $@
 am_ecm_OBJECTS = EvaporativeCoolingCLINewAPI.$(OBJEXT)
 ecm_OBJECTS = $(am_ecm_OBJECTS)
-ecm_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
+ecm_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -257,8 +257,8 @@ my_include_paths = -I$(top_srcdir)/src -I$(top_srcdir)/src/library
 AM_CXXFLAGS = $(CXXFLAGS) -I$(my_include_paths) $(BOOST_CPPFLAGS) \
 	-DHAVE__BOOL -D__NOPLUGIN__
 AM_FFLAGS = $(my_include_paths) -x f77-cpp-input
-my_ld_flags = -lrjungle -llr -lec -lgsl -lgslcblas $(BOOST_PROGRAM_OPTIONS_LIBS) @FLIBS@
-my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR) $(LDFLAGS) 
+my_ld_flags = $(LDFLAGS) -lec -lgsl -lgslcblas $(BOOST_PROGRAM_OPTIONS_LIBS) @FLIBS@
+my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR)  
 ec_SOURCES = EvaporativeCoolingCLI.cpp
 
 # libtool libraries

@@ -22059,6 +22059,7 @@ _ACEOF
 
 fi
 
+LDFLAGS="$LDFLAGS -llr -lrjungle"
 
 ######################################################################
 # DOXYGEN SUPPORT

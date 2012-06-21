@@ -136,6 +136,7 @@ AC_SUBST(XML_LIBS)
 # check for RandomJungle dependency
 AC_CHECK_LIB([rjungle], [main])
 AC_CHECK_LIB([lr], [mk_lr_options])
+LDFLAGS="$LDFLAGS -llr -lrjungle"
 
 ######################################################################
 # DOXYGEN SUPPORT
