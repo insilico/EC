@@ -208,6 +208,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	vector<string> tmpSelectedSnpNames;
 	int numExcludedSnps = 0;
 	int numIncludedSnps = 0;
+	int numMissingSnps = 0;
 	while (getline(genotypesStream, line)) {
 		++lineNumber;
 		if(lineNumber % 100000 == 0) {
@@ -275,6 +276,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 			}
 			else {
 				/// missing data detected
+				++numMissingSnps;
 				//cout << "MISSING!" << endl;
 			}
 		}
@@ -287,6 +289,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 	}
 	cout << Timestamp() << lineNumber << endl;
 	genotypesStream.close();
+	cout << Timestamp() << "Read " << numMissingSnps << " missing SNPs from Birdseed file" << endl;
 
 	int numSnps = tmpSelectedSnpNames.size();
 	if((int) snpAlleleCounts.size() != numSnps) {
