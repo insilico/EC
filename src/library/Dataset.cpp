@@ -2819,7 +2819,8 @@ bool Dataset::WriteSnpTiTvInfo(string titvFilename) {
 	return true;
 }
 
-bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFilename) {
+bool Dataset::CalculateDistanceMatrix(double** distanceMatrix,
+		string matrixFilename) {
   cout << Timestamp() << "Calculating distance matrix" << endl;
   map<string, unsigned int> instanceMask = MaskGetInstanceMask();
   vector<string> instanceIds = MaskGetInstanceIds();
@@ -2844,6 +2845,8 @@ bool Dataset::CalculateDistanceMatrix(double** distanceMatrix, string matrixFile
                                                 GetInstance(dsi2Index));
       // cout << i << ", " << j << " => " << distanceMatrix[i][j] << endl;
     }
+    distanceMatrix[i][i] = 0.0;
+
     if(i && (i % 100 == 0)) {
       cout << Timestamp() << i << "/" << numInstances << endl;
     }
@@ -2913,6 +2916,7 @@ bool Dataset::CalculateDistanceMatrix(vector<vector<double> >& distanceMatrix) {
               ComputeInstanceToInstanceDistance(GetInstance(dsi1Index),
                                                 GetInstance(dsi2Index));
     }
+    distanceMatrix[i][i] = 0.0;
   }
 
   return true;
