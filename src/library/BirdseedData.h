@@ -40,6 +40,8 @@ public:
 	int GetNumSNPs();
 	/// Get SNPs for sample at index
 	std::vector<int> GetSubjectGenotypes(int subjectIndex);
+	/// Get SNP call confidences for sample at index
+	std::vector<double> GetSubjectCallConfidences(int subjectIndex);
 	/// Get the phenotype at sample index
 	int GetSamplePhenotype(int subjectIndex);
 	/// Print basic statistics to the console
@@ -77,8 +79,9 @@ private:
 	bool hasIncludedSnps;
 	/// SNP names
 	std::vector<std::string> snpNames;
-	/// SNP genotypes
+	/// SNP genotype calls and their corresponding confidences
 	std::vector<std::vector<int> > snpGenotypes;
+  std::vector<std::vector<double> > confidences;
 	/// SNP genotype->count
 	std::vector<std::map<std::string, unsigned int> > genotypeCounts;
 
@@ -88,7 +91,6 @@ private:
 	std::vector<double> snpMajorAlleleFreq;
   /// SNP allele->count
   std::vector<std::map<char, unsigned int> > snpAlleleCounts;
-
   /// subject name -> attribute indices
   std::map<std::string, std::vector<unsigned int> > missingValues;
 

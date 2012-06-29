@@ -252,6 +252,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		//cout << Timestamp() << "Splitting SNP [" << snpID
 		//		<< "] line into genotypes and allele counts" << endl;
 		vector<string> thisSnpGenotypes;
+		vector<double> thisSnpConfidences;
 		map<char, unsigned int> thisSnpAlleles;
 		map<string, unsigned int> thisSnpGenotypeCounts;
 		char allele1, allele2;
@@ -259,7 +260,9 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		for (unsigned int colIdx = COLUMNS_PER_SUBJECT;
 				colIdx < birdseedLineParts.size();
 				colIdx += COLUMNS_PER_SUBJECT) {
-			string thisStringGenotype = birdseedLineParts[colIdx];
+			string thisStringGenotype = birdseedLineParts[colIdx-1];
+			double thisConfidence = boost::lexical_cast<double>(birdseedLineParts[colIdx-5]);
+			thisSnpConfidences.push_back(thisConfidence);
 			thisSnpGenotypes.push_back(thisStringGenotype);
 			++count;
 			/// skip missing genotypes for allele updates
@@ -282,7 +285,8 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 		}
 		// cout << endl;
 
-		/// save the genotypic/allelic distribution for this SNP
+		/// save the attributes for this SNP
+		confidences.push_back(thisSnpConfidences);
 		snpAlleleCounts.push_back(thisSnpAlleles);
 		genotypeCounts.push_back(thisSnpGenotypeCounts);
 		fileGenotypes.push_back(thisSnpGenotypes);
@@ -495,6 +499,21 @@ vector<int> BirdseedData::GetSubjectGenotypes(int subjectIndex) {
 	vector<int> returnVector;
 	for(int i=0; i < (int) snpNames.size(); ++i) {
 		returnVector.push_back(snpGenotypes[i][subjectIndex]);
+	}
+
+	return returnVector;
+}
+
+vector<double> BirdseedData::GetSubjectCallConfidences(int subjectIndex) {
+	if((subjectIndex < 0) || (subjectIndex >= (int) subjectNames.size())) {
+		cerr << "ERROR: BirdseedData::GetSubjectCallConfidences, index out of range: "
+				<< subjectIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+
+	vector<double> returnVector;
+	for(int i=0; i < (int) snpNames.size(); ++i) {
+		returnVector.push_back(confidences[i][subjectIndex]);
 	}
 
 	return returnVector;
