@@ -74,6 +74,7 @@ private:
 
   /// RandomJungle parameters object
   RJunglePar rjParams;
+  bool fixedMtry;
   /// RandomJungle calling style
   RandomJungleRunMode runMode;
   /// pointer to a Dataset object

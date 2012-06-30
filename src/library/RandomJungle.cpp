@@ -165,9 +165,11 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 	// added new RJ params 5/24/12 per Scott Dudek request/experience
 	if (vm.count("rj-mtry")) {
 		rjParams.mtry = vm["rj-mtry"].as<uli_t>();
+		fixedMtry = true;
 	}
 	else {
 		rjParams.mtry = (uli_t) sqrt((double) ds->NumVariables());
+		fixedMtry = false;
 	}
 	if (vm.count("rj-impmeasure")) {
 		rjParams.impMeasure = vm["rj-impmeasure"].as<unsigned int>();
@@ -239,9 +241,11 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	// added new RJ params 5/24/12 per Scott Dudek request/experience
 	if (GetConfigValue(configMap, "rj-mtry", configValue)) {
 		rjParams.mtry = lexical_cast<uli_t>(configValue);
+		fixedMtry = true;
 	}
 	else {
 		rjParams.mtry = (uli_t) sqrt((double) ds->NumVariables());
+		fixedMtry = false;
 	}
 	if (GetConfigValue(configMap, "rj-nimpvar", configValue)) {
 		rjParams.numOfImpVar = lexical_cast<uli_t>(configValue);
@@ -304,6 +308,9 @@ bool RandomJungle::ComputeAttributeScores() {
 
 	time(&start);
 
+	if(!fixedMtry) {
+		rjParams.mtry = (uli_t) sqrt((double) dataset->NumVariables());
+	}
 	rjParams.ncol = dataset->NumVariables() + 1;
 	rjParams.depVar = rjParams.ncol - 1;
 	rjParams.depVarCol = rjParams.ncol - 1;
