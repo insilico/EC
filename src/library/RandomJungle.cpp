@@ -166,7 +166,7 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 		rjParams.mtry = vm["rj-mtry"].as<uli_t>();
 	}
 	else {
-		rjParams.mtry = sqrt((double) ds->NumVariables());
+		rjParams.mtry = (uli_t) sqrt((double) ds->NumVariables());
 	}
 	if (vm.count("rj-impmeasure")) {
 		rjParams.impMeasure = vm["rj-impmeasure"].as<unsigned int>();
@@ -240,7 +240,7 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 		rjParams.mtry = lexical_cast<uli_t>(configValue);
 	}
 	else {
-		rjParams.mtry = sqrt((double) ds->NumVariables());
+		rjParams.mtry = (uli_t) sqrt((double) ds->NumVariables());
 	}
 	if (GetConfigValue(configMap, "rj-nimpvar", configValue)) {
 		rjParams.numOfImpVar = lexical_cast<uli_t>(configValue);
