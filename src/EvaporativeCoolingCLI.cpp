@@ -191,7 +191,7 @@ int main(int argc, char** argv) {
 		)
 		(
 		"rj-mtry",
-		po::value<uli_t > (&rjMtry)->default_value(rjMtry),
+		po::value<uli_t > (&rjMtry),
 		"Random Jungle size of randomly chosen variable sets, DEFAULT: sqrt(ncol)"
 		)
 		(

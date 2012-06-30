@@ -13,6 +13,7 @@
 #endif
 
 #include <string.h>
+#include <math.h>
 
 #include <omp.h>
 
