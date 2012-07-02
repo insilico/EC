@@ -13,6 +13,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* Define to 1 if you have the `gomp' library (-lgomp). */
+#define HAVE_LIBGOMP 1
+
 /* Define to 1 if you have the `lr' library (-llr). */
 #define HAVE_LIBLR 1
 
