@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 	string gainMatrixFilename = "";
 	string titvFilename = "";
 	// Random Jungle
-	uli_t rjNumTrees = 1000;
+	uli_t rjNumTrees = 500;
 	uli_t rjTreeType = NOMINAL_NUMERIC_TREE;
 	uli_t rjMemoryMode = 0;
 	uli_t rjRunMode = LIBRARY_RUN_MODE;
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 	uli_t rjMtry;
   unsigned int rjImpMeasure = 1;
   unsigned int rjBackSel = 0;
-  uli_t rjNumOfImpVar = 1;
+  uli_t rjNumOfImpVar = 100;
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
@@ -828,10 +828,10 @@ int main(int argc, char** argv) {
 		cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
 		vector<string> tempFilenames;
 		//tempFilenames.push_back(outputFilesPrefix + ".log");
-		tempFilenames.push_back(outputFilesPrefix + ".verbose");
-		tempFilenames.push_back(outputFilesPrefix + ".importance");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion2");
+//		tempFilenames.push_back(outputFilesPrefix + ".verbose");
+//		tempFilenames.push_back(outputFilesPrefix + ".importance");
+//		tempFilenames.push_back(outputFilesPrefix + ".confusion");
+//		tempFilenames.push_back(outputFilesPrefix + ".confusion2");
 		for(vector<string>::const_iterator it=tempFilenames.begin();
 				it != tempFilenames.end(); ++it) {
 			unlink((*it).c_str());

@@ -12,6 +12,9 @@
 #include "config.h"
 #endif
 
+#include <iostream>
+#include <iomanip>
+
 #include <string.h>
 #include <math.h>
 
@@ -262,9 +265,8 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 	gsl_rng_set(rjParams.rng, rjParams.seed);
 
 	rjParams.nrow = dataset->NumInstances();
-	rjParams.depVarName = (char *) "Class";
-	//  rjParams.verbose_flag = true;
-	rjParams.filename = (char*) "";
+	strcpy(rjParams.depVarName, "Class");
+	strcpy(rjParams.filename, "");
 
 	rjParams.mpiId = 0;
 
@@ -308,38 +310,43 @@ bool RandomJungle::ComputeAttributeScores() {
 
 	time(&start);
 
+	/// set the default mtry
 	if(!fixedMtry) {
 		rjParams.mtry = (uli_t) sqrt((double) dataset->NumVariables());
 	}
+
+	// this needs to be done for every iteration of Random Jungle
+	// so cannot be set once in the constructor
 	rjParams.ncol = dataset->NumVariables() + 1;
 	rjParams.depVar = rjParams.ncol - 1;
-	rjParams.depVarCol = rjParams.ncol - 1;
+
 	string outPrefix(rjParams.outprefix);
 	string importanceFilename = outPrefix + ".importance";
 	string confusionFilename = outPrefix + ".confusion";
 
 	RJungleIO io;
 	io.open(rjParams);
+
 	unsigned int numInstances = dataset->NumInstances();
 	vector<string> variableNames = dataset->GetVariableNames();
 	variableNames.push_back(rjParams.depVarName);
 	vector<string> instanceIds = dataset->GetInstanceIds();
-
-//  cout << "Variables names from the data set:" << endl;
-//  copy(variableNames.begin(), variableNames.end(), ostream_iterator<string>(cout, "\n"));
-
+	//cout << "Variables names from the data set:" << endl;
+	//copy(variableNames.begin(), variableNames.end(), ostream_iterator<string>(cout, "\n"));
 	vector<string> attributeNames = dataset->GetAttributeNames();
 	vector<string> numericNames = dataset->GetNumericsNames();
+
 	if ((rjParams.treeType == 1) || (rjParams.treeType == 3)
 			|| (rjParams.treeType == 4) || (rjParams.treeType == 5)) {
 		// regression
-		cout << Timestamp() << "Preparing regression trees Random Jungle" << endl;
+		cout << Timestamp() << "Preparing Random Jungle type "
+				<< rjParams.treeType << endl;
 		DataFrame<NumericLevel>* data = new DataFrame<NumericLevel>(rjParams);
-		data->setDim(rjParams.nrow, rjParams.ncol);
-		data->setVarNames(variableNames);
-		data->setDepVarName(rjParams.depVarName);
-		data->setDepVar(rjParams.depVarCol);
+		RJungleGen<NumericLevel> rjGen;
+
 		data->initMatrix();
+		data->setVarNames(variableNames);
+
 		// load data frame
 		// TODO: do not load data frame every time-- use column mask mechanism?
 		cout << Timestamp() << "Loading RJ DataFrame with double values: " << endl
@@ -349,28 +356,33 @@ bool RandomJungle::ComputeAttributeScores() {
 			unsigned int instanceIndex;
 			dataset->GetInstanceIndexForID(instanceIds[i], instanceIndex);
 			unsigned int j = 0;
-			for (unsigned int a = 0; a < attributeNames.size(); ++a) {
-//        cout << "Loading instance " << i << ", attribute: " << a
-//                << " " << attributeNames[a] << endl;
-				data->set(
-						i,
-						j,
-						static_cast<NumericLevel>(dataset->GetAttribute(instanceIndex,
-								attributeNames[a])));
+			vector<unsigned int> attrIndices =
+					dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
+			for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
+				AttributeLevel A =
+						dataset->GetInstance(instanceIndex)->GetAttribute(attrIndices[aIdx]);
+				data->set(i, j, static_cast<double>(A));
 				++j;
 			}
-			for (unsigned int n = 0; n < numericNames.size(); ++n) {
-				data->set(i, j, dataset->GetNumeric(i, numericNames[n]));
+			vector<unsigned int> numIndices =
+					dataset->MaskGetAttributeIndices(NUMERIC_TYPE);
+			for (unsigned int nIdx = 0; nIdx < numIndices.size(); nIdx++) {
+				NumericLevel N =
+						dataset->GetInstance(instanceIndex)->GetNumeric(numIndices[nIdx]);
+				data->set(i, j, N);
 				++j;
 			}
 			if (dataset->HasContinuousPhenotypes()) {
 				data->set(i, j,
 						dataset->GetInstance(instanceIndex)->GetPredictedValueTau());
 			} else {
-				data->set(
-						i,
-						j,
-						static_cast<NumericLevel>(dataset->GetInstance(instanceIndex)->GetClass()));
+				NumericLevel pheno = static_cast<NumericLevel>(dataset->GetInstance(instanceIndex)->GetClass());
+//				cout << "Phenotype for instance " << i
+//						<< ", ID " << instanceIds[i]
+//						<< ", instanceIndex " << instanceIndex
+//						<< ", class index " << j
+//						<< ", class " << pheno << endl;
+				data->set(i, j, pheno);
 			}
 			// happy lights
 			if (i && ((i % 100) == 0)) {
@@ -383,14 +395,16 @@ bool RandomJungle::ComputeAttributeScores() {
 			}
 		}
 		cout << numInstances << "/" << numInstances << endl;
+
+		data->setDepVarName(string(rjParams.depVarName));
 		data->storeCategories();
 		data->makeDepVecs();
 		data->getMissings();
-//   cout << "DEBUG data frame:" << endl;
-//    data->print(cout);
-//    data->printSummary();
 
-		RJungleGen<NumericLevel> rjGen;
+//		cout << "DEBUG data frame:" << endl;
+//		data->print(cout);
+//		data->printSummary();
+
 		rjGen.init(rjParams, *data);
 
 		RJungleHelper<NumericLevel>::printRJunglePar(rjParams, *io.outLog);
@@ -412,6 +426,7 @@ bool RandomJungle::ComputeAttributeScores() {
 	} else {
 		cout << Timestamp() << "Preparing SNP classification trees Random Jungle"
 				<< endl;
+		rjParams.memMode = 2;
 		DataFrame<char>* data = new DataFrame<char>(rjParams);
 		data->setDim(rjParams.nrow, rjParams.ncol);
 		data->setVarNames(variableNames);
@@ -488,6 +503,8 @@ bool RandomJungle::ComputeAttributeScores() {
 		cout << Timestamp() << "Running Random Jungle" << endl;
 		rjCtrl.autoBuildInternal(rjParams, io, rjGen, *data, colMaskVec);
 		classificationAccuracy = rjCtrl.getOobPredAcc();
+		cout << "DEBUG classification accuracy: " << classificationAccuracy
+				<< endl;
 		endgrow = clock();
 
 		time(&end);
@@ -516,7 +533,7 @@ bool RandomJungle::ComputeAttributeScores() {
 
 	/// rj classification error
 	// from confusion file - 4/11/12
-	// added the new getOob
+	// added the new getOob - 7/1/12
 	cout << Timestamp() << "RJ classification accuracy: "
 			<< classificationAccuracy << endl;
 
@@ -633,8 +650,9 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 		}
 		string val = tokens[2];
 		string keyVal = tokens[3];
-		double key = strtod(keyVal.c_str(), NULL);
-		// cout << "Storing RJ: " << key << " => " << val << endl;
+		double key = boost::lexical_cast<double>(keyVal.c_str());
+		// cout << setprecision(3);
+		// cout << "Storing RJ: " << key << " => " << val << " form " << keyVal << endl;
 		scores.push_back(make_pair(key, val));
 		if (lineNumber == 1) {
 			minRJScore = key;
@@ -650,8 +668,10 @@ bool RandomJungle::ReadScores(string importanceFilename) {
 		}
 	}
 	importanceStream.close();
+	cout << setprecision(3);
 	cout << Timestamp() << "Read [" << scores.size() << "] scores from ["
-			<< importanceFilename << "]" << endl;
+			<< importanceFilename << "], min [" << minRJScore << "], max ["
+			<< maxRJScore << "]" << endl;
 	// normalize scores
 	bool needsNormalization = true;
 	if (minRJScore == maxRJScore) {

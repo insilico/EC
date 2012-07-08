@@ -310,7 +310,7 @@ bool EvaporativeCooling::ComputeECScores() {
 				<< ", target attributes: " << numTargetAttributes
 				<< ", temperature: " << optimalTemperature << endl;
 		cout << Timestamp()
-				<< "transitions: " << titvCounts.first
+				<< "Ti/Tv: transitions: " << titvCounts.first
 				<< " transversions: " << titvCounts.second
 				<< " ratio: " << titvRatio
 				<< endl;
