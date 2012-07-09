@@ -17,7 +17,7 @@
 #define HAVE_LIBGOMP 1
 
 /* Define to 1 if you have the `lr' library (-llr). */
-#define HAVE_LIBLR 1
+/* #undef HAVE_LIBLR */
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
@@ -82,6 +82,9 @@
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "http://insilico.utulsa.edu/evaporative-cooling"
+
+/* Define to the home page for this package. */
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"

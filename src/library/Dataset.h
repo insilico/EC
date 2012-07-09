@@ -181,6 +181,11 @@ public:
    ****************************************************************************/
   std::vector<std::string> GetAttributeNames();
   /*************************************************************************//**
+   * Return the discrete (SNP) attribute names as read from file originally.
+   * \return vector of attribute names
+   ****************************************************************************/
+  std::vector<std::string> GetFileAttributeNames();
+  /*************************************************************************//**
    * Loads the referenced vector with an attribute's values (column).
    * from the dataset
    * \param [in] attributeIndex attribute index
@@ -266,6 +271,11 @@ public:
    * \return vector of attribute names
    ****************************************************************************/
   std::vector<std::string> GetNumericsNames();
+  /*************************************************************************//**
+   * Return the numeric attribute names as originally read from file.
+   * \return vector of attribute names
+   ****************************************************************************/
+  std::vector<std::string> GetFileNumericsNames();
   /*************************************************************************//**
    * Get the minimum and maximum values for a numeric at index.
    * \param [in] numericIdx numeric index

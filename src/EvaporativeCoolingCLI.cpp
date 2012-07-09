@@ -18,6 +18,7 @@
 #include <map>
 #include <sstream>
 #include <vector>
+#include <ctime>
 
 #include <unistd.h>
 #include <time.h>
@@ -68,9 +69,11 @@ int main(int argc, char** argv) {
 	uli_t rjRunMode = LIBRARY_RUN_MODE;
 	// added new RJ params 5/24/12 per Scott Dudek request/experience
 	uli_t rjMtry;
-  unsigned int rjImpMeasure = 1;
-  unsigned int rjBackSel = 0;
-  uli_t rjNumOfImpVar = 100;
+	unsigned int rjImpMeasure = 1;
+	unsigned int rjBackSel = 0;
+	uli_t rjNumOfImpVar = 100;
+	// added user-specified random number generator seed - 7/8/12
+	unsigned int rjRngSeed = 1;
 	// ReliefF
 	unsigned int k = 10;
 	unsigned int m = 0;
@@ -218,6 +221,11 @@ int main(int argc, char** argv) {
 		"rj-memory-mode,M",
 		po::value<unsigned int> (&rjMemoryMode)->default_value(rjMemoryMode),
 		"Random Jungle memory mode: 0 (default=double) / 1 (float) / 2 (char)"
+		)
+		(
+		"rj-rng-seed",
+		po::value<unsigned int> (&rjRngSeed)->default_value(rjRngSeed),
+		"Seed for the random number generator."
 		)
 		(
 		"snp-exclusion-file,x",
