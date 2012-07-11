@@ -490,6 +490,8 @@ bool RandomJungle::ComputeAttributeScoresFileIO() {
 	  throw Exception(ERRORCODE_39);
 	}
 
+	unlink(tempFile.c_str());
+
 	// clean up
 	if (colMaskVec != NULL) {
 		delete colMaskVec;
