@@ -173,8 +173,9 @@ enum RandomJungleTreeType
 enum RandomJungleRunMode
 {
 	UNKNOWN_RUN_MODE, /**< unknown run mode */
-	LIBRARY_RUN_MODE, /**< call Random Jungle through C++ library calls */
-	SYSTEM_CALL_RUN_MODE /**< call Random Jungle through C system() call */
+	LIBRARY_RUN_MODE, /**< Random Jungle through C++ library calls */
+	SYSTEM_CALL_RUN_MODE, /**< call Random Jungle through C system() call */
+	LIBRARY_FILE_RUN_MODE /**< C+ library calls with file I/O */
 };
 
 static std::map<std::string, std::string> datasetTypeToExt;

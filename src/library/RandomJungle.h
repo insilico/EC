@@ -56,6 +56,8 @@ public:
   bool ComputeAttributeScores();
   /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScoresRjungle();
+  /// Score attributes by getting Random Jungle importance scores
+  bool ComputeAttributeScoresFileIO();
   /*************************************************************************//**
    * Get the (importance) scores as a vector of pairs: score, attribute name
    * \return vector of pairs

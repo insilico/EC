@@ -185,7 +185,9 @@ int main(int argc, char** argv) {
 		(
 		"rj-run-mode,R",
 		po::value<unsigned int> (&rjRunMode)->default_value(rjRunMode),
-		"Random Jungle run mode: 1 (default=library call) / 2 (system call)"
+		"Random Jungle run mode: 1 (default=library call with meory I/O) "
+		"/ 2 (system call)"
+		"/ 3 (library call with file I/O)"
 		)
 		(
 		"rj-num-trees,j",
@@ -641,7 +643,10 @@ int main(int argc, char** argv) {
 				<< " SNPs remain after processing exclusion file" << endl;
 	}
 
-	if(!ds->SetDistanceMetrics(snpMetricNN, numMetric)) {
+	if(vm.count("snp-metric-nn")) {
+		snpMetric = snpMetricNN;
+	}
+	if(!ds->SetDistanceMetrics(snpMetric, numMetric)) {
 		cerr << "Could not set distance metrics for the data set, "
 				<< "SNP nearest neighbors: " << snpMetricNN
 				<< ", SNP ReliefF weight updates: " << snpMetricWeights

@@ -93,41 +93,18 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 	}
 	string line;
 	/// strip the header line(s), read the error, cast to double
-	if ((treeType == NUMERIC_NUMERIC_TREE) || (treeType == NUMERIC_NOMINAL_TREE)
-			|| (treeType == NOMINAL_NUMERIC_TREE)
-			|| (treeType == NOMINAL_NUMERIC_FLOATS)) {
-		for (unsigned int i = 0; i < 8; ++i) {
-			getline(confusionStream, line);
-		}
-		vector<string> tokens;
-		split(tokens, line, " ");
-		if (tokens.size() != 3) {
-			cout << Timestamp()
-					<< "WARNING: RandomJungle::GetClassificationError: "
-					<< "error parsing " << confusionFilename << "." << endl;
-			cout << Timestamp() << "WARNING: Read " << tokens.size()
-					<< " columns from line 8, should be 3" << endl;
-			cout << Timestamp() << "WARNING: Attempting to read alternate "
-					<< "confusion file column" << endl;
-		}
-		if (tokens.size() == 3) {
-			classifierError = lexical_cast<double>(trim(tokens[2]));
-		} else {
-			classifierError = lexical_cast<double>(trim(tokens[0]));
-		}
-	} else {
-		getline(confusionStream, line);
-		vector<string> tokens;
-		split(tokens, line, ",");
-		if (tokens.size() != 5) {
-			cerr << "ERROR: RandomJungle::GetClassificationError: "
-					<< "error parsing " << confusionFilename << "." << endl;
-			cerr << "Read " << tokens.size()
-					<< " columns from line 2, should be 5" << endl;
-			return false;
-		}
-		classifierError = lexical_cast<double>(trim(tokens[4]));
+	getline(confusionStream, line);
+	getline(confusionStream, line);
+	vector<string> tokens;
+	split(tokens, line, "\t");
+	if (tokens.size() != 5) {
+		cerr << "ERROR: RandomJungle::GetClassificationError: "
+				<< "error parsing " << confusionFilename << "." << endl;
+		cerr << "Read " << tokens.size()
+				<< " columns from line 2, should be 5" << endl;
+		return false;
 	}
+	classifierError = lexical_cast<double>(trim(tokens[4]));
 	confusionStream.close();
 
 	cout << Timestamp() << "Read classification error from "
@@ -303,6 +280,10 @@ bool RandomJungle::ComputeAttributeScores() {
 		return ComputeAttributeScoresRjungle();
 	}
 
+	if (runMode == LIBRARY_FILE_RUN_MODE) {
+		return ComputeAttributeScoresFileIO();
+	}
+
 	cout << Timestamp() << "Running Random Jungle using C++ librjungle calls"
 			<< endl;
 
@@ -455,6 +436,77 @@ bool RandomJungle::ComputeAttributeScores() {
 	/// rj classification error
 	// from confusion file - 4/11/12
 	// added the new getOob - 7/1/12
+	cout << Timestamp() << "RJ classification accuracy: "
+			<< classificationAccuracy << endl;
+
+	return true;
+}
+
+bool RandomJungle::ComputeAttributeScoresFileIO() {
+	cout << Timestamp() << "Running rjungle through C++ library with file I/O"
+			<< endl;
+	vector<uli_t>* colMaskVec = NULL;
+
+	string outPrefix(rjParams.outprefix);
+	string importanceFilename = outPrefix + ".importance";
+	string confusionFilename;
+	if (dataset->HasContinuousPhenotypes()) {
+		cerr << "File I/O run mode does not support continuous phenotypes yet."
+				<< endl;
+		return false;
+		// confusionFilename = outPrefix + ".confusion";
+	} else {
+		confusionFilename = outPrefix + ".confusion2";
+	}
+
+	/// save the current data set to a temporary file for rjungle
+	string tempFile = outPrefix + "_tmp.csv";
+	cout << Timestamp() << "Writing temporary file for RJ: "
+			<< tempFile	<< endl;
+	dataset->WriteNewDataset(tempFile, TAB_DELIMITED_DATASET);
+
+	// this needs to be done for every iteration of Random Jungle
+	// so cannot be set once in the constructor
+	rjParams.ncol = dataset->NumVariables() + 1;
+	rjParams.depVar = rjParams.ncol - 1;
+	rjParams.filename  = strdup(tempFile.c_str());
+	/// set the default mtry
+	if (!fixedMtry) {
+		rjParams.mtry = (uli_t) sqrt((double) dataset->NumVariables());
+	}
+
+	// create controller
+	switch (rjParams.memMode) {
+	case 0:
+	  RJungleCtrl<double>::autoBuild(rjParams);
+	  break;
+	case 1:
+	  RJungleCtrl<float>::autoBuild(rjParams);
+	  break;
+	case 2:
+	  RJungleCtrl<char>::autoBuild(rjParams);
+	  break;
+	default:
+	  throw Exception(ERRORCODE_39);
+	}
+
+	// clean up
+	if (colMaskVec != NULL) {
+		delete colMaskVec;
+	}
+
+	/// loads rjScores map
+	cout << Timestamp() << "Loading RJ variable importance (VI) scores "
+			<< "from [" << importanceFilename << "]" << endl;
+	if (!ReadScores(importanceFilename)) {
+		cerr << "ERROR: Could not read Random Jungle scores" << endl;
+		return false;
+	}
+
+	/// rj classification error
+	// from confusion file - 4/11/12
+	// added the new getOob - 7/1/12
+	classificationAccuracy = ReadClassificationError(confusionFilename);
 	cout << Timestamp() << "RJ classification accuracy: "
 			<< classificationAccuracy << endl;
 

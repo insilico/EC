@@ -2771,16 +2771,16 @@ bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
 				<< newSnpMetric << "]" << endl;
 		return false;
 	}
-	snpMetric = to_upper(newSnpMetric);
+	snpMetric = newSnpMetric;
 
-	if (to_upper(numMetric) == "MANHATTAN") {
+	if (to_upper(newNumMetric) == "MANHATTAN") {
 		numDiff = diffManhattan;
 	} else {
-		cerr << "ERROR: [" << numMetric
+		cerr << "ERROR: [" << newNumMetric
 				<< "] is not a valid numeric metric type" << endl;
 		return false;
 	}
-	numMetric = to_upper(newNumMetric);
+	numMetric = newNumMetric;
 
 	cout << Timestamp() << "New SNP distance metric for nearest neighbors: "
 			<< snpMetric << endl;

@@ -165,6 +165,7 @@ double diffNCA(unsigned int attributeIndex,
                DatasetInstance* dsi1,
                DatasetInstance* dsi2) {
   double distance = 0.0;
+  // TODO: need special missing value checks for NCA metrics
   pair<bool, double> checkMissing = CheckMissing(attributeIndex, dsi1, dsi2);
   if(checkMissing.first) {
     distance = checkMissing.second;
@@ -206,6 +207,7 @@ double diffNCA6(unsigned int attributeIndex,
                 DatasetInstance* dsi1,
                 DatasetInstance* dsi2) {
   double distance = 0.0;
+  // TODO: need special missing value checks for NCA metrics
   pair<bool, double> checkMissing = CheckMissing(attributeIndex, dsi1, dsi2);
   if(checkMissing.first) {
     distance = checkMissing.second;
@@ -226,12 +228,14 @@ double diffNCA6(unsigned int attributeIndex,
   	string genotype2 = genotypeMap[attrLevel2];
   	map<char, unsigned int> nca1;
   	nca1['A'] = 0; nca1['T'] = 0; nca1['C'] = 0; nca1['G'] = 0;
+  	nca1['X'] = 0; nca1['Y'] = 0;
   	++nca1[genotype1[0]];
   	++nca1[genotype1[1]];
   	nca1['X'] = nca1['A'] + nca1['G'];
   	nca1['Y'] = nca1['C'] + nca1['T'];
   	map<char, unsigned int> nca2;
   	nca2['A'] = 0; nca2['T'] = 0; nca2['C'] = 0; nca2['G'] = 0;
+  	nca2['X'] = 0; nca2['Y'] = 0;
   	++nca2[genotype2[0]];
   	++nca2[genotype2[1]];
   	nca2['X'] = nca2['A'] + nca2['G'];
