@@ -12,17 +12,17 @@ AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
 lib_LTLIBRARIES=libec.la
 libec_la_SOURCES=\
 Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
-PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp DistanceMetrics.cpp \
-Statistics.cpp ChiSquared.cpp Insilico.cpp \
-ReliefF.cpp RReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
+PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp \
+DistanceMetrics.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
+ReliefF.cpp RReliefF.cpp SNReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
 
 # the list of header files that belong to the library
 libec_la_HEADERS= \
-ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h \
-DistanceMetrics.h EvaporativeCooling.h \
-GSLRandomBase.h GSLRandomFlat.h Insilico.h PlinkBinaryDataset.h PlinkDataset.h \
-PlinkRawDataset.h RReliefF.h RandomJungle.h ReliefF.h DgeData.h Statistics.h \
-StringUtils.h BestN.h BirdseedData.h
+ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h DistanceMetrics.h \
+EvaporativeCooling.h GSLRandomBase.h GSLRandomFlat.h Insilico.h \
+PlinkBinaryDataset.h PlinkDataset.h PlinkRawDataset.h RReliefF.h SNReliefF.h \
+RandomJungle.h ReliefF.h DgeData.h Statistics.h StringUtils.h BestN.h \
+BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
 libec_la_LDFLAGS = $(LDFLAGS) -L/usr/local/lib -lxml2 -lz -lpthread -lm \

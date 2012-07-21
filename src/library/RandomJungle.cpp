@@ -531,7 +531,7 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 	string tempFile = outPrefix + "_tmp.csv";
 	cout << Timestamp() << "Writing temporary file for RJ: " << tempFile
 			<< endl;
-	dataset->WriteNewDataset(tempFile, CSV_DELIMITED_DATASET);
+	dataset->WriteNewDataset(tempFile, TAB_DELIMITED_DATASET);
 
 	// base classifier: classification or regression trees?
 	pair<RandomJungleTreeType, string> treeTypeResult;
@@ -544,7 +544,7 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
-	rjCmd << "rjungle" << " -f " << tempFile << " -e ','" << " -D 'Class'"
+	rjCmd << "rjungle" << " -f " << tempFile << " -e '\t'" << " -D 'Class'"
 			<< " -o " << outPrefix << " -U " << rjParams.nthreads << " -t "
 			<< rjParams.ntree << " -y " << rjParams.treeType << " -m "
 			<< rjParams.mtry << " -B " << rjParams.backSel << " -i "
