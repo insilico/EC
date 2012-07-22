@@ -160,7 +160,7 @@ private:
   std::vector<std::string> bestNeighborIds;
   /// nearest neighbor weighting factors
   std::vector<double> neighborInfluenceFactorDs;
-  /// countinuous value for this class
+  /// continuous value for this class
   double predictedValueTau;
 };
 

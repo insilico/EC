@@ -29,6 +29,7 @@
 #include "RandomJungle.h"
 #include "ReliefF.h"
 #include "RReliefF.h"
+#include "SNReliefF.h"
 #include "Insilico.h"
 
 using namespace std;
@@ -143,12 +144,19 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	// create and initialize Relief-F
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
 		cout << Timestamp() << "Initializing Relief-F" << endl;
-		if (dataset->HasContinuousPhenotypes()) {
-			cout << Timestamp() << "RRelief-F" << endl;
-			reliefF = new RReliefF(dataset, paramsMap);
-		} else {
-			cout << Timestamp() << "Relief-F" << endl;
-			reliefF = new ReliefF(dataset, paramsMap, analysisType);
+		// check for special ReliefF-Seq requested analysis
+		if(paramsMap.count("relieff-seq")) {
+			cout << Timestamp() << "ReliefF-Seq" << endl;
+			reliefF = new SNReliefF(dataset, paramsMap);
+		}
+		else {
+			if (dataset->HasContinuousPhenotypes()) {
+				cout << Timestamp() << "RRelief-F" << endl;
+				reliefF = new RReliefF(dataset, paramsMap);
+			} else {
+				cout << Timestamp() << "Relief-F" << endl;
+				reliefF = new ReliefF(dataset, paramsMap, analysisType);
+			}
 		}
 	}
 
@@ -256,12 +264,17 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	// create and initialize Relief-F
 	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
 		cout << Timestamp() << "Initializing Relief-F" << endl;
-		if (dataset->HasContinuousPhenotypes()) {
-			cout << Timestamp() << "RRelief-F" << endl;
-			reliefF = new RReliefF(dataset, configMap);
-		} else {
-			cout << Timestamp() << "Relief-F" << endl;
-			reliefF = new ReliefF(dataset, configMap, analysisType);
+		if(GetConfigValue(configMap, "relieff-seq", configValue)) {
+			cout << Timestamp() << "ReliefF-Seq" << endl;
+		}
+		else {
+			if (dataset->HasContinuousPhenotypes()) {
+				cout << Timestamp() << "RRelief-F" << endl;
+				reliefF = new RReliefF(dataset, configMap);
+			} else {
+				cout << Timestamp() << "Relief-F" << endl;
+				reliefF = new ReliefF(dataset, configMap, analysisType);
+			}
 		}
 	}
 

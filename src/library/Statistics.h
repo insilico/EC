@@ -110,11 +110,11 @@ double KendallTau(std::vector<int> X, std::vector<int> Y);
 /***************************************************************************//**
  * Calculate variance and standard deviation of a vector of values.
  * \param [in]  ranked attribute lists X and Y
- * \return Kendall Tau value (-1, 1)
+ * \return pair: variance and standard deviation
  ******************************************************************************/
 template<class T>
-std::pair<double, double> VarStd(std::vector<T>& values) {
-  double average = (double) std::accumulate(values.begin(), values.end(), 0) /
+std::pair<double, double> VarStd(std::vector<T>& values, double& average) {
+  average = (double) std::accumulate(values.begin(), values.end(), 0) /
           values.size();
 
   // calculate and return variance

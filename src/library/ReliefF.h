@@ -77,7 +77,7 @@ public:
   void WriteAttributeScores(std::string baseFilename);
   /// Precompute all pairwise instance-to-instance distances.
   bool PreComputeDistances();
-  /// Precompute all pairwise distances homoring excluded instances.
+  /// Precompute all pairwise distances honoring excluded instances.
   bool PreComputeDistancesByMap();
   /// Get the last computed ReliefF scores.
   std::vector<std::pair<double, std::string> > GetScores();

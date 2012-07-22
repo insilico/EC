@@ -101,6 +101,7 @@ int main(int argc, char** argv) {
 		("verbose", "verbose output")
 		("convert", "convert data set to data set - no ec")
 		("optimize-temp,T", "optimize coupling constant T")
+		("relieff-seq,Q", "Use ReliefF-Seq algorithm on the DGE data")
 		(
 		"config-file,c",
 		po::value<string > (&configFilename),
@@ -274,6 +275,7 @@ int main(int argc, char** argv) {
 		po::value<string > (&dgeNormsFilename),
 		"read digital gene expression normalization factors from text file"
 		)
+		("relieff-seq,Q", "Use ReliefF-Seq algorithm on the DGE data")
 		(
 		"birdseed-snps-data",
 		po::value<string > (&birdseedFilename),
@@ -743,8 +745,7 @@ int main(int argc, char** argv) {
 		return 0;
 	}
 
-	// ---------------------------------------------------------------------------
-	// FINALLY! run EC algorithm
+	// do any data transformations before the analysis
 	cout << Timestamp() << "Running EC" << endl;
 	if(ds->HasNumerics() && numericTransform != "") {
 		cout << Timestamp() << "Performing numeric transformation: "
@@ -770,6 +771,10 @@ int main(int argc, char** argv) {
 //		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
 //		exit(0);
 	}
+
+	// ---------------------------------------------------------------------------
+	// FINALLY! run EC algorithm
+	cout << Timestamp() << "Running EC" << endl;
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;

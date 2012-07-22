@@ -24,12 +24,25 @@
 #define	SNRELIEFF_H
 
 #include <vector>
+#include <map>
+#include <string>
 #include <fstream>
 
 #include "ReliefF.h"
 #include "Dataset.h"
+#include "DatasetInstance.h"
 #include "Insilico.h"
 #include <boost/program_options.hpp>
+
+/// a pair of vectors for hit and miss statistics for each instance
+typedef std::vector<std::pair<double, double> > InstanceAttributeStats;
+typedef std::pair<InstanceAttributeStats, InstanceAttributeStats>
+	InstanceHitMissStats;
+
+/// a map from instance ID to neighbor statistics
+typedef std::vector<InstanceHitMissStats> NeighborStats;
+typedef std::vector<InstanceHitMissStats>::iterator NeighborStatsIt;
+typedef std::vector<InstanceHitMissStats>::const_iterator NeighborStatsCIt;
 
 namespace po = boost::program_options;
 
@@ -54,8 +67,16 @@ public:
    ****************************************************************************/
   SNReliefF(Dataset* ds, ConfigMap& configMap);
   bool ComputeAttributeScores();
+  /// Precompute nearest neighbor gene statistics for all instances.
+  bool PreComputeNeighborGeneStats();
   virtual ~SNReliefF();
-private:  
+private:
+  bool ComputeInstanceStats(DatasetInstance* dsi,
+  		std::vector<unsigned int> hitIndicies,
+  		std::vector<unsigned int> missIndicies,
+  		InstanceHitMissStats& hitMissStats);
+  /// nearest neighbor attribute averages and standard deviations
+  NeighborStats neighborStats;
 };
 
 #endif	/* SNReliefF_H */
