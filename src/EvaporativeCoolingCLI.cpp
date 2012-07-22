@@ -101,7 +101,6 @@ int main(int argc, char** argv) {
 		("verbose", "verbose output")
 		("convert", "convert data set to data set - no ec")
 		("optimize-temp,T", "optimize coupling constant T")
-		("relieff-seq,Q", "Use ReliefF-Seq algorithm on the DGE data")
 		(
 		"config-file,c",
 		po::value<string > (&configFilename),

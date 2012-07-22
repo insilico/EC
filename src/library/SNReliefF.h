@@ -36,6 +36,9 @@
 
 /// a pair of vectors for hit and miss statistics for each instance
 typedef std::vector<std::pair<double, double> > InstanceAttributeStats;
+typedef std::vector<std::pair<double, double> >::const_iterator
+		InstanceAttributeStatsIt;
+
 typedef std::pair<InstanceAttributeStats, InstanceAttributeStats>
 	InstanceHitMissStats;
 
@@ -69,12 +72,15 @@ public:
   bool ComputeAttributeScores();
   /// Precompute nearest neighbor gene statistics for all instances.
   bool PreComputeNeighborGeneStats();
+  /// Print the neighbor statistics data structure
+  void PrintNeighborStats();
   virtual ~SNReliefF();
 private:
   bool ComputeInstanceStats(DatasetInstance* dsi,
   		std::vector<unsigned int> hitIndicies,
   		std::vector<unsigned int> missIndicies,
   		InstanceHitMissStats& hitMissStats);
+  void PrintInstanceAttributeStats(InstanceAttributeStats stats);
   /// nearest neighbor attribute averages and standard deviations
   NeighborStats neighborStats;
 };
