@@ -1,7 +1,7 @@
 /**
- * \class SNReliefF
+ * \class ReliefFSeq
  *
- * \brief Signal-to-Noise ReliefF attribute ranking algorithm.
+ * \brief ReliefFSeq attribute ranking algorithm.
  *
  * Designed to handle digital gene expression (DGE) data sets, particularly
  * RNA-Seq high-throughput count data, by accounting for variable-specific
@@ -17,11 +17,11 @@
  * \version 1.0
  *
  * Contact: bill.c.white@gmail.com
- * Created on: 7/21/12
+ * Created on: 7/23/12
  */
 
-#ifndef SNRELIEFF_H
-#define	SNRELIEFF_H
+#ifndef RELIEFFSEQ_H
+#define	RELIEFFSEQ_H
 
 #include <vector>
 #include <map>
@@ -34,57 +34,36 @@
 #include "Insilico.h"
 #include <boost/program_options.hpp>
 
-/// a pair of vectors for hit and miss statistics for each instance
-typedef std::vector<std::pair<double, double> > InstanceAttributeStats;
-typedef std::vector<std::pair<double, double> >::const_iterator
-		InstanceAttributeStatsIt;
-
-typedef std::pair<InstanceAttributeStats, InstanceAttributeStats>
-	InstanceHitMissStats;
-
-/// a map from instance ID to neighbor statistics
-typedef std::vector<InstanceHitMissStats> NeighborStats;
-typedef std::vector<InstanceHitMissStats>::iterator NeighborStatsIt;
-typedef std::vector<InstanceHitMissStats>::const_iterator NeighborStatsCIt;
-
 namespace po = boost::program_options;
 
-class SNReliefF : public ReliefF
+class ReliefFSeq : public ReliefF
 {
 public:
   /*************************************************************************//**
-   * Construct an SNReliefF algorithm object.
+   * Construct an ReliefFSeq algorithm object.
    * \param [in] ds pointer to a Dataset object
    ****************************************************************************/
-  SNReliefF(Dataset* ds);
+  ReliefFSeq(Dataset* ds);
   /*************************************************************************//**
-   * Construct an SNReliefF algorithm object.
+   * Construct an ReliefFSeq algorithm object.
    * \param [in] ds pointer to a Dataset object
    * \param [in] vm reference to a Boost map of command line options
    ****************************************************************************/
-  SNReliefF(Dataset* ds, po::variables_map& vm);
+  ReliefFSeq(Dataset* ds, po::variables_map& vm);
   /*************************************************************************//**
-   * Construct an SNReliefF algorithm object.
+   * Construct an ReliefFSeq algorithm object.
    * \param [in] ds pointer to a Dataset object
    * \param [in] configMap reference to a ConfigMap (map<string, string>)
    ****************************************************************************/
-  SNReliefF(Dataset* ds, ConfigMap& configMap);
+  ReliefFSeq(Dataset* ds, ConfigMap& configMap);
   bool ComputeAttributeScores();
-  /// Precompute nearest neighbor gene statistics for all instances.
-  bool PreComputeNeighborGeneStats();
-  /// Print the neighbor statistics data structure
-  void PrintNeighborStats();
-  virtual ~SNReliefF();
+  // average hit and miss diffs for gene alpha
+  std::pair<double, double> MuDeltaAlphas(unsigned int alpha);
+  /// standard deviations of hit and miss diffs for gene alpha
+  std::pair<double, double> SigmaDeltaAlphas(unsigned int alpha,
+  		double muDeltaHit, double muDeltaMiss);
+  virtual ~ReliefFSeq();
 private:
-  /// Computes the nearest neighbor statistics for a particular instance.
-  bool ComputeInstanceStats(DatasetInstance* dsi,
-  		std::vector<unsigned int> hitIndicies,
-  		std::vector<unsigned int> missIndicies,
-  		InstanceHitMissStats& hitMissStats);
-  /// Prints all attribute stats to stdout.
-  void PrintInstanceAttributeStats(InstanceAttributeStats stats);
-  /// nearest neighbor attribute averages and standard deviations
-  NeighborStats neighborStats;
 };
 
 #endif	/* SNReliefF_H */

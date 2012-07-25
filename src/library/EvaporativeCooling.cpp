@@ -29,7 +29,7 @@
 #include "RandomJungle.h"
 #include "ReliefF.h"
 #include "RReliefF.h"
-#include "SNReliefF.h"
+#include "ReliefFSeq.h"
 #include "Insilico.h"
 
 using namespace std;
@@ -147,7 +147,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 		// check for special ReliefF-Seq requested analysis
 		if(paramsMap.count("relieff-seq")) {
 			cout << Timestamp() << "ReliefF-Seq" << endl;
-			reliefF = new SNReliefF(dataset, paramsMap);
+			reliefF = new ReliefFSeq(dataset, paramsMap);
 		}
 		else {
 			if (dataset->HasContinuousPhenotypes()) {
@@ -266,6 +266,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 		cout << Timestamp() << "Initializing Relief-F" << endl;
 		if(GetConfigValue(configMap, "relieff-seq", configValue)) {
 			cout << Timestamp() << "ReliefF-Seq" << endl;
+			reliefF = new ReliefFSeq(dataset, paramsMap);
 		}
 		else {
 			if (dataset->HasContinuousPhenotypes()) {

@@ -82,7 +82,8 @@ am_libec_la_OBJECTS = libec_la-Dataset.lo libec_la-ArffDataset.lo \
 	libec_la-DistanceMetrics.lo libec_la-Statistics.lo \
 	libec_la-ChiSquared.lo libec_la-Insilico.lo \
 	libec_la-ReliefF.lo libec_la-RReliefF.lo libec_la-SNReliefF.lo \
-	libec_la-RandomJungle.lo libec_la-EvaporativeCooling.lo
+	libec_la-ReliefFSeq.lo libec_la-RandomJungle.lo \
+	libec_la-EvaporativeCooling.lo
 libec_la_OBJECTS = $(am_libec_la_OBJECTS)
 libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -283,16 +284,17 @@ libec_la_SOURCES = \
 Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
 PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp \
 DistanceMetrics.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
-ReliefF.cpp RReliefF.cpp SNReliefF.cpp RandomJungle.cpp EvaporativeCooling.cpp
+ReliefF.cpp RReliefF.cpp SNReliefF.cpp ReliefFSeq.cpp \
+RandomJungle.cpp EvaporativeCooling.cpp
 
 
 # the list of header files that belong to the library
 libec_la_HEADERS = \
 ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h DistanceMetrics.h \
 EvaporativeCooling.h GSLRandomBase.h GSLRandomFlat.h Insilico.h \
-PlinkBinaryDataset.h PlinkDataset.h PlinkRawDataset.h RReliefF.h SNReliefF.h \
-RandomJungle.h ReliefF.h DgeData.h Statistics.h StringUtils.h BestN.h \
-BirdseedData.h
+PlinkBinaryDataset.h PlinkDataset.h PlinkRawDataset.h \
+RReliefF.h SNReliefF.h ReliefFSeq.h RandomJungle.h ReliefF.h \
+DgeData.h Statistics.h StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
 libec_la_LDFLAGS = $(LDFLAGS) -L/usr/local/lib -lxml2 -lz -lpthread -lm \
@@ -390,6 +392,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-RReliefF.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-RandomJungle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-ReliefF.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-ReliefFSeq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-SNReliefF.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Statistics.Plo@am__quote@
 
@@ -518,6 +521,13 @@ libec_la-SNReliefF.lo: SNReliefF.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='SNReliefF.cpp' object='libec_la-SNReliefF.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-SNReliefF.lo `test -f 'SNReliefF.cpp' || echo '$(srcdir)/'`SNReliefF.cpp
+
+libec_la-ReliefFSeq.lo: ReliefFSeq.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-ReliefFSeq.lo -MD -MP -MF $(DEPDIR)/libec_la-ReliefFSeq.Tpo -c -o libec_la-ReliefFSeq.lo `test -f 'ReliefFSeq.cpp' || echo '$(srcdir)/'`ReliefFSeq.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libec_la-ReliefFSeq.Tpo $(DEPDIR)/libec_la-ReliefFSeq.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='ReliefFSeq.cpp' object='libec_la-ReliefFSeq.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-ReliefFSeq.lo `test -f 'ReliefFSeq.cpp' || echo '$(srcdir)/'`ReliefFSeq.cpp
 
 libec_la-RandomJungle.lo: RandomJungle.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-RandomJungle.lo -MD -MP -MF $(DEPDIR)/libec_la-RandomJungle.Tpo -c -o libec_la-RandomJungle.lo `test -f 'RandomJungle.cpp' || echo '$(srcdir)/'`RandomJungle.cpp

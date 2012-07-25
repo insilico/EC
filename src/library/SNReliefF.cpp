@@ -47,31 +47,42 @@ bool SNReliefF::ComputeAttributeScores() {
 	// PrintNeighborStats();
 
 	// variable weights
-	W.resize(dataset->NumVariables(), 0.0);
+	std::vector<double> avgHitSum;
+	std::vector<double> stdHitSum;
+	std::vector<double> avgMissSum;
+	std::vector<double> stdMissSum;
+
+	avgHitSum.resize(dataset->NumVariables(), 0.0);
+	stdHitSum.resize(dataset->NumVariables(), 0.0);
+	avgMissSum.resize(dataset->NumVariables(), 0.0);
+	stdMissSum.resize(dataset->NumVariables(), 0.0);
 
 	// using pseudo-code notation from white board discussion - 7/21/12
 	cout << Timestamp() << "Running SNRelief-F algorithm" << endl;
 
-	for(unsigned int varIdx=0; varIdx < dataset->NumVariables(); ++varIdx) {
-		for(unsigned int instanceIdx=0; instanceIdx < m; ++instanceIdx) {
-			InstanceHitMissStats hitMissStats = neighborStats[instanceIdx];
+	for(unsigned int instanceIdx=0; instanceIdx < m; ++instanceIdx) {
+		InstanceHitMissStats hitMissStats = neighborStats[instanceIdx];
+		for(unsigned int varIdx=0; varIdx < dataset->NumVariables(); ++varIdx) {
 
 			InstanceAttributeStats varIdxHitStats = hitMissStats.first;
 			InstanceAttributeStats varIdxMissStats = hitMissStats.second;
 
 			double avgHits = varIdxHitStats[varIdx].first;
 			double stdHits = varIdxHitStats[varIdx].second;
-
 			double avgMisses = varIdxMissStats[varIdx].first;
 			double stdMisses = varIdxMissStats[varIdx].second;
 
-			W[varIdx] += (avgMisses - avgHits) / (stdMisses + stdHits);
+			avgHitSum[varIdx] += avgHits;
+			stdHitSum[varIdx] += stdHits;
+			avgMissSum[varIdx] += avgMisses;
+			stdMissSum[varIdx] += stdMisses;
 		}
 	}
 
 	// divide all weights by the m-instance sums accumulated above
-	for(unsigned int i=0; i < W.size(); ++i) {
-		W[i] /= (double) m;
+	W.resize(dataset->NumVariables(), 0.0);
+	for(unsigned int i=0; i < dataset->NumVariables(); ++i) {
+		W[i] = ((avgMissSum[i] -avgHitSum[i]) / (stdMissSum[i] + stdHitSum[i])) / m;
 	}
 
 	return true;
