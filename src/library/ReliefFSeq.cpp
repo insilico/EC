@@ -50,6 +50,7 @@ bool ReliefFSeq::ComputeAttributeScores() {
 	// changed to use Brett's email (7/21/12) equations - 7/23/12
 	cout << Timestamp() << "Running Relief-F Seq algorithm" << endl;
 
+#pragma omp parallel for
 	for(unsigned int alpha = 0; alpha < dataset->NumNumerics(); ++alpha) {
 
 		pair<double, double> muDeltaAlphas = MuDeltaAlphas(alpha);
