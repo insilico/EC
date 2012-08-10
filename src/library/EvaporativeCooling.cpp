@@ -13,24 +13,28 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
-#include <time.h>
+
+#include <omp.h>
+
+#include <gsl/gsl_rng.h>
 
 #include <boost/program_options.hpp>
 #include <boost/lexical_cast.hpp>
-#include <omp.h>
-#include <gsl/gsl_rng.h>
+#include <boost/progress.hpp>
 
+// class interface
 #include "EvaporativeCooling.h"
 
-// ReliefF project
+// EC project
+#include "Insilico.h"
 #include "Dataset.h"
 #include "Statistics.h"
 #include "StringUtils.h"
 #include "RandomJungle.h"
+#include "Deseq.h"
 #include "ReliefF.h"
 #include "RReliefF.h"
 #include "ReliefFSeq.h"
-#include "Insilico.h"
 
 using namespace std;
 namespace po = boost::program_options;
@@ -66,6 +70,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 
 	reliefF = NULL;
 	randomJungle = NULL;
+	deseq = NULL;
 
 	optimizeTemperature = false;
 	if(paramsMap.count("optimize-temp")) {
@@ -88,29 +93,35 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	cout << Timestamp() << "EC is removing attributes until best "
 			<< numTargetAttributes << " remain" << endl;
 
-	if (paramsMap.count("ec-algorithm-steps")) {
-		string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
-		if (ecAlgParam == "ALL") {
-			algorithmType = EC_ALL;
-			cout << Timestamp()
-					<< "Running EC in standard mode: Random Jungle + Relief-F" << endl;
-		} else {
-			if (ecAlgParam == "RJ") {
-				algorithmType = EC_RJ;
-				cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
+	if(paramsMap.count("relieff-seq")) {
+		algorithmType = EC_ALG_SEQ;
+		cout << Timestamp()
+				<< "Running EC in SEQ mode: DESeq + ReliefFSeq" << endl;
+	}
+	else {
+		if (paramsMap.count("ec-algorithm-steps")) {
+			string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
+			if (ecAlgParam == "ALL") {
+				algorithmType = EC_ALG_ALL;
+				cout << Timestamp()
+						<< "Running EC in standard mode: Random Jungle + ReliefF" << endl;
 			} else {
-				if (ecAlgParam == "RF") {
-					algorithmType = EC_RF;
-					cout << Timestamp() << "Running EC in Relief-F only mode" << endl;
+				if (ecAlgParam == "RJ") {
+					algorithmType = EC_ALG_RJ;
+					cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
 				} else {
-					cerr << "ERROR: --ec-algorithm-steps must be one of: "
-							<< "all, rj or rf" << endl;
-					exit(EXIT_FAILURE);
+					if (ecAlgParam == "RF") {
+						algorithmType = EC_ALG_RF;
+						cout << Timestamp() << "Running EC in ReliefF only mode" << endl;
+					} else {
+						cerr << "ERROR: --ec-algorithm-steps must be one of: "
+								<< "all, rj or rf" << endl;
+						exit(EXIT_FAILURE);
+					}
 				}
 			}
 		}
 	}
-
 	outFilesPrefix = paramsMap["out-files-prefix"].as<string>();
 
 	// set the number of attributea to remove per iteration
@@ -134,30 +145,32 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	numRFThreads = maxThreads;
 	cout << Timestamp() << "EC will use " << numRFThreads << " threads" << endl;
 
+	deseq = NULL;
 	// ------------------------------------------------------------- Random Jungle
 	// create and initialize a Random Jungle
-	if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
+	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
 		randomJungle = new RandomJungle(dataset, paramsMap);
 	}
 
 	// ------------------------------------------------------------------ Relief-F
 	// create and initialize Relief-F
-	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
-		cout << Timestamp() << "Initializing Relief-F" << endl;
-		// check for special ReliefF-Seq requested analysis
-		if(paramsMap.count("relieff-seq")) {
-			cout << Timestamp() << "ReliefF-Seq" << endl;
-			reliefF = new ReliefFSeq(dataset, paramsMap);
-		}
-		else {
+	// check for special ReliefF-Seq requested analysis
+	if(algorithmType == EC_ALG_SEQ) {
+		cout << Timestamp() << "Creating ReliefFSeq object" << endl;
+		reliefF = new ReliefFSeq(dataset, paramsMap);
+		cout << Timestamp() << "Creating DESeq object" << endl;
+		deseq = new Deseq(dataset);
+	}
+
+	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
+		cout << Timestamp() << "Initializing ReliefF" << endl;
 			if (dataset->HasContinuousPhenotypes()) {
-				cout << Timestamp() << "RRelief-F" << endl;
+				cout << Timestamp() << "RReliefF" << endl;
 				reliefF = new RReliefF(dataset, paramsMap);
 			} else {
-				cout << Timestamp() << "Relief-F" << endl;
+				cout << Timestamp() << "ReliefF" << endl;
 				reliefF = new ReliefF(dataset, paramsMap, analysisType);
 			}
-		}
 	}
 
 } // end of constructor
@@ -175,6 +188,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 
 	reliefF = NULL;
 	randomJungle = NULL;
+	deseq = NULL;
 
 	string configValue;
 
@@ -203,25 +217,32 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 			<< numTargetAttributes << " remain" << endl;
 
 	string ecAlgParam = "ALL";
-	algorithmType = EC_ALL;
-	if (GetConfigValue(configMap, "ec-algorithm-steps", configValue)) {
-		ecAlgParam = to_upper(configValue);
-		if (ecAlgParam == "ALL") {
-			algorithmType = EC_ALL;
-			cout << Timestamp()
-					<< "Running EC in standard mode: Random Jungle + Relief-F" << endl;
-		} else {
-			if (ecAlgParam == "RJ") {
-				algorithmType = EC_RJ;
-				cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
+	algorithmType = EC_ALG_ALL;
+	if(GetConfigValue(configMap, "relieff-seq", configValue)) {
+		algorithmType = EC_ALG_SEQ;
+		cout << Timestamp()
+				<< "Running EC in SEQ mode: DESeq + ReliefFSeq" << endl;
+	}
+	else {
+		if (GetConfigValue(configMap, "ec-algorithm-steps", configValue)) {
+			ecAlgParam = to_upper(configValue);
+			if (ecAlgParam == "ALL") {
+				algorithmType = EC_ALG_ALL;
+				cout << Timestamp()
+						<< "Running EC in standard mode: Random Jungle + Relief-F" << endl;
 			} else {
-				if (ecAlgParam == "RF") {
-					algorithmType = EC_RF;
-					cout << Timestamp() << "Running EC in Relief-F only mode" << endl;
+				if (ecAlgParam == "RJ") {
+					algorithmType = EC_ALG_RJ;
+					cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
 				} else {
-					cerr << "ERROR: --ec-algorithm-steps must be one of: "
-							<< "all, rj or rf" << endl;
-					exit(EXIT_FAILURE);
+					if (ecAlgParam == "RF") {
+						algorithmType = EC_ALG_RF;
+						cout << Timestamp() << "Running EC in Relief-F only mode" << endl;
+					} else {
+						cerr << "ERROR: --ec-algorithm-steps must be one of: "
+								<< "all, rj or rf" << endl;
+						exit(EXIT_FAILURE);
+					}
 				}
 			}
 		}
@@ -256,17 +277,19 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 
 	// ------------------------------------------------------------- Random Jungle
 	// create and initialize a Random Jungle
-	if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
+	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
 		randomJungle = new RandomJungle(dataset, configMap);
 	}
 
 	// ------------------------------------------------------------------ Relief-F
 	// create and initialize Relief-F
-	if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
+	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
 		cout << Timestamp() << "Initializing Relief-F" << endl;
 		if(GetConfigValue(configMap, "relieff-seq", configValue)) {
 			cout << Timestamp() << "ReliefF-Seq" << endl;
 			reliefF = new ReliefFSeq(dataset, paramsMap);
+			deseq = new Deseq(dataset);
+			algorithmType = EC_ALG_SEQ;
 		}
 		else {
 			if (dataset->HasContinuousPhenotypes()) {
@@ -288,6 +311,9 @@ EvaporativeCooling::~EvaporativeCooling() {
 	if (randomJungle) {
 		delete randomJungle;
 	}
+	if (deseq) {
+		delete deseq;
+	}
 }
 
 bool EvaporativeCooling::ComputeECScores() {
@@ -305,7 +331,7 @@ bool EvaporativeCooling::ComputeECScores() {
 	// varying temperature and classifier accuracy optimization steps.
 	// Added temperature optimization - 4/9/12
 	unsigned int iteration = 1;
-	clock_t t;
+	boost::progress_timer t;
 	float elapsedTime = 0.0;
 	optimalTemperature = 1.0;
 	while (numWorkingAttributes >= numTargetAttributes) {
@@ -331,9 +357,21 @@ bool EvaporativeCooling::ComputeECScores() {
 		cout << fixed << setprecision(1);
 
 		// -------------------------------------------------------------------------
+		if (algorithmType == EC_ALG_SEQ) {
+			cout << Timestamp() << "Running DESeq" << endl;
+			deseqScores = deseq->ComputeScores();
+			cout << Timestamp() << "Running ReliefFSeq" << endl;
+			if (!RunReliefF()) {
+				cerr << "ERROR: In EC algorithm: ReliefFSeq failed" << endl;
+				return false;
+			}
+			cout << setprecision(1);
+			cout << Timestamp() << "ReliefFSeq finished in " << t.elapsed() << " secs"
+					<< endl;
+		}
+
 		// run Random Jungle and get the normalized scores for use in EC
-		if ((algorithmType == EC_ALL) || (algorithmType == EC_RJ)) {
-			t = clock();
+		if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
 			cout << Timestamp() << "Running Random Jungle" << endl;
 			if (randomJungle->ComputeAttributeScores()) {
 				rjScores = randomJungle->GetScores();
@@ -342,11 +380,10 @@ bool EvaporativeCooling::ComputeECScores() {
 				cerr << "ERROR: In EC algorithm: Random Jungle failed" << endl;
 				return false;
 			}
-			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-			cout << Timestamp() << "Random Jungle finished in " << elapsedTime
+			cout << Timestamp() << "Random Jungle finished in " << t.elapsed()
 					<< " secs" << endl;
 			// RJ standalone runs
-			if ((algorithmType == EC_RJ)
+			if ((algorithmType == EC_ALG_RJ)
 					&& (numWorkingAttributes == numTargetAttributes)) {
 				sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
 				ecScores.resize(numTargetAttributes);
@@ -358,19 +395,17 @@ bool EvaporativeCooling::ComputeECScores() {
 
 		// -------------------------------------------------------------------------
 		// run Relief-F and get normalized score for use in EC
-		if ((algorithmType == EC_ALL) || (algorithmType == EC_RF)) {
-			t = clock();
+		if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
 			cout << Timestamp() << "Running ReliefF" << endl;
 			if (!RunReliefF()) {
 				cerr << "ERROR: In EC algorithm: ReliefF failed" << endl;
 				return false;
 			}
 			cout << setprecision(1);
-			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-			cout << Timestamp() << "ReliefF finished in " << elapsedTime << " secs"
+			cout << Timestamp() << "ReliefF finished in " << t.elapsed() << " secs"
 					<< endl;
 			// ReliefF standalone runs
-			if ((algorithmType == EC_RF)
+			if ((algorithmType == EC_ALG_RF)
 					&& (numWorkingAttributes == numTargetAttributes)) {
 				sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
 				ecScores.resize(numTargetAttributes);
@@ -382,35 +417,30 @@ bool EvaporativeCooling::ComputeECScores() {
 
 		// -------------------------------------------------------------------------
 		// compute free energy for all attributes
-		t = clock();
 		cout << Timestamp() << "Computing free energy" << endl;
 		if (!ComputeFreeEnergy(optimalTemperature)) {
 			cerr << "ERROR: In EC algorithm: ComputeFreeEnergy failed" << endl;
 			return false;
 		}
-		elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
 		cout << Timestamp() << "Free energy calculations complete in "
-				<< elapsedTime << " secs" << endl;
+				<< t.elapsed() << " secs" << endl;
 		// PrintAllScoresTabular();
 		// PrintKendallTaus();
 
 		// -------------------------------------------------------------------------
 		// optimize the temperature by sampling a set of delta values around T
 		if(optimizeTemperature) {
-			t = clock();
 			cout << Timestamp() << "Optimizing coupling temperature T" << endl;
 			vector<double> temperatureDeltas;
 			temperatureDeltas.push_back(-0.2);
 			temperatureDeltas.push_back(0.2);
 			optimalTemperature = OptimizeTemperature(temperatureDeltas);
-			elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
 			cout << Timestamp() << "T optimization: " << optimalTemperature
-					<< ", complete in " << elapsedTime << " secs" << endl;
+					<< ", complete in " << t.elapsed() << " secs" << endl;
 		}
 
 		// -------------------------------------------------------------------------
 		// remove the worst attributes and iterate
-		t = clock();
 		cout << Timestamp() << "Removing the worst attributes" << endl;
 		unsigned int numToRemove = numToRemovePerIteration;
 		numToRemoveNextIteration = numToRemove - numToRemovePerIteration;
@@ -438,8 +468,7 @@ bool EvaporativeCooling::ComputeECScores() {
 			return false;
 		}
 		numWorkingAttributes -= numToRemove;
-		elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-		cout << Timestamp() << "Attribute removal complete in " << elapsedTime
+		cout << Timestamp() << "Attribute removal complete in " << t.elapsed()
 				<< " secs" << endl;
 
 		++iteration;
@@ -491,6 +520,15 @@ void EvaporativeCooling::PrintRJAttributeScores(ofstream& outStream) {
 	}
 }
 
+void EvaporativeCooling::PrintDeseqAttributeScores(ofstream& outStream) {
+	sort(deseqScores.begin(), deseqScores.end(), scoresSortDesc);
+	for (EcScoresCIt deseqScoresIt = deseqScores.begin();
+			deseqScoresIt != deseqScores.end();	++deseqScoresIt) {
+		outStream << fixed << setprecision(8) << (*deseqScoresIt).first << "\t"
+				<< (*deseqScoresIt).second << endl;
+	}
+}
+
 void EvaporativeCooling::PrintRFAttributeScores(ofstream& outStream) {
 	sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
 	for (EcScoresCIt rfScoresIt = rfScores.begin(); rfScoresIt != rfScores.end();
@@ -506,7 +544,38 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 	// added 9/26/11 for reflecting the fact that only parts of the
 	// complete EC algorithm were performed
 	switch (algorithmType) {
-	case EC_ALL:
+	case EC_ALG_SEQ:
+		resultsFilename = baseFilename + ".ecseq";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintAttributeScores(outFile);
+		outFile.close();
+
+		resultsFilename = baseFilename + ".ecseq.deseq";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintDeseqAttributeScores(outFile);
+		outFile.close();
+
+		resultsFilename = baseFilename + ".ecseq.rf";
+		outFile.open(resultsFilename.c_str());
+		if (outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << resultsFilename
+					<< "for writing" << endl;
+			exit(1);
+		}
+		PrintRFAttributeScores(outFile);
+		outFile.close();
+		break;
+	case EC_ALG_ALL:
 		resultsFilename = baseFilename + ".ec";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
@@ -537,7 +606,7 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		PrintRFAttributeScores(outFile);
 		outFile.close();
 		break;
-	case EC_RJ:
+	case EC_ALG_RJ:
 		resultsFilename += ".rj";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
@@ -548,7 +617,7 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		PrintAttributeScores(outFile);
 		outFile.close();
 		break;
-	case EC_RF:
+	case EC_ALG_RF:
 		resultsFilename += ".rf";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
@@ -697,7 +766,7 @@ bool EvaporativeCooling::RunReliefF() {
 }
 
 bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
-	if (algorithmType == EC_ALL) {
+	if (algorithmType == EC_ALG_ALL) {
 		if (rjScores.size() != rfScores.size()) {
 			cerr << "ERROR: EvaporativeCooling::ComputeFreeEnergy scores lists are "
 					"unequal. RJ: " << rjScores.size() << " vs. RF: " << rfScores.size()
@@ -706,11 +775,21 @@ bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
 		}
 	}
 
+	if (algorithmType == EC_ALG_SEQ) {
+		if (deseqScores.size() != rfScores.size()) {
+			cerr << "ERROR: EvaporativeCooling::ComputeFreeEnergy scores lists are "
+					"unequal. DESeq: " << deseqScores.size() << " vs. RF: "
+					<< rfScores.size() << endl;
+			return false;
+		}
+	}
+
 	freeEnergyScores.clear();
 	EcScoresCIt rjIt = rjScores.begin();
 	EcScoresCIt rfIt = rfScores.begin();
+	EcScoresCIt deseqIt = deseqScores.begin();
 	switch (algorithmType) {
-	case EC_ALL:
+	case EC_ALG_ALL:
 		sort(rjScores.begin(), rjScores.end(), scoresSortAscByName);
 		sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
 		for (; rjIt != rjScores.end(); ++rjIt, ++rfIt) {
@@ -720,14 +799,24 @@ bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
 					make_pair((*rfIt).first + (temperature * key), val));
 		}
 		break;
-	case EC_RJ:
+	case EC_ALG_RJ:
 		for (; rjIt != rjScores.end(); ++rjIt) {
 			freeEnergyScores.push_back(make_pair(rjIt->first, rjIt->second));
 		}
 		break;
-	case EC_RF:
+	case EC_ALG_RF:
 		for (; rfIt != rfScores.end(); ++rfIt) {
 			freeEnergyScores.push_back(make_pair(rfIt->first, rfIt->second));
+		}
+		break;
+	case EC_ALG_SEQ:
+		sort(deseqScores.begin(), deseqScores.end(), scoresSortAscByName);
+		sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
+		for (; deseqIt != deseqScores.end(); ++deseqIt, ++rfIt) {
+			string val = deseqIt->second;
+			double key = deseqIt->first;
+			freeEnergyScores.push_back(
+					make_pair((*rfIt).first + (temperature * key), val));
 		}
 		break;
 	default:

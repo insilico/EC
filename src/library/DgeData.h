@@ -39,6 +39,8 @@ public:
 	std::vector<double> GetNormalizationFactors();
 	/// Print the Sample statistics to the console
 	void PrintSampleStats();
+	/// Get the original data set filename
+	std::string GetCountsFilename();
 private:
 	/// Filename containing DGE counts
 	std::string countsFilename;

@@ -23,11 +23,13 @@
 #define	EVAPORATIVECOOLING_H
 
 #include <vector>
+
 #include <boost/program_options.hpp>
 
 #include "Dataset.h"
 #include "RandomJungle.h"
 #include "ReliefF.h"
+#include "Deseq.h"
 #include "Insilico.h"
 
 namespace po = boost::program_options;
@@ -38,17 +40,6 @@ typedef std::vector<std::pair<double, std::string> > EcScores;
 typedef std::vector<std::pair<double, std::string> >::iterator EcScoresIt;
 /// evaporative cooling scores constant iterator - sorted by score key
 typedef std::vector<std::pair<double, std::string> >::const_iterator EcScoresCIt;
-
-/**
- * \enum EcAlgorithmType.
- * Type of algorithm steps to perform.
- */
-typedef enum {
-	EC_ALL, /**< Run RandomJungle and ReliefF */
-	EC_RJ, /**< Run only RandomJungle */
-	EC_RF
-/**< Run only ReliefF */
-} EcAlgorithmType;
 
 class EvaporativeCooling {
 public:
@@ -94,6 +85,11 @@ public:
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
 	void PrintRJAttributeScores(std::ofstream& outStream);
+	/*************************************************************************//**
+	 * Write the Deseq scores and attribute names to stream.
+	 * \param [in] outStream stream to write score-attribute name pairs
+	 ****************************************************************************/
+	void PrintDeseqAttributeScores(std::ofstream& outStream);
 	/*************************************************************************//**
 	 * Write the RF scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
@@ -141,6 +137,8 @@ private:
 	ReliefF* reliefF;
 	/// pointer to a RandomJungle algorithm object
 	RandomJungle* randomJungle;
+	/// pointer to a DESeq algorithm object
+	Deseq* deseq;
 
 	bool optimizeTemperature;
 	double optimalTemperature;
@@ -148,6 +146,8 @@ private:
 
 	/// current random jungle scores
 	EcScores rjScores;
+	/// current deseq scores
+	EcScores deseqScores;
 	/// current relieff scores
 	EcScores rfScores;
 	/// current free energy scores

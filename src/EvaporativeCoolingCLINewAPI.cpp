@@ -19,10 +19,6 @@
 #include <sstream>
 #include <vector>
 
-#include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
-
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -474,13 +470,13 @@ int main(int argc, char** argv) {
   // <metric>.relieff suffix
   string resultsFilename = outputFilesPrefix;
   switch(ec.GetAlgorithmType()) {
-    case EC_ALL:
+    case EC_ALG_ALL:
       resultsFilename += ".ec";
       break;
-    case EC_RJ:
+    case EC_ALG_RJ:
       resultsFilename += ".ec.rj";
       break;
-    case EC_RF:
+    case EC_ALG_RF:
       resultsFilename += ".ec.rf";
       break;
     default:
@@ -515,7 +511,7 @@ int main(int argc, char** argv) {
   // delete ds;
 
   /// Remove temporary Random Jungle files if they exist
-  if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
+  if((ec.GetAlgorithmType() == EC_ALG_ALL) || (ec.GetAlgorithmType() == EC_ALG_RJ)) {
   	cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
 		vector<string> tempFilenames;
 		tempFilenames.push_back(outputFilesPrefix + ".log");

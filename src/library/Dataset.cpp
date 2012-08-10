@@ -280,9 +280,9 @@ bool Dataset::LoadDataset(string snpsFilename, string numericsFilename,
 bool Dataset::LoadDataset(DgeData* dgeData) {
 	// TODO: check for genotypes already loaded; assume DGE only for now
 
-	numericsFilename = "DGE CLASS";
-
-	cout << Timestamp() << "Reading numerics from " << numericsFilename << endl;
+	numericsFilename = dgeData->GetCountsFilename();
+	cout << Timestamp() << "Reading numerics from DgeData class whose "
+			<< "original counts are from ["	<< numericsFilename << "]" << endl;
 
 	// populate numericNames, numericsMinMax and numericsMask
 	vector<string> geneNames = dgeData->GetGeneNames();
@@ -663,7 +663,7 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 
 	switch (outputDatasetType) {
 	case PLINK_PED_DATASET:
-		cerr << "ERROR: This version if WriteNewDataset does not support PED"
+		cerr << "ERROR: This version of WriteNewDataset does not support PED"
 				<< endl;
 		return false;
 	case TAB_DELIMITED_DATASET:

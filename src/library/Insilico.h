@@ -179,6 +179,18 @@ enum RandomJungleRunMode
 	LIBRARY_FILE_RUN_MODE /**< C+ library calls with file I/O */
 };
 
+/**
+ * \enum EcAlgorithmType.
+ * Type of algorithm steps to perform.
+ */
+enum EcAlgorithmType
+{
+	EC_ALG_ALL, /**< Random Jungle + ReliefF */
+	EC_ALG_RJ,  /**< Random Jungle only */
+	EC_ALG_RF,  /**< ReliefF only */
+	EC_ALG_SEQ  /**< DESeq + ReliefFSeq */
+};
+
 static std::map<std::string, std::string> datasetTypeToExt;
 
 /***************************************************************************//**

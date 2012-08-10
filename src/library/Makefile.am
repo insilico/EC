@@ -15,14 +15,14 @@ Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
 PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp \
 DistanceMetrics.cpp Statistics.cpp ChiSquared.cpp Insilico.cpp \
 ReliefF.cpp RReliefF.cpp SNReliefF.cpp ReliefFSeq.cpp \
-RandomJungle.cpp EvaporativeCooling.cpp
+RandomJungle.cpp EvaporativeCooling.cpp Deseq.cpp
 
 # the list of header files that belong to the library
 libec_la_HEADERS= \
 ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h DistanceMetrics.h \
 EvaporativeCooling.h GSLRandomBase.h GSLRandomFlat.h Insilico.h \
 PlinkBinaryDataset.h PlinkDataset.h PlinkRawDataset.h \
-RReliefF.h SNReliefF.h ReliefFSeq.h RandomJungle.h ReliefF.h \
+RReliefF.h SNReliefF.h ReliefFSeq.h RandomJungle.h ReliefF.h Deseq.h \
 DgeData.h Statistics.h StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)

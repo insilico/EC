@@ -292,3 +292,6 @@ void DgeData::PrintSampleStats() {
 	}
 }
 
+string DgeData::GetCountsFilename() {
+	return countsFilename;
+}

@@ -20,14 +20,10 @@
 #include <vector>
 #include <ctime>
 
-#include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
-// #include <sys/resource.h>
-
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/progress.hpp>
 
 #include "EvaporativeCooling.h"
 #include "Insilico.h"
@@ -38,6 +34,7 @@
 #include "BirdseedData.h"
 
 using namespace std;
+using namespace boost;
 namespace po = boost::program_options;
 
 int main(int argc, char** argv) {
@@ -331,8 +328,7 @@ int main(int argc, char** argv) {
 	/// begin main program
 	// ---------------------------------------------------------------------------
 	cout << Timestamp() << argv[0] << " starting" << endl;
-	clock_t t;
-	t = clock();
+	boost::progress_timer t;
 
 	// ---------------------------------------------------------------------------
 	cout << Timestamp() << "Processing command line arguments" << endl;
@@ -683,8 +679,7 @@ int main(int argc, char** argv) {
 				<< "Dumping SNP transition/transversion information to ["
 				<< titvFilename << "]" << endl;
 		ds->WriteSnpTiTvInfo(titvFilename);
-	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-	  cout << Timestamp() << "Elapsed time: " << elapsedTime << " secs" << endl;
+	  cout << Timestamp() << "Elapsed time: " << t.elapsed() << " secs" << endl;
 	  cout << Timestamp() << argv[0] << " done" << endl;
 		return 0;
 	}
@@ -738,14 +733,12 @@ int main(int argc, char** argv) {
 				exit(EXIT_FAILURE);
 			}
 		}
-	  float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-	  cout << Timestamp() << "Elapsed time: " << elapsedTime << " secs" << endl;
+	  cout << Timestamp() << "Elapsed time: " << t.elapsed() << " secs" << endl;
 	  cout << Timestamp() << argv[0] << " done" << endl;
 		return 0;
 	}
 
 	// do any data transformations before the analysis
-	cout << Timestamp() << "Running EC" << endl;
 	if(ds->HasNumerics() && numericTransform != "") {
 		cout << Timestamp() << "Performing numeric transformation: "
 				<< numericTransform << endl;
@@ -779,27 +772,32 @@ int main(int argc, char** argv) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;
 		exit(EXIT_FAILURE);
 	}
-// IS THIS CROSS-PLATFORM/POSIX COMPATIBLE?
+
+	// IS THIS CROSS-PLATFORM/POSIX COMPATIBLE?
 //  struct rusage s;
 //  struct rusage*p = &s;
 //  getrusage(RUSAGE_SELF, p);
 //  cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
 //         << " MB" << endl;
-  cout << Timestamp() << "EC done" << endl;
+
+	cout << Timestamp() << "EC done" << endl;
 
 	// ---------------------------------------------------------------------------
 	// write the scores to the same name as the dataset with
 	// <metric>.relieff suffix
 	string resultsFilename = outputFilesPrefix;
 	switch(ec.GetAlgorithmType()) {
-		case EC_ALL:
+		case EC_ALG_ALL:
 			resultsFilename += ".ec";
 			break;
-		case EC_RJ:
+		case EC_ALG_RJ:
 			resultsFilename += ".rj";
 			break;
-		case EC_RF:
+		case EC_ALG_RF:
 			resultsFilename += ".rf";
+			break;
+		case EC_ALG_SEQ:
+			resultsFilename += ".ecseq";
 			break;
 		default:
 			// we should not get here by the CLI front end but it is possible to call
@@ -841,7 +839,7 @@ int main(int argc, char** argv) {
 	// delete ds;
 
 	/// Remove temporary Random Jungle files if they exist
-	if((ec.GetAlgorithmType() == EC_ALL) || (ec.GetAlgorithmType() == EC_RJ)) {
+	if((ec.GetAlgorithmType() == EC_ALG_ALL) || (ec.GetAlgorithmType() == EC_ALG_RJ)) {
 		cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
 		vector<string> tempFilenames;
 		tempFilenames.push_back(outputFilesPrefix + ".log");
@@ -855,8 +853,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
-	cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
+	cout << Timestamp() << "EC elapsed time " << t.elapsed() << " secs" << endl;
 
 	cout << Timestamp() << argv[0] << " done" << endl;
 
