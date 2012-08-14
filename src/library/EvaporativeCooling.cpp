@@ -8,6 +8,9 @@
  * McKinney, et. al. "Capturing the Spectrum of Interaction Effects in Genetic
  * Association Studies by Simulated Evaporative Cooling Network Analysis."
  * PLoS Genetics, Vol 5, Issue 3, 2009.
+  *
+ * Made even more generic with main effects and interaction effects algorithms
+ * in a class hierarchy from a AttributeRanker base. 8/12/12
  */
 
 #include <cstdlib>
@@ -68,10 +71,6 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	paramsMap = vm;
 	analysisType = anaType;
 
-	reliefF = NULL;
-	randomJungle = NULL;
-	deseq = NULL;
-
 	optimizeTemperature = false;
 	if(paramsMap.count("optimize-temp")) {
 		optimizeTemperature = true;
@@ -93,38 +92,99 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	cout << Timestamp() << "EC is removing attributes until best "
 			<< numTargetAttributes << " remain" << endl;
 
-	if(paramsMap.count("relieff-seq")) {
-		algorithmType = EC_ALG_SEQ;
-		cout << Timestamp()
-				<< "Running EC in SEQ mode: DESeq + ReliefFSeq" << endl;
-	}
-	else {
-		if (paramsMap.count("ec-algorithm-steps")) {
-			string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
-			if (ecAlgParam == "ALL") {
-				algorithmType = EC_ALG_ALL;
-				cout << Timestamp()
-						<< "Running EC in standard mode: Random Jungle + ReliefF" << endl;
+	/// set the EC steps to perform
+	algorithmType = EC_ALG_ME_IT;
+	if (paramsMap.count("ec-algorithm-steps")) {
+		string ecAlgParam = to_upper(vm["ec-algorithm-steps"].as<string>());
+		if (ecAlgParam == "ALL") {
+			algorithmType = EC_ALG_ME_IT;
+			cout << Timestamp()
+					<< "Running EC in standard mode: Main effects + interaction effects"
+					<< endl;
+		} else {
+			if (ecAlgParam == "ME") {
+				algorithmType = EC_ALG_ME_ONLY;
+				cout << Timestamp() << "Running EC in main effects only mode" << endl;
 			} else {
-				if (ecAlgParam == "RJ") {
-					algorithmType = EC_ALG_RJ;
-					cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
+				if (ecAlgParam == "IT") {
+					algorithmType = EC_ALG_IT_ONLY;
+					cout << Timestamp() << "Running EC in interactions effects only mode"
+							<< endl;
 				} else {
-					if (ecAlgParam == "RF") {
-						algorithmType = EC_ALG_RF;
-						cout << Timestamp() << "Running EC in ReliefF only mode" << endl;
-					} else {
-						cerr << "ERROR: --ec-algorithm-steps must be one of: "
-								<< "all, rj or rf" << endl;
-						exit(EXIT_FAILURE);
-					}
+					cerr << "ERROR: --ec-algorithm-steps must be one of: "
+							<< "all, me or it" << endl;
+					exit(EXIT_FAILURE);
 				}
 			}
 		}
 	}
+
+	/// set the main effects algorithm
+	meAlgorithmType = EC_ME_ALG_RJ;
+	if (paramsMap.count("ec-me-algorithm")) {
+		string ecMeAlgParam = to_upper(vm["ec-me-algorithm"].as<string>());
+		if (ecMeAlgParam == "RJ") {
+			meAlgorithmType = EC_ME_ALG_RJ;
+			cout << Timestamp()
+					<< "EC main effects algorithm set to: Random Jungle"
+					<< endl;
+		} else {
+			if (ecMeAlgParam == "DESEQ") {
+				meAlgorithmType = EC_ME_ALG_DESEQ;
+				cout << Timestamp()
+						<< "Running EC in main effects algorithm set to: DESeq" << endl;
+			} else {
+				cerr << "ERROR: --ec-me-algorithm must be one of: "
+						<< "rj or deseq" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	maineffectAlgorithm = NULL;
+	switch(meAlgorithmType) {
+	case EC_ME_ALG_RJ:
+		maineffectAlgorithm = new RandomJungle(ds, vm);
+		break;
+	case EC_ME_ALG_DESEQ:
+		maineffectAlgorithm = new Deseq(ds);
+		break;
+	}
+
+	/// set the interaction algorithm
+	itAlgorithmType = EC_IT_ALG_RF;
+	if (paramsMap.count("ec-it-algorithm")) {
+		string ecItAlgParam = to_upper(vm["ec-it-algorithm"].as<string>());
+		if (ecItAlgParam == "RF") {
+			itAlgorithmType = EC_IT_ALG_RF;
+			cout << Timestamp()
+					<< "EC interaction effects algorithm set to: ReliefF"
+					<< endl;
+		} else {
+			if (ecItAlgParam == "RFSEQ") {
+				itAlgorithmType = EC_IT_ALG_RFSEQ;
+				cout << Timestamp()
+						<< "Running EC in interaction effects algorithm set to: ReliefFSeq"
+						<< endl;
+			} else {
+				cerr << "ERROR: --ec-it-algorithm must be one of: "
+						<< "rf or rfseq" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	interactionAlgorithm = NULL;
+	switch(meAlgorithmType) {
+	case EC_IT_ALG_RF:
+		interactionAlgorithm = new ReliefF(ds, vm, anaType);
+		break;
+	case EC_IT_ALG_RFSEQ:
+		interactionAlgorithm = new ReliefFSeq(ds, vm);
+		break;
+	}
+
 	outFilesPrefix = paramsMap["out-files-prefix"].as<string>();
 
-	// set the number of attributea to remove per iteration
+	// set the number of attributes to remove per iteration
 	numToRemovePerIteration = 0;
 	if (paramsMap.count("ec-iter-remove-n")) {
 		numToRemovePerIteration = paramsMap["ec-iter-remove-n"].as<unsigned int>();
@@ -145,34 +205,6 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	numRFThreads = maxThreads;
 	cout << Timestamp() << "EC will use " << numRFThreads << " threads" << endl;
 
-	deseq = NULL;
-	// ------------------------------------------------------------- Random Jungle
-	// create and initialize a Random Jungle
-	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
-		randomJungle = new RandomJungle(dataset, paramsMap);
-	}
-
-	// ------------------------------------------------------------------ Relief-F
-	// create and initialize Relief-F
-	// check for special ReliefF-Seq requested analysis
-	if(algorithmType == EC_ALG_SEQ) {
-		cout << Timestamp() << "Creating ReliefFSeq object" << endl;
-		reliefF = new ReliefFSeq(dataset, paramsMap);
-		cout << Timestamp() << "Creating DESeq object" << endl;
-		deseq = new Deseq(dataset);
-	}
-
-	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
-		cout << Timestamp() << "Initializing ReliefF" << endl;
-			if (dataset->HasContinuousPhenotypes()) {
-				cout << Timestamp() << "RReliefF" << endl;
-				reliefF = new RReliefF(dataset, paramsMap);
-			} else {
-				cout << Timestamp() << "ReliefF" << endl;
-				reliefF = new ReliefF(dataset, paramsMap, analysisType);
-			}
-	}
-
 } // end of constructor
 
 EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
@@ -186,9 +218,8 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	}
 	analysisType = anaType;
 
-	reliefF = NULL;
-	randomJungle = NULL;
-	deseq = NULL;
+	interactionAlgorithm = NULL;
+	maineffectAlgorithm = NULL;
 
 	string configValue;
 
@@ -216,36 +247,94 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	cout << Timestamp() << "EC is removing attributes until best "
 			<< numTargetAttributes << " remain" << endl;
 
-	string ecAlgParam = "ALL";
-	algorithmType = EC_ALG_ALL;
-	if(GetConfigValue(configMap, "relieff-seq", configValue)) {
-		algorithmType = EC_ALG_SEQ;
-		cout << Timestamp()
-				<< "Running EC in SEQ mode: DESeq + ReliefFSeq" << endl;
-	}
-	else {
-		if (GetConfigValue(configMap, "ec-algorithm-steps", configValue)) {
-			ecAlgParam = to_upper(configValue);
-			if (ecAlgParam == "ALL") {
-				algorithmType = EC_ALG_ALL;
-				cout << Timestamp()
-						<< "Running EC in standard mode: Random Jungle + Relief-F" << endl;
+	/// set the EC steps to perform
+	algorithmType = EC_ALG_ME_IT;
+	if (GetConfigValue(configMap, "ec-algorithm-steps", configValue)) {
+		string ecAlgParam = to_upper(configValue);
+		if (ecAlgParam == "ALL") {
+			algorithmType = EC_ALG_ME_IT;
+			cout << Timestamp()
+					<< "Running EC in standard mode: Main effects + interaction effects"
+					<< endl;
+		} else {
+			if (ecAlgParam == "ME") {
+				algorithmType = EC_ALG_ME_ONLY;
+				cout << Timestamp() << "Running EC in main effects only mode" << endl;
 			} else {
-				if (ecAlgParam == "RJ") {
-					algorithmType = EC_ALG_RJ;
-					cout << Timestamp() << "Running EC in Random Jungle only mode" << endl;
+				if (ecAlgParam == "IT") {
+					algorithmType = EC_ALG_IT_ONLY;
+					cout << Timestamp() << "Running EC in interactions effects only mode"
+							<< endl;
 				} else {
-					if (ecAlgParam == "RF") {
-						algorithmType = EC_ALG_RF;
-						cout << Timestamp() << "Running EC in Relief-F only mode" << endl;
-					} else {
-						cerr << "ERROR: --ec-algorithm-steps must be one of: "
-								<< "all, rj or rf" << endl;
-						exit(EXIT_FAILURE);
-					}
+					cerr << "ERROR: --ec-algorithm-steps must be one of: "
+							<< "all, me or it" << endl;
+					exit(EXIT_FAILURE);
 				}
 			}
 		}
+	}
+
+	/// set the main effects algorithm
+	meAlgorithmType = EC_ME_ALG_RJ;
+	if (GetConfigValue(configMap, "ec-me-algorithm", configValue)) {
+		string ecMeAlgParam = to_upper(configValue);
+		if (ecMeAlgParam == "RJ") {
+			meAlgorithmType = EC_ME_ALG_RJ;
+			cout << Timestamp()
+					<< "EC main effects algorithm set to: Random Jungle"
+					<< endl;
+		} else {
+			if (ecMeAlgParam == "DESEQ") {
+				meAlgorithmType = EC_ME_ALG_DESEQ;
+				cout << Timestamp()
+						<< "Running EC in main effects algorithm set to: DESeq" << endl;
+			} else {
+				cerr << "ERROR: --ec-me-algorithm must be one of: "
+						<< "rj or deseq" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	maineffectAlgorithm = NULL;
+	switch(meAlgorithmType) {
+	case EC_ME_ALG_RJ:
+		maineffectAlgorithm = new RandomJungle(ds, configMap);
+		break;
+	case EC_ME_ALG_DESEQ:
+		maineffectAlgorithm = new Deseq(ds);
+		break;
+	}
+
+	/// set the interaction algorithm
+	itAlgorithmType = EC_IT_ALG_RF;
+	if (GetConfigValue(configMap, "ec-it-algorithm", configValue)) {
+		string ecItAlgParam = to_upper(configValue);
+		if (ecItAlgParam == "RF") {
+			itAlgorithmType = EC_IT_ALG_RF;
+			cout << Timestamp()
+					<< "EC interaction effects algorithm set to: ReliefF"
+					<< endl;
+		} else {
+			if (ecItAlgParam == "RFSEQ") {
+				itAlgorithmType = EC_IT_ALG_RFSEQ;
+				cout << Timestamp()
+						<< "Running EC in interaction effects algorithm set to: ReliefFSeq"
+						<< endl;
+			} else {
+				cerr << "ERROR: --ec-it-algorithm must be one of: "
+						<< "rf or rfseq" << endl;
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+	interactionAlgorithm = NULL;
+	switch(meAlgorithmType) {
+	case EC_IT_ALG_RF:
+		interactionAlgorithm = new ReliefF(ds, configMap, anaType);
+		break;
+	case EC_IT_ALG_RFSEQ:
+		interactionAlgorithm = new ReliefFSeq(ds, configMap);
+		break;
 	}
 
 	if (GetConfigValue(configMap, "out-files-prefix", configValue)) {
@@ -275,44 +364,14 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 	numRFThreads = maxThreads;
 	cout << Timestamp() << "EC will use " << numRFThreads << " threads" << endl;
 
-	// ------------------------------------------------------------- Random Jungle
-	// create and initialize a Random Jungle
-	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
-		randomJungle = new RandomJungle(dataset, configMap);
-	}
-
-	// ------------------------------------------------------------------ Relief-F
-	// create and initialize Relief-F
-	if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
-		cout << Timestamp() << "Initializing Relief-F" << endl;
-		if(GetConfigValue(configMap, "relieff-seq", configValue)) {
-			cout << Timestamp() << "ReliefF-Seq" << endl;
-			reliefF = new ReliefFSeq(dataset, paramsMap);
-			deseq = new Deseq(dataset);
-			algorithmType = EC_ALG_SEQ;
-		}
-		else {
-			if (dataset->HasContinuousPhenotypes()) {
-				cout << Timestamp() << "RRelief-F" << endl;
-				reliefF = new RReliefF(dataset, configMap);
-			} else {
-				cout << Timestamp() << "Relief-F" << endl;
-				reliefF = new ReliefF(dataset, configMap, analysisType);
-			}
-		}
-	}
-
 } // end of constructor
 
 EvaporativeCooling::~EvaporativeCooling() {
-	if (reliefF) {
-		delete reliefF;
+	if (interactionAlgorithm) {
+		delete interactionAlgorithm;
 	}
-	if (randomJungle) {
-		delete randomJungle;
-	}
-	if (deseq) {
-		delete deseq;
+	if (maineffectAlgorithm) {
+		delete maineffectAlgorithm;
 	}
 }
 
@@ -357,45 +416,27 @@ bool EvaporativeCooling::ComputeECScores() {
 		cout << fixed << setprecision(1);
 
 		// -------------------------------------------------------------------------
-		if (algorithmType == EC_ALG_SEQ) {
-			cout << Timestamp() << "Running DESeq" << endl;
-			deseqScores = deseq->ComputeScores();
-			cout << Timestamp() << "Running ReliefFSeq" << endl;
-			if (!RunReliefF()) {
-				cerr << "ERROR: In EC algorithm: ReliefFSeq failed" << endl;
-				return false;
-			}
-			cout << setprecision(1);
-			cout << Timestamp() << "ReliefFSeq finished in " << t.elapsed() << " secs"
-					<< endl;
-		}
-
-		// run Random Jungle and get the normalized scores for use in EC
-		if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RJ)) {
+		// run main effects algorithm and get the normalized scores for use in EC
+		if ((algorithmType == EC_ALG_ME_IT) || (algorithmType == EC_ALG_ME_ONLY)) {
 			cout << Timestamp() << "Running Random Jungle" << endl;
-			if (randomJungle->ComputeAttributeScores()) {
-				rjScores = randomJungle->GetScores();
-				bestClassificationError = randomJungle->GetClassificationError();
-			} else {
-				cerr << "ERROR: In EC algorithm: Random Jungle failed" << endl;
-				return false;
-			}
-			cout << Timestamp() << "Random Jungle finished in " << t.elapsed()
+			maineffectScores = maineffectAlgorithm->ComputeScores();
+			bestClassificationError = maineffectAlgorithm->GetClassificationError();
+			cout << Timestamp() << "Main effects ranker finished in " << t.elapsed()
 					<< " secs" << endl;
 			// RJ standalone runs
-			if ((algorithmType == EC_ALG_RJ)
+			if ((algorithmType == EC_ALG_ME_ONLY)
 					&& (numWorkingAttributes == numTargetAttributes)) {
-				sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
+				sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
 				ecScores.resize(numTargetAttributes);
-				copy(rjScores.begin(), rjScores.begin() + numTargetAttributes,
+				copy(maineffectScores.begin(), maineffectScores.begin() + numTargetAttributes,
 						ecScores.begin());
 				return true;
 			}
 		}
 
 		// -------------------------------------------------------------------------
-		// run Relief-F and get normalized score for use in EC
-		if ((algorithmType == EC_ALG_ALL) || (algorithmType == EC_ALG_RF)) {
+		// run interaction effects algorithm and get normalized score for use in EC
+		if ((algorithmType == EC_ALG_ME_IT) || (algorithmType == EC_ALG_IT_ONLY)) {
 			cout << Timestamp() << "Running ReliefF" << endl;
 			if (!RunReliefF()) {
 				cerr << "ERROR: In EC algorithm: ReliefF failed" << endl;
@@ -405,11 +446,11 @@ bool EvaporativeCooling::ComputeECScores() {
 			cout << Timestamp() << "ReliefF finished in " << t.elapsed() << " secs"
 					<< endl;
 			// ReliefF standalone runs
-			if ((algorithmType == EC_ALG_RF)
+			if ((algorithmType == EC_ALG_IT_ONLY)
 					&& (numWorkingAttributes == numTargetAttributes)) {
-				sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+				sort(interactionScores.begin(), interactionScores.end(), scoresSortDesc);
 				ecScores.resize(numTargetAttributes);
-				copy(rfScores.begin(), rfScores.begin() + numTargetAttributes,
+				copy(interactionScores.begin(), interactionScores.begin() + numTargetAttributes,
 						ecScores.begin());
 				return true;
 			}
@@ -487,15 +528,15 @@ bool EvaporativeCooling::ComputeECScores() {
 	return true;
 }
 
-EcScores& EvaporativeCooling::GetRandomJungleScores() {
-	return rjScores;
+AttributeScores& EvaporativeCooling::GetMaineffectScores() {
+	return maineffectScores;
 }
 
-EcScores& EvaporativeCooling::GetReliefFScores() {
-	return rfScores;
+AttributeScores& EvaporativeCooling::GetInteractionScores() {
+	return interactionScores;
 }
 
-EcScores& EvaporativeCooling::GetECScores() {
+AttributeScores& EvaporativeCooling::GetECScores() {
 	return ecScores;
 }
 
@@ -504,34 +545,25 @@ EcAlgorithmType EvaporativeCooling::GetAlgorithmType() {
 }
 
 void EvaporativeCooling::PrintAttributeScores(ofstream& outStream) {
-	for (EcScoresCIt ecScoresIt = ecScores.begin(); ecScoresIt != ecScores.end();
+	for (AttributeScoresCIt ecScoresIt = ecScores.begin(); ecScoresIt != ecScores.end();
 			++ecScoresIt) {
 		outStream << fixed << setprecision(8) << (*ecScoresIt).first << "\t"
 				<< (*ecScoresIt).second << endl;
 	}
 }
 
-void EvaporativeCooling::PrintRJAttributeScores(ofstream& outStream) {
-	sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
-	for (EcScoresCIt rjScoresIt = rjScores.begin(); rjScoresIt != rjScores.end();
+void EvaporativeCooling::PrintMaineffectAttributeScores(ofstream& outStream) {
+	sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
+	for (AttributeScoresCIt rjScoresIt = maineffectScores.begin(); rjScoresIt != maineffectScores.end();
 			++rjScoresIt) {
 		outStream << fixed << setprecision(8) << (*rjScoresIt).first << "\t"
 				<< (*rjScoresIt).second << endl;
 	}
 }
 
-void EvaporativeCooling::PrintDeseqAttributeScores(ofstream& outStream) {
-	sort(deseqScores.begin(), deseqScores.end(), scoresSortDesc);
-	for (EcScoresCIt deseqScoresIt = deseqScores.begin();
-			deseqScoresIt != deseqScores.end();	++deseqScoresIt) {
-		outStream << fixed << setprecision(8) << (*deseqScoresIt).first << "\t"
-				<< (*deseqScoresIt).second << endl;
-	}
-}
-
-void EvaporativeCooling::PrintRFAttributeScores(ofstream& outStream) {
-	sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
-	for (EcScoresCIt rfScoresIt = rfScores.begin(); rfScoresIt != rfScores.end();
+void EvaporativeCooling::PrintInteractionAttributeScores(ofstream& outStream) {
+	sort(interactionScores.begin(), interactionScores.end(), scoresSortDesc);
+	for (AttributeScoresCIt rfScoresIt = interactionScores.begin(); rfScoresIt != interactionScores.end();
 			++rfScoresIt) {
 		outStream << fixed << setprecision(8) << (*rfScoresIt).first << "\t"
 				<< (*rfScoresIt).second << endl;
@@ -544,38 +576,7 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 	// added 9/26/11 for reflecting the fact that only parts of the
 	// complete EC algorithm were performed
 	switch (algorithmType) {
-	case EC_ALG_SEQ:
-		resultsFilename = baseFilename + ".ecseq";
-		outFile.open(resultsFilename.c_str());
-		if (outFile.bad()) {
-			cerr << "ERROR: Could not open scores file " << resultsFilename
-					<< "for writing" << endl;
-			exit(1);
-		}
-		PrintAttributeScores(outFile);
-		outFile.close();
-
-		resultsFilename = baseFilename + ".ecseq.deseq";
-		outFile.open(resultsFilename.c_str());
-		if (outFile.bad()) {
-			cerr << "ERROR: Could not open scores file " << resultsFilename
-					<< "for writing" << endl;
-			exit(1);
-		}
-		PrintDeseqAttributeScores(outFile);
-		outFile.close();
-
-		resultsFilename = baseFilename + ".ecseq.rf";
-		outFile.open(resultsFilename.c_str());
-		if (outFile.bad()) {
-			cerr << "ERROR: Could not open scores file " << resultsFilename
-					<< "for writing" << endl;
-			exit(1);
-		}
-		PrintRFAttributeScores(outFile);
-		outFile.close();
-		break;
-	case EC_ALG_ALL:
+	case EC_ALG_ME_IT:
 		resultsFilename = baseFilename + ".ec";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
@@ -586,28 +587,28 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		PrintAttributeScores(outFile);
 		outFile.close();
 
-		resultsFilename = baseFilename + ".ec.rj";
+		resultsFilename = baseFilename + ".ec.me";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
 			cerr << "ERROR: Could not open scores file " << resultsFilename
 					<< "for writing" << endl;
 			exit(1);
 		}
-		PrintRJAttributeScores(outFile);
+		PrintMaineffectAttributeScores(outFile);
 		outFile.close();
 
-		resultsFilename = baseFilename + ".ec.rf";
+		resultsFilename = baseFilename + ".ec.it";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
 			cerr << "ERROR: Could not open scores file " << resultsFilename
 					<< "for writing" << endl;
 			exit(1);
 		}
-		PrintRFAttributeScores(outFile);
+		PrintInteractionAttributeScores(outFile);
 		outFile.close();
 		break;
-	case EC_ALG_RJ:
-		resultsFilename += ".rj";
+	case EC_ALG_ME_ONLY:
+		resultsFilename += ".me";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
 			cerr << "ERROR: Could not open scores file " << resultsFilename
@@ -617,8 +618,8 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		PrintAttributeScores(outFile);
 		outFile.close();
 		break;
-	case EC_ALG_RF:
-		resultsFilename += ".rf";
+	case EC_ALG_IT_ONLY:
+		resultsFilename += ".it";
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
 			cerr << "ERROR: Could not open scores file " << resultsFilename
@@ -640,28 +641,28 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 
 bool EvaporativeCooling::PrintAllScoresTabular() {
 	// sanity checks
-	if (rjScores.size() != rfScores.size()) {
+	if (maineffectScores.size() != interactionScores.size()) {
 		cerr
 				<< "ERROR: Random Jungle and Relief-F scores lists are not the same size"
 				<< endl;
 		return false;
 	}
-	if (freeEnergyScores.size() != rfScores.size()) {
+	if (freeEnergyScores.size() != interactionScores.size()) {
 		cerr
 				<< "ERROR: Random Jungle and Relief-F scores lists are not the same size"
 				<< endl;
 		return false;
 	}
 
-	sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
-	sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+	sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
+	sort(interactionScores.begin(), interactionScores.end(), scoresSortDesc);
 	sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
 
 	cout << "\t\t\tE (RF)\t\tS (RJ)\t\tF (free energy)\n";
 	unsigned int numScores = freeEnergyScores.size();
 	for (unsigned int i = 0; i < numScores; ++i) {
-		pair<double, string> thisRJScores = rjScores[i];
-		pair<double, string> thisRFScores = rfScores[i];
+		pair<double, string> thisRJScores = maineffectScores[i];
+		pair<double, string> thisRFScores = interactionScores[i];
 		pair<double, string> thisFEScores = freeEnergyScores[i];
 		printf("\t\t\t%s\t%6.4f\t%s\t%6.4f\t%s\t%6.4f\n",
 				thisRFScores.second.c_str(), thisRFScores.first,
@@ -674,21 +675,21 @@ bool EvaporativeCooling::PrintAllScoresTabular() {
 
 bool EvaporativeCooling::PrintKendallTaus() {
 	// sanity checks
-	if (rjScores.size() != rfScores.size()) {
+	if (maineffectScores.size() != interactionScores.size()) {
 		cerr
 				<< "ERROR: Random Jungle and Relief-F scores lists are not the same size"
 				<< endl;
 		return false;
 	}
-	if (freeEnergyScores.size() != rfScores.size()) {
+	if (freeEnergyScores.size() != interactionScores.size()) {
 		cerr
 				<< "ERROR: Random Jungle and Relief-F scores lists are not the same size"
 				<< endl;
 		return false;
 	}
 
-	sort(rjScores.begin(), rjScores.end(), scoresSortDesc);
-	sort(rfScores.begin(), rfScores.end(), scoresSortDesc);
+	sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
+	sort(interactionScores.begin(), interactionScores.end(), scoresSortDesc);
 	sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
 
 	vector<string> rjNames;
@@ -696,8 +697,8 @@ bool EvaporativeCooling::PrintKendallTaus() {
 	vector<string> feNames;
 	unsigned int numScores = freeEnergyScores.size();
 	for (unsigned int i = 0; i < numScores; ++i) {
-		pair<double, string> thisRJScores = rjScores[i];
-		pair<double, string> thisRFScores = rfScores[i];
+		pair<double, string> thisRJScores = maineffectScores[i];
+		pair<double, string> thisRFScores = interactionScores[i];
 		pair<double, string> thisFEScores = freeEnergyScores[i];
 		rjNames.push_back(thisRJScores.second);
 		rfNames.push_back(thisRFScores.second);
@@ -716,24 +717,18 @@ bool EvaporativeCooling::PrintKendallTaus() {
 
 bool EvaporativeCooling::RunReliefF() {
 
-	if(reliefF->ComputeAttributeScores()) {
-		rfScores = reliefF->GetScores();
-		if(rfScores.size() == 0) {
-			cerr << "ERROR: RunReliefF: No scores computed" << endl;
-			return false;
-		}
-	}
-	else {
-		cerr << "ERROR: RunReliefF: ComputeAttributeScores failed" << endl;
+	interactionScores = interactionAlgorithm->ComputeScores();
+	if(interactionScores.size() == 0) {
+		cerr << "ERROR: RunReliefF: No scores computed" << endl;
 		return false;
 	}
 
 	cout << Timestamp() << "Normalizing ReliefF scores to 0-1" << endl;
-	pair<double, string> firstScore = rfScores[0];
+	pair<double, string> firstScore = interactionScores[0];
 	double minRFScore = firstScore.first;
 	double maxRFScore = firstScore.first;
-	EcScoresCIt rfScoresIt = rfScores.begin();
-	for (; rfScoresIt != rfScores.end(); ++rfScoresIt) {
+	AttributeScoresCIt rfScoresIt = interactionScores.begin();
+	for (; rfScoresIt != interactionScores.end(); ++rfScoresIt) {
 		pair<double, string> thisScore = *rfScoresIt;
 		if (thisScore.first < minRFScore) {
 			minRFScore = thisScore.first;
@@ -750,73 +745,53 @@ bool EvaporativeCooling::RunReliefF() {
 		return true;
 	}
 
-	EcScores newRFScores;
+	AttributeScores newRFScores;
 	double rfRange = maxRFScore - minRFScore;
-	for (EcScoresIt it = rfScores.begin(); it != rfScores.end(); ++it) {
+	for (AttributeScoresIt it = interactionScores.begin(); it != interactionScores.end(); ++it) {
 		pair<double, string> thisScore = *it;
 		double key = thisScore.first;
 		string val = thisScore.second;
 		newRFScores.push_back(make_pair((key - minRFScore) / rfRange, val));
 	}
 
-	rfScores.clear();
-	rfScores = newRFScores;
+	interactionScores.clear();
+	interactionScores = newRFScores;
 
 	return true;
 }
 
 bool EvaporativeCooling::ComputeFreeEnergy(double temperature) {
-	if (algorithmType == EC_ALG_ALL) {
-		if (rjScores.size() != rfScores.size()) {
+	if (algorithmType == EC_ALG_ME_IT) {
+		if (maineffectScores.size() != interactionScores.size()) {
 			cerr << "ERROR: EvaporativeCooling::ComputeFreeEnergy scores lists are "
-					"unequal. RJ: " << rjScores.size() << " vs. RF: " << rfScores.size()
+					"unequal. RJ: " << maineffectScores.size() << " vs. RF: " << interactionScores.size()
 					<< endl;
 			return false;
 		}
 	}
 
-	if (algorithmType == EC_ALG_SEQ) {
-		if (deseqScores.size() != rfScores.size()) {
-			cerr << "ERROR: EvaporativeCooling::ComputeFreeEnergy scores lists are "
-					"unequal. DESeq: " << deseqScores.size() << " vs. RF: "
-					<< rfScores.size() << endl;
-			return false;
-		}
-	}
-
 	freeEnergyScores.clear();
-	EcScoresCIt rjIt = rjScores.begin();
-	EcScoresCIt rfIt = rfScores.begin();
-	EcScoresCIt deseqIt = deseqScores.begin();
+	AttributeScoresCIt rjIt = maineffectScores.begin();
+	AttributeScoresCIt rfIt = interactionScores.begin();
 	switch (algorithmType) {
-	case EC_ALG_ALL:
-		sort(rjScores.begin(), rjScores.end(), scoresSortAscByName);
-		sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
-		for (; rjIt != rjScores.end(); ++rjIt, ++rfIt) {
+	case EC_ALG_ME_IT:
+		sort(maineffectScores.begin(), maineffectScores.end(), scoresSortAscByName);
+		sort(interactionScores.begin(), interactionScores.end(), scoresSortAscByName);
+		for (; rjIt != maineffectScores.end(); ++rjIt, ++rfIt) {
 			string val = rjIt->second;
 			double key = rjIt->first;
 			freeEnergyScores.push_back(
 					make_pair((*rfIt).first + (temperature * key), val));
 		}
 		break;
-	case EC_ALG_RJ:
-		for (; rjIt != rjScores.end(); ++rjIt) {
+	case EC_ALG_ME_ONLY:
+		for (; rjIt != maineffectScores.end(); ++rjIt) {
 			freeEnergyScores.push_back(make_pair(rjIt->first, rjIt->second));
 		}
 		break;
-	case EC_ALG_RF:
-		for (; rfIt != rfScores.end(); ++rfIt) {
+	case EC_ALG_IT_ONLY:
+		for (; rfIt != interactionScores.end(); ++rfIt) {
 			freeEnergyScores.push_back(make_pair(rfIt->first, rfIt->second));
-		}
-		break;
-	case EC_ALG_SEQ:
-		sort(deseqScores.begin(), deseqScores.end(), scoresSortAscByName);
-		sort(rfScores.begin(), rfScores.end(), scoresSortAscByName);
-		for (; deseqIt != deseqScores.end(); ++deseqIt, ++rfIt) {
-			string val = deseqIt->second;
-			double key = deseqIt->first;
-			freeEnergyScores.push_back(
-					make_pair((*rfIt).first + (temperature * key), val));
 		}
 		break;
 	default:
@@ -866,7 +841,7 @@ double EvaporativeCooling::OptimizeTemperature(vector<double> deltas) {
 	/// for each delta, run a classifier on the best attributes according
 	/// to the free energy and update best temperature
 	vector<double>::const_iterator deltaIt = deltas.begin();
-	EcScores bestFreeEnergyScores = freeEnergyScores;
+	AttributeScores bestFreeEnergyScores = freeEnergyScores;
 	for(; deltaIt != deltas.end(); ++deltaIt) {
 		double thisTemp = optimalTemperature + *deltaIt;
 		ComputeFreeEnergy(thisTemp);
@@ -909,7 +884,7 @@ double EvaporativeCooling::ComputeClassificationErrorRJ() {
 			<< " attributes for temporary CSV file" << endl;
 	vector<string> bestAttributes;
 	unsigned int numCopied = 0;
-	EcScoresCIt scoreIt = freeEnergyScores.begin();
+	AttributeScoresCIt scoreIt = freeEnergyScores.begin();
 	for(; numCopied < numBest && scoreIt != freeEnergyScores.end();
 			++numCopied, ++scoreIt) {
 		bestAttributes.push_back(scoreIt->second);

@@ -13,12 +13,13 @@
 
 #include "gsl/gsl_cdf.h"
 
+#include "AttributeRanker.h"
 #include "ChiSquared.h"
 #include "Dataset.h"
 
 using namespace std;
 
-ChiSquared::ChiSquared(Dataset* ds) {
+ChiSquared::ChiSquared(Dataset* ds) : AttributeRanker::AttributeRanker(ds) {
   if(ds) {
     dataset = ds;
   } else {
@@ -31,16 +32,16 @@ ChiSquared::ChiSquared(Dataset* ds) {
 ChiSquared::~ChiSquared() {
 }
 
-const vector<pair<double, double> >& ChiSquared::ComputeScores() {
+const vector<pair<double, double> >& ChiSquared::ComputeScoresWithPValues() {
   // for each attribute
   for(unsigned int curAttribute = 0;
       curAttribute < dataset->NumAttributes();
       curAttribute++) {
-    scores.push_back(ComputeScore(curAttribute));
+    scoresPvalues.push_back(ComputeScore(curAttribute));
     // PrintTables();
   } // next attribute
 
-  return scores;
+  return scoresPvalues;
 }
 
 pair<double, double> ChiSquared::ComputeScore(unsigned int index) {
@@ -173,7 +174,7 @@ void ChiSquared::PrintTables() {
   cout << endl;
 }
 
-void ChiSquared::PrintScores(ofstream& outFile, unsigned int topN) {
+void ChiSquared::PrintScoresWithPValues(ofstream& outFile, unsigned int topN) {
   if(topN == 0 || topN >= dataset->NumAttributes()) {
     topN = dataset->NumAttributes();
     outFile << "Chi-squared values/p-values for all attributes:" << endl;
@@ -182,15 +183,15 @@ void ChiSquared::PrintScores(ofstream& outFile, unsigned int topN) {
             << "] attributes:" << endl;
   }
   vector<string> attributeNames = dataset->GetAttributeNames();
-  vector<pair<double, double> >::const_iterator aIt = scores.begin();
+  vector<pair<double, double> >::const_iterator aIt = scoresPvalues.begin();
   unsigned int n = 0;
-  for(; aIt != scores.end() && n < topN; ++aIt, ++n) {
+  for(; aIt != scoresPvalues.end() && n < topN; ++aIt, ++n) {
     outFile << attributeNames[n] << " " << (*aIt).first << " "
             << (*aIt).second << endl;
   }
 }
 
-void ChiSquared::WriteScores(string outFilename, unsigned int topN) {
+void ChiSquared::WriteScoresWithPValues(string outFilename, unsigned int topN) {
   if(topN == 0 || topN >= dataset->NumAttributes()) {
     topN = dataset->NumAttributes();
   }
@@ -202,7 +203,7 @@ void ChiSquared::WriteScores(string outFilename, unsigned int topN) {
     cerr << "ERROR: Could not open scores file for writing" << endl;
     exit(-1);
   }
-  PrintScores(outFile, topN);
+  PrintScoresWithPValues(outFile, topN);
   outFile.close();
 }
 
@@ -240,3 +241,13 @@ void ChiSquared::ClearTables() {
   }
 }
 
+AttributeScores ChiSquared::ComputeScores() {
+	ComputeScoresWithPValues();
+  vector<string> attributeNames = dataset->GetAttributeNames();
+  vector<pair<double, double> >::const_iterator aIt = scoresPvalues.begin();
+  scores.clear();
+  for(unsigned int i =0; aIt != scoresPvalues.end(); ++aIt, ++i) {
+  	scores.push_back(make_pair(aIt->first, attributeNames[i]));
+  }
+	return scores;
+}

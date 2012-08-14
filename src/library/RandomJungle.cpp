@@ -33,6 +33,7 @@
 #include "RandomJungle.h"
 #include "StringUtils.h"
 #include "Insilico.h"
+#include "AttributeRanker.h"
 
 using namespace std;
 using namespace insilico;
@@ -115,7 +116,8 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 }
 
 // standard methods
-RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
+RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm):
+	AttributeRanker::AttributeRanker(ds) {
 	dataset = ds;
 
 	cout << Timestamp()
@@ -191,7 +193,8 @@ RandomJungle::RandomJungle(Dataset* ds, po::variables_map& vm) {
 	rjParams.nthreads = numProcs;
 }
 
-RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
+RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap):
+			AttributeRanker::AttributeRanker(ds)  {
 
 	cout << Timestamp() << "Initializing Random Jungle with ConfigMap" << endl;
 
@@ -266,22 +269,36 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap) {
 }
 
 RandomJungle::~RandomJungle() {
+	cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
+	vector<string> tempFilenames;
+	string outprefix(rjParams.outprefix);
+	tempFilenames.push_back(outprefix + ".log");
+	tempFilenames.push_back(outprefix + ".verbose");
+	tempFilenames.push_back(outprefix + ".importance");
+	tempFilenames.push_back(outprefix + ".confusion");
+	tempFilenames.push_back(outprefix + ".confusion2");
+	for(vector<string>::const_iterator it=tempFilenames.begin();
+			it != tempFilenames.end(); ++it) {
+		unlink((*it).c_str());
+	}
 	if (rjParams.rng) {
 		gsl_rng_free(rjParams.rng);
 	}
 }
 
-bool RandomJungle::ComputeAttributeScores() {
+AttributeScores RandomJungle::ComputeScores() {
 
 	cout << Timestamp() << "Computing Random Jungle variable importance scores"
 			<< endl;
 
 	if (runMode == SYSTEM_CALL_RUN_MODE) {
-		return ComputeAttributeScoresRjungle();
+		ComputeAttributeScoresRjungle();
+		return scores;
 	}
 
 	if (runMode == LIBRARY_FILE_RUN_MODE) {
-		return ComputeAttributeScoresFileIO();
+		ComputeAttributeScoresFileIO();
+		return scores;
 	}
 
 	cout << Timestamp() << "Running Random Jungle using C++ librjungle calls"
@@ -430,7 +447,7 @@ bool RandomJungle::ComputeAttributeScores() {
 			<< "from [" << importanceFilename << "]" << endl;
 	if (!ReadScores(importanceFilename)) {
 		cerr << "ERROR: Could not read Random Jungle scores" << endl;
-		return false;
+ 		exit(-1);
 	}
 
 	/// rj classification error
@@ -439,7 +456,7 @@ bool RandomJungle::ComputeAttributeScores() {
 	cout << Timestamp() << "RJ classification accuracy: "
 			<< classificationAccuracy << endl;
 
-	return true;
+	return scores;
 }
 
 bool RandomJungle::ComputeAttributeScoresFileIO() {
@@ -582,14 +599,6 @@ bool RandomJungle::ComputeAttributeScoresRjungle() {
 	unlink(tempFile.c_str());
 
 	return true;
-}
-
-vector<pair<double, string> > RandomJungle::GetScores() {
-	return scores;
-}
-
-double RandomJungle::GetClassificationError() {
-	return classificationAccuracy;
 }
 
 bool RandomJungle::ReadScores(string importanceFilename) {

@@ -22,7 +22,7 @@
 using namespace std;
 using namespace insilico;
 
-Deseq::Deseq(Dataset* ds) {
+Deseq::Deseq(Dataset* ds): AttributeRanker::AttributeRanker(ds) {
   if(ds) {
   	if(!ds->HasNumerics()) {
       cerr << "ERROR: Deseq::constructor: data set must have numeric data"
@@ -39,7 +39,7 @@ Deseq::Deseq(Dataset* ds) {
 Deseq::~Deseq() {
 }
 
-const vector<pair<double, string> >& Deseq::ComputeScores() {
+vector<pair<double, string> > Deseq::ComputeScores() {
 	cout << Timestamp() << "Running DESeq through C system() call" << endl;
 
 	/// save the current data set to a temporary file for DESeq

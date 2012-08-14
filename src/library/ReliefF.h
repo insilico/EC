@@ -24,12 +24,13 @@
 
 #include <boost/program_options.hpp>
 
+#include "AttributeRanker.h"
 #include "Dataset.h"
 #include "Insilico.h"
 
 namespace po = boost::program_options;
 
-class ReliefF
+class ReliefF : public AttributeRanker
 {
 public:
   /*************************************************************************//**
@@ -79,10 +80,12 @@ public:
   bool PreComputeDistances();
   /// Precompute all pairwise distances honoring excluded instances.
   bool PreComputeDistancesByMap();
-  /// Get the last computed ReliefF scores.
-  std::vector<std::pair<double, std::string> > GetScores();
+  /// Overrides base class method.
+  AttributeScores GetScores();
+  // Implements AttributeRanker interface.
+  AttributeScores ComputeScores();
 protected:
-  /// Compute the weight by distance factors for nearest neighbors.
+  /// Compute theconst AttributeScores& ComputeScores(); weight by distance factors for nearest neighbors.
   bool ComputeWeightByDistanceFactors();
   /// type of analysis to perform
   AnalysisType analysisType;
@@ -110,8 +113,6 @@ protected:
   std::string snpMetric;
   /// the name of continuous diff(erence) function
   std::string numMetric;
-  /// the dataset on which the algorithm is working
-  Dataset* dataset;
   /// nomalizing factor for ReliefF m * k loop
   double one_over_m_times_k;
   /// number of instances to sample

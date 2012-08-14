@@ -18,9 +18,10 @@
 #include <vector>
 #include <fstream>
 
+#include "AttributeRanker.h"
 #include "Dataset.h"
 
-class Deseq
+class Deseq : public AttributeRanker
 {
 public:
   /*************************************************************************//**
@@ -34,7 +35,7 @@ public:
    * in a vector of pairs indexed by attribute index.
    * \return vector of pairs of deseq scores and associated p-values
    ****************************************************************************/
-  const std::vector<std::pair<double, std::string> >& ComputeScores();
+  std::vector<std::pair<double, std::string> > ComputeScores();
   /*************************************************************************//**
    * Print the scores to a stream.
    * \param [in] outStream reference to an output stream

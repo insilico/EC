@@ -42,6 +42,13 @@ typedef DistancePairs::const_iterator DistancePairsIt;
 /// Configuration map as an alternative to Boost::program_options
 typedef std::map<std::string, std::string> ConfigMap;
 
+/// attribute scores - sorted by score key
+typedef std::vector<std::pair<double, std::string> > AttributeScores;
+/// attribute scores iterator - sorted by score key
+typedef AttributeScores::iterator AttributeScoresIt;
+/// attribute scores constant iterator - sorted by score key
+typedef AttributeScores::const_iterator AttributeScoresCIt;
+
 /// C O N S T A N T S
 
 /// Error codes.
@@ -185,10 +192,29 @@ enum RandomJungleRunMode
  */
 enum EcAlgorithmType
 {
-	EC_ALG_ALL, /**< Random Jungle + ReliefF */
-	EC_ALG_RJ,  /**< Random Jungle only */
-	EC_ALG_RF,  /**< ReliefF only */
-	EC_ALG_SEQ  /**< DESeq + ReliefFSeq */
+	EC_ALG_ME_IT, /**< main effects + interactions algorithms combined */
+	EC_ALG_ME_ONLY,  /**< main effects algorithm only */
+	EC_ALG_IT_ONLY  /**< interactions algorithm only */
+};
+
+/**
+ * \enum EcMeAlgorithmType.
+ * Type of main effects algorithm to execute.
+ */
+enum EcMeAlgorithmType
+{
+	EC_ME_ALG_RJ, /**< Random Jungle main effects algorithm */
+	EC_ME_ALG_DESEQ,  /**< DESeq main effects algorithm */
+};
+
+/**
+ * \enum EcItAlgorithmType.
+ * Type of interactions algorithm to execute.
+ */
+enum EcItAlgorithmType
+{
+	EC_IT_ALG_RF, /**< ReliefF interactions algorithm */
+	EC_IT_ALG_RFSEQ,  /**< ReliefFSeq interactions algorithm */
 };
 
 static std::map<std::string, std::string> datasetTypeToExt;

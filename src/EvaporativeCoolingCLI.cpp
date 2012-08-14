@@ -25,6 +25,8 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/progress.hpp>
 
+#include "rjungle/librjungle.h"
+
 #include "EvaporativeCooling.h"
 #include "Insilico.h"
 
@@ -85,6 +87,8 @@ int main(int argc, char** argv) {
 	string diagnosticLevelsCountsFilename = "";
 	// EC parameters
 	string ecAlgorithmSteps = "all";
+	string ecMeAlgorithm = "rj";
+	string ecItAlgorithm = "rf";
 	unsigned int ecNumTarget = 0;
 	unsigned int ecIterNumToRemove = 0;
 	unsigned int ecIterPercentToRemove = 0;
@@ -132,7 +136,17 @@ int main(int argc, char** argv) {
 		(
 		"ec-algorithm-steps,g",
 		po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
-		"EC steps to run (all|rj|rf)"
+		"EC steps to run (all|me=main effects only|it=interaction effects only)"
+		)
+		(
+		"ec-me-algorithm",
+		po::value<string > (&ecMeAlgorithm)->default_value(ecMeAlgorithm),
+		"Main effects algorithm (rj|deseq)"
+		)
+		(
+		"ec-it-algorithm",
+		po::value<string > (&ecItAlgorithm)->default_value(ecItAlgorithm),
+		"Interaction effects algorithm (rf|rfseq)"
 		)
 		(
 		"ec-num-target,t",
@@ -271,7 +285,6 @@ int main(int argc, char** argv) {
 		po::value<string > (&dgeNormsFilename),
 		"read digital gene expression normalization factors from text file"
 		)
-		("relieff-seq,Q", "Use ReliefF-Seq algorithm on the DGE data")
 		(
 		"birdseed-snps-data",
 		po::value<string > (&birdseedFilename),
@@ -787,17 +800,14 @@ int main(int argc, char** argv) {
 	// <metric>.relieff suffix
 	string resultsFilename = outputFilesPrefix;
 	switch(ec.GetAlgorithmType()) {
-		case EC_ALG_ALL:
+		case EC_ALG_ME_IT:
 			resultsFilename += ".ec";
 			break;
-		case EC_ALG_RJ:
-			resultsFilename += ".rj";
+		case EC_ALG_ME_ONLY:
+			resultsFilename += ".me";
 			break;
-		case EC_ALG_RF:
-			resultsFilename += ".rf";
-			break;
-		case EC_ALG_SEQ:
-			resultsFilename += ".ecseq";
+		case EC_ALG_IT_ONLY:
+			resultsFilename += ".it";
 			break;
 		default:
 			// we should not get here by the CLI front end but it is possible to call
@@ -836,21 +846,8 @@ int main(int argc, char** argv) {
 
 	// ---------------------------------------------------------------------------
 	cout << Timestamp() << "Clean up and shutdown" << endl;
-	// delete ds;
-
-	/// Remove temporary Random Jungle files if they exist
-	if((ec.GetAlgorithmType() == EC_ALG_ALL) || (ec.GetAlgorithmType() == EC_ALG_RJ)) {
-		cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
-		vector<string> tempFilenames;
-		tempFilenames.push_back(outputFilesPrefix + ".log");
-		tempFilenames.push_back(outputFilesPrefix + ".verbose");
-		tempFilenames.push_back(outputFilesPrefix + ".importance");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion2");
-		for(vector<string>::const_iterator it=tempFilenames.begin();
-				it != tempFilenames.end(); ++it) {
-			unlink((*it).c_str());
-		}
+	if(ds) {
+		delete ds;
 	}
 
 	cout << Timestamp() << "EC elapsed time " << t.elapsed() << " secs" << endl;

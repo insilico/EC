@@ -17,6 +17,9 @@
  *
  * Contact: bill.c.white@gmail.com
  * Created on: 7/14/11
+ *
+ * Made even more generic with main effects and interaction effects algorithms
+ * in a class hierarchy from a AttributeRanker base. 8/12/12
  */
 
 #ifndef EVAPORATIVECOOLING_H
@@ -26,20 +29,11 @@
 
 #include <boost/program_options.hpp>
 
+#include "AttributeRanker.h"
 #include "Dataset.h"
-#include "RandomJungle.h"
-#include "ReliefF.h"
-#include "Deseq.h"
 #include "Insilico.h"
 
 namespace po = boost::program_options;
-
-/// evaporative cooling scores - sorted by score key
-typedef std::vector<std::pair<double, std::string> > EcScores;
-/// evaporative cooling scores iterator - sorted by score key
-typedef std::vector<std::pair<double, std::string> >::iterator EcScoresIt;
-/// evaporative cooling scores constant iterator - sorted by score key
-typedef std::vector<std::pair<double, std::string> >::const_iterator EcScoresCIt;
 
 class EvaporativeCooling {
 public:
@@ -63,12 +57,12 @@ public:
 	/// Compute the EC scores based on the current set of attributes.
 	bool ComputeECScores();
 	/// Get the last computed RandomJungle scores.
-	EcScores& GetRandomJungleScores();
+	AttributeScores& GetMaineffectScores();
 	/// Get the last computed ReliefF scores.
-	EcScores& GetReliefFScores();
+	AttributeScores& GetInteractionScores();
 	/// Get the last computed EC scores.
-	EcScores& GetECScores();
-	/// Return the algorithm type: EC_ALL, EC_RJ or EC_RF.
+	AttributeScores& GetECScores();
+	/// Return the algorithm type.
 	EcAlgorithmType GetAlgorithmType();
 	/*************************************************************************//**
 	 * Write the scores and attribute names to file.
@@ -81,23 +75,18 @@ public:
 	 ****************************************************************************/
 	void PrintAttributeScores(std::ofstream& outStream);
 	/*************************************************************************//**
-	 * Write the RJ scores and attribute names to stream.
+	 * Write the main effect scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
-	void PrintRJAttributeScores(std::ofstream& outStream);
+	void PrintMaineffectAttributeScores(std::ofstream& outStream);
 	/*************************************************************************//**
-	 * Write the Deseq scores and attribute names to stream.
+	 * Write the interaction scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
-	void PrintDeseqAttributeScores(std::ofstream& outStream);
-	/*************************************************************************//**
-	 * Write the RF scores and attribute names to stream.
-	 * \param [in] outStream stream to write score-attribute name pairs
-	 ****************************************************************************/
-	void PrintRFAttributeScores(std::ofstream& outStream);
+	void PrintInteractionAttributeScores(std::ofstream& outStream);
 	/// Print the current attributes scores to stdout in tab-delimited format.
 	bool PrintAllScoresTabular();
-	/// Print the kendall taus between the ReliefF and RandomJungle scores.
+	/// Print the kendall taus between the main effects and interactions scores.
 	bool PrintKendallTaus();
 private:
 	/// Run the ReliefF algorithm.
@@ -132,26 +121,26 @@ private:
 	AnalysisType analysisType;
 	/// algorithm steps to perform
 	EcAlgorithmType algorithmType;
+	/// main effects algorithm
+	EcMeAlgorithmType meAlgorithmType;
+	/// interactions algorithm
+	EcItAlgorithmType itAlgorithmType;
 
-	/// pointer to a ReliefF or RReliefF algorithm object
-	ReliefF* reliefF;
-	/// pointer to a RandomJungle algorithm object
-	RandomJungle* randomJungle;
-	/// pointer to a DESeq algorithm object
-	Deseq* deseq;
+	/// pointer to a main effects algorithm object
+	AttributeRanker* maineffectAlgorithm;
+	/// pointer to an interaction ranker algorithm object
+	AttributeRanker* interactionAlgorithm;
 
 	bool optimizeTemperature;
 	double optimalTemperature;
 	double bestClassificationError;
 
 	/// current random jungle scores
-	EcScores rjScores;
-	/// current deseq scores
-	EcScores deseqScores;
-	/// current relieff scores
-	EcScores rfScores;
+	AttributeScores maineffectScores;
+	/// current interaction scores
+	AttributeScores interactionScores;
 	/// current free energy scores
-	EcScores freeEnergyScores;
+	AttributeScores freeEnergyScores;
 
 	// number of threads to use for random jungle
 	unsigned int numRFThreads;
@@ -163,9 +152,9 @@ private:
 	/// number of target attributes
 	unsigned int numTargetAttributes;
 	/// attributes that have been evaporated so far
-	EcScores evaporatedAttributes;
+	AttributeScores evaporatedAttributes;
 	/// current set of ec scores
-	EcScores ecScores;
+	AttributeScores ecScores;
 };
 
 /// HACK FOR AUTOTOOLS LIBRARY DETECTION

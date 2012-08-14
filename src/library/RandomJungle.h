@@ -19,17 +19,19 @@
 #include <vector>
 #include <fstream>
 
-#include "Insilico.h"
-#include "Dataset.h"
 #include <boost/program_options.hpp>
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 #include "rjungle/RJunglePar.h"
 
+#include "Insilico.h"
+#include "Dataset.h"
+#include "AttributeRanker.h"
+
 namespace po = boost::program_options;
 
-class RandomJungle
+class RandomJungle: public AttributeRanker
 {
 public:
 	/// Run Random jungle as a classifier without instantiating a Random Jungle
@@ -52,19 +54,13 @@ public:
    ****************************************************************************/
   RandomJungle(Dataset* ds, ConfigMap& vm);
   virtual ~RandomJungle();
+
   /// Score attributes by getting Random Jungle importance scores
-  bool ComputeAttributeScores();
+  AttributeScores ComputeScores();
   /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScoresRjungle();
   /// Score attributes by getting Random Jungle importance scores
   bool ComputeAttributeScoresFileIO();
-  /*************************************************************************//**
-   * Get the (importance) scores as a vector of pairs: score, attribute name
-   * \return vector of pairs
-   ****************************************************************************/
-  std::vector<std::pair<double, std::string> > GetScores();
-  /// Get the classification error of the last classifier run
-  double GetClassificationError();
 private:
   /// Read the importance scores as attribute rankings from file into member
   /// vector scores: pair<double, string>
@@ -79,12 +75,6 @@ private:
   bool fixedMtry;
   /// RandomJungle calling style
   RandomJungleRunMode runMode;
-  /// pointer to a Dataset object
-  Dataset* dataset;
-  /// vector of pairs: scores, attribute names
-  std::vector<std::pair<double, std::string> > scores;
-  /// last classification error
-  double classificationAccuracy;
 };
 
 #endif	/* RANDOMJUNGLE_H */

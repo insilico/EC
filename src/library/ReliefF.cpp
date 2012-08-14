@@ -63,7 +63,8 @@ public:
 	}
 };
 
-ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
+ReliefF::ReliefF(Dataset* ds, AnalysisType anaType):
+		AttributeRanker::AttributeRanker(ds) {
 	cout << Timestamp() << "ReliefF default initialization without "
 			<< "configuration parameters" << endl;
 	if (ds) {
@@ -115,7 +116,8 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType) {
 			scoreNames.begin() + atrNames.size());
 }
 
-ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
+ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType):
+				AttributeRanker::AttributeRanker(ds)  {
 	cout << Timestamp() << "ReliefF initialization with boost command "
 			<< "line parameters:" << endl;
 	if (ds) {
@@ -271,7 +273,8 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType) {
 			scoreNames.begin() + atrNames.size());
 }
 
-ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType) {
+ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType):
+				AttributeRanker::AttributeRanker(ds)  {
 	cout << Timestamp() << "ReliefF initialization with configuration map:"
 			<< endl;
 	if (ds) {
@@ -995,9 +998,9 @@ bool ReliefF::PreComputeDistancesByMap() {
 	return true;
 }
 
-vector<pair<double, string> > ReliefF::GetScores() {
+AttributeScores ReliefF::GetScores() {
 
-	vector<pair<double, string> > returnScores;
+	AttributeScores returnScores;
 	vector<double>::const_iterator scoresIt = W.begin();
 	unsigned int nameIdx = 0;
 	vector<string> maskNames = dataset->MaskGetAllVariableNames();
@@ -1005,8 +1008,12 @@ vector<pair<double, string> > ReliefF::GetScores() {
 		returnScores.push_back(make_pair(*scoresIt, maskNames[nameIdx]));
 		++nameIdx;
 	}
-
 	return returnScores;
+}
+
+AttributeScores ReliefF::ComputeScores() {
+	ComputeAttributeScores();
+	return GetScores();
 }
 
 bool ReliefF::ComputeWeightByDistanceFactors() {

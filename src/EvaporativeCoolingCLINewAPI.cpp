@@ -23,6 +23,8 @@
 #include <boost/program_options/positional_options.hpp>
 #include <boost/program_options/parsers.hpp>
 
+#include "rjungle/librjungle.h"
+
 #include "EvaporativeCooling.h"
 #include "Insilico.h"
 #include "Dataset.h"
@@ -470,14 +472,14 @@ int main(int argc, char** argv) {
   // <metric>.relieff suffix
   string resultsFilename = outputFilesPrefix;
   switch(ec.GetAlgorithmType()) {
-    case EC_ALG_ALL:
+    case EC_ALG_ME_IT:
       resultsFilename += ".ec";
       break;
-    case EC_ALG_RJ:
-      resultsFilename += ".ec.rj";
+    case EC_ALG_ME_ONLY:
+      resultsFilename += ".ec.me";
       break;
-    case EC_ALG_RF:
-      resultsFilename += ".ec.rf";
+    case EC_ALG_IT_ONLY:
+      resultsFilename += ".ec.it";
       break;
     default:
       // we should not get here by the CLI front end but it is possible to call
@@ -509,21 +511,6 @@ int main(int argc, char** argv) {
   // ---------------------------------------------------------------------------
   cout << Timestamp() << "Clean up and shutdown" << endl;
   // delete ds;
-
-  /// Remove temporary Random Jungle files if they exist
-  if((ec.GetAlgorithmType() == EC_ALG_ALL) || (ec.GetAlgorithmType() == EC_ALG_RJ)) {
-  	cout << Timestamp() << "Removing temporary RandomJungle files" << endl;
-		vector<string> tempFilenames;
-		tempFilenames.push_back(outputFilesPrefix + ".log");
-		tempFilenames.push_back(outputFilesPrefix + ".verbose");
-		tempFilenames.push_back(outputFilesPrefix + ".importance");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion");
-		tempFilenames.push_back(outputFilesPrefix + ".confusion2");
-		for(vector<string>::const_iterator it=tempFilenames.begin();
-				it != tempFilenames.end(); ++it) {
-			unlink((*it).c_str());
-		}
-  }
 
   float elapsedTime = (float) (clock() - t) / CLOCKS_PER_SEC;
   cout << Timestamp() << "EC elapsed time " << elapsedTime << " secs" << endl;
