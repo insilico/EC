@@ -106,7 +106,7 @@ enum AnalysisType
   INTEGRATED_ANALYSIS, /**< discrete and continuous analysis  */
   DIAGNOSTIC_ANALYSIS, /**< diagnostic mode - no ReliefF analysis */
   REGRESSION_ANALYSIS, /**< regression ReliefF analysis */
-  SIGNAL_TO_NOISE_ANALYSIS, /**< signal-to-noise ReliefF analysis */
+  RNASEQ_ANALYSIS, /**< rnaSeq count data ReliefF analysis */
   DGE_ANALYSIS, /**< digital gene expression (DGE) analysis */
   BIRDSEED_ANALYSIS, /**< Birdseed called SNPs analysis */
   DISTANCE_MATRIX_ANALYSIS, /**< distance matrix calculation */

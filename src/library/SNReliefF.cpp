@@ -18,17 +18,17 @@
 using namespace std;
 
 SNReliefF::SNReliefF(Dataset* ds) :
-		ReliefF::ReliefF(ds, SIGNAL_TO_NOISE_ANALYSIS) {
+		ReliefF::ReliefF(ds, RNASEQ_ANALYSIS) {
 	cout << Timestamp() << "SNReliefF initializing" << endl;
 }
 
 SNReliefF::SNReliefF(Dataset* ds, po::variables_map& vm) :
-		ReliefF::ReliefF(ds, vm, SIGNAL_TO_NOISE_ANALYSIS) {
+		ReliefF::ReliefF(ds, vm, RNASEQ_ANALYSIS) {
 	cout << Timestamp() << "SNReliefF initializing" << endl;
 }
 
 SNReliefF::SNReliefF(Dataset* ds, ConfigMap& configMap) :
-		ReliefF::ReliefF(ds, configMap, SIGNAL_TO_NOISE_ANALYSIS) {
+		ReliefF::ReliefF(ds, configMap, RNASEQ_ANALYSIS) {
 	cout << Timestamp() << "SNReliefF initialing" << endl;
 }
 

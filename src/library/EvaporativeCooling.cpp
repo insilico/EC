@@ -163,7 +163,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 			if (ecItAlgParam == "RFSEQ") {
 				itAlgorithmType = EC_IT_ALG_RFSEQ;
 				cout << Timestamp()
-						<< "Running EC in interaction effects algorithm set to: ReliefFSeq"
+						<< "Running EC interaction effects algorithm set to: ReliefFSeq"
 						<< endl;
 			} else {
 				cerr << "ERROR: --ec-it-algorithm must be one of: "
@@ -173,7 +173,7 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 		}
 	}
 	interactionAlgorithm = NULL;
-	switch(meAlgorithmType) {
+	switch(itAlgorithmType) {
 	case EC_IT_ALG_RF:
 		interactionAlgorithm = new ReliefF(ds, vm, anaType);
 		break;
@@ -584,6 +584,8 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 					<< "for writing" << endl;
 			exit(1);
 		}
+		cout << Timestamp()
+				<< "Writing EC scores to [" + resultsFilename + "]" << endl;
 		PrintAttributeScores(outFile);
 		outFile.close();
 
@@ -594,6 +596,8 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 					<< "for writing" << endl;
 			exit(1);
 		}
+		cout << Timestamp()
+				<< "Writing EC main effects scores to [" + resultsFilename + "]" << endl;
 		PrintMaineffectAttributeScores(outFile);
 		outFile.close();
 
@@ -604,6 +608,9 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 					<< "for writing" << endl;
 			exit(1);
 		}
+		cout << Timestamp()
+				<< "Writing EC interaction effects scores to [" + resultsFilename + "]"
+				<< endl;
 		PrintInteractionAttributeScores(outFile);
 		outFile.close();
 		break;
@@ -615,6 +622,8 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 					<< "for writing" << endl;
 			exit(1);
 		}
+		cout << Timestamp()
+				<< "Writing EC main effects scores to [" + resultsFilename + "]" << endl;
 		PrintAttributeScores(outFile);
 		outFile.close();
 		break;
@@ -626,6 +635,9 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 					<< "for writing" << endl;
 			exit(1);
 		}
+		cout << Timestamp()
+				<< "Writing EC interaction effects scores to [" + resultsFilename + "]"
+				<< endl;
 		PrintAttributeScores(outFile);
 		outFile.close();
 		break;

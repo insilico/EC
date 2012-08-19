@@ -89,6 +89,8 @@ int main(int argc, char** argv) {
 	string ecAlgorithmSteps = "all";
 	string ecMeAlgorithm = "rj";
 	string ecItAlgorithm = "rf";
+	string ecSeqAlgorithmMode = "snr";
+	double ecSeqAlgorithmS0 = 0.05;
 	unsigned int ecNumTarget = 0;
 	unsigned int ecIterNumToRemove = 0;
 	unsigned int ecIterPercentToRemove = 0;
@@ -149,6 +151,16 @@ int main(int argc, char** argv) {
 		"Interaction effects algorithm (rf|rfseq)"
 		)
 		(
+		"ec-seq-algorithm-mode",
+		po::value<string > (&ecSeqAlgorithmMode)->default_value(ecSeqAlgorithmMode),
+		"Seq interaction algorithm mode (snr|tstat)"
+		)
+		(
+		"ec-seq-algorithm-s0",
+		po::value<double > (&ecSeqAlgorithmS0)->default_value(ecSeqAlgorithmS0),
+		"Seq interaction algorithm s0 (0.0 <= s0 <= 1.0)"
+		)
+		(
 		"ec-num-target,t",
 		po::value<unsigned int>(&ecNumTarget)->default_value(ecNumTarget),
 		"EC N_target - target number of attributes to keep"
@@ -196,7 +208,7 @@ int main(int argc, char** argv) {
 		(
 		"rj-run-mode,R",
 		po::value<unsigned int> (&rjRunMode)->default_value(rjRunMode),
-		"Random Jungle run mode: 1 (default=library call with meory I/O) "
+		"Random Jungle run mode: 1 (default=library call with memory I/O) "
 		"/ 2 (system call)"
 		"/ 3 (library call with file I/O)"
 		)
@@ -796,8 +808,7 @@ int main(int argc, char** argv) {
 	cout << Timestamp() << "EC done" << endl;
 
 	// ---------------------------------------------------------------------------
-	// write the scores to the same name as the dataset with
-	// <metric>.relieff suffix
+	// write the scores to the same name as the data set with algorithm suffix
 	string resultsFilename = outputFilesPrefix;
 	switch(ec.GetAlgorithmType()) {
 		case EC_ALG_ME_IT:
@@ -816,8 +827,6 @@ int main(int argc, char** argv) {
 							<< "type was determined. " << endl;
 			return false;
 	}
-
-	cout << Timestamp() << "Writing EC scores to [" + resultsFilename + "]" << endl;
 	ec.WriteAttributeScores(outputFilesPrefix);
 
 	/// write the ReliefF filtered attributes as a new data set

@@ -64,6 +64,8 @@ public:
   		double muDeltaHit, double muDeltaMiss);
   virtual ~ReliefFSeq();
 private:
+  std::string mode;
+  double s0;
 };
 
 #endif	/* SNReliefF_H */

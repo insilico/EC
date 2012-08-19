@@ -19,18 +19,42 @@
 using namespace std;
 
 ReliefFSeq::ReliefFSeq(Dataset* ds) :
-		ReliefF::ReliefF(ds, SIGNAL_TO_NOISE_ANALYSIS) {
-	cout << Timestamp() << "ReliefFSeq initializing" << endl;
+		ReliefF::ReliefF(ds, RNASEQ_ANALYSIS) {
+	cout << Timestamp() << "ReliefFSeq initializing with data set only" << endl;
 }
 
 ReliefFSeq::ReliefFSeq(Dataset* ds, po::variables_map& vm) :
-		ReliefF::ReliefF(ds, vm, SIGNAL_TO_NOISE_ANALYSIS) {
-	cout << Timestamp() << "ReliefFSeq initializing" << endl;
+		ReliefF::ReliefF(ds, vm, RNASEQ_ANALYSIS) {
+	cout << Timestamp() << "ReliefFSeq initializing with Boost parameters"
+			<< endl;
+	mode = "snr";
+	if(vm.count("ec-seq-algorithm-mode")) {
+		mode = vm["ec-seq-algorithm-mode"].as<string>();
+		if((mode =="snr") || (mode == "tstat")) {
+			cout << Timestamp() << "ReliefFSeq mode set to: " << mode << endl;
+		}
+		else {
+			cerr << "ERROR: Unrecognized ReliefFSeq mode: " << mode << endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+	s0 = 0.05;
+	if(vm.count("ec-seq-algorithm-s0")) {
+		s0 = vm["ec-seq-algorithm-s0"].as<double>();
+		if((s0 >= 0) || (s0 <= 1.0)) {
+			cout << Timestamp() << "ReliefFSeq s0 set to: " << s0 << endl;
+		}
+		else {
+			cerr << "ERROR: ReliefFSeq s0 out of range (0, 1): " << s0 << endl;
+			exit(EXIT_FAILURE);
+		}
+
+	}
 }
 
 ReliefFSeq::ReliefFSeq(Dataset* ds, ConfigMap& configMap) :
-		ReliefF::ReliefF(ds, configMap, SIGNAL_TO_NOISE_ANALYSIS) {
-	cout << Timestamp() << "ReliefFSeq initialing" << endl;
+		ReliefF::ReliefF(ds, configMap, RNASEQ_ANALYSIS) {
+	cout << Timestamp() << "ReliefFSeq initializing with config map" << endl;
 }
 
 ReliefFSeq::~ReliefFSeq() {
@@ -43,12 +67,12 @@ bool ReliefFSeq::ComputeAttributeScores() {
 
 	W.resize(dataset->NumNumerics(), 0.0);
 
-	// precompute all instance-to-instance distances and get nearest neighbors
+	// pre-compute all instance-to-instance distances and get nearest neighbors
 	PreComputeDistances();
 
 	// using pseudo-code notation from white board discussion - 7/21/12
 	// changed to use Brett's email (7/21/12) equations - 7/23/12
-	cout << Timestamp() << "Running Relief-F Seq algorithm" << endl;
+	cout << Timestamp() << "Running ReliefFSeq algorithm" << endl;
 
 #pragma omp parallel for
 	for(unsigned int alpha = 0; alpha < dataset->NumNumerics(); ++alpha) {
@@ -65,7 +89,26 @@ bool ReliefFSeq::ComputeAttributeScores() {
 		double num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
 		double den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
 
-		W[alpha] = num / den;
+		if(mode == "snr") {
+			// mode: snr (signal to noise ratio)
+			W[alpha] = num / (den + s0);
+		}
+		else {
+			// mode: tstat (t-statistic)
+			// from Brett's email - 8/15/12
+			// Also we could change the score to a real t-statistic:
+			// (xbar1 – xbar2)/(Sp*sqrt(1/n1 + 1/n2)), where Sp = pooled standard
+			// deviation=sqrt(((n1-1)*variance1 + (n2-1)*variance2)/(n1+n2-2)).
+			double n1, n2;
+			n1 = n2 = k;
+			double variance1 = sigmaDeltaHitAlpha;
+			double variance2 = sigmaDeltaMissAlpha;
+			double pooledStdDev =
+					sqrt(((n1 - 1) * variance1 + (n2 - 1) * variance2) / (n1 + n2 - 2));
+			W[alpha] =
+					(muDeltaMissAlpha - muDeltaHitAlpha) /
+					(pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2)));
+		}
 	}
 
 	return true;
