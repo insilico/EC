@@ -86,12 +86,11 @@ bool ReliefFSeq::ComputeAttributeScores() {
 		double sigmaDeltaHitAlpha = sigmaDeltaAlphas.first;
 		double sigmaDeltaMissAlpha = sigmaDeltaAlphas.second;
 
-		double num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
-		double den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
-
+		double num=0.0, den=0.0;
 		if(mode == "snr") {
 			// mode: snr (signal to noise ratio)
-			W[alpha] = num / (den + s0);
+			num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
+			den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
 		}
 		else {
 			// mode: tstat (t-statistic)
@@ -105,10 +104,11 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			double variance2 = sigmaDeltaMissAlpha;
 			double pooledStdDev =
 					sqrt(((n1 - 1) * variance1 + (n2 - 1) * variance2) / (n1 + n2 - 2));
-			W[alpha] =
-					(muDeltaMissAlpha - muDeltaHitAlpha) /
-					(pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2)));
+			num = muDeltaMissAlpha - muDeltaHitAlpha;
+			den = pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2));
 		}
+
+		W[alpha] = num / (den + s0);
 	}
 
 	return true;
