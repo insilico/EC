@@ -347,3 +347,13 @@ double KendallTau(vector<int> X, vector<int> Y)
 
   return tau;
 }
+
+double hypot(double x, double y) {
+    double t;
+    x = abs(x);
+    y = abs(y);
+    t = min(x, y);
+    x = max(x, y);
+    y = t;
+    return x * sqrt(1 + (y / x) * (y / x));
+}

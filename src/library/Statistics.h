@@ -107,6 +107,8 @@ double KendallTau(std::vector<double> X, std::vector<double> Y);
  * \return Kendall Tau value (-1, 1)
  ******************************************************************************/
 double KendallTau(std::vector<int> X, std::vector<int> Y);
+/// Compute the hypotenuse.
+double hypot(double x, double y);
 /***************************************************************************//**
  * Calculate variance and standard deviation of a vector of values.
  * \param [in]  ranked attribute lists X and Y

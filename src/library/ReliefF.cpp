@@ -233,9 +233,14 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType):
 	if (to_upper(numMetric) == "MANHATTAN") {
 		numDiff = diffManhattan;
 	} else {
-		cerr << "ERROR: [" << numMetric
-				<< "] is not a valid numeric metric type" << endl;
-		exit(1);
+		if (to_upper(numMetric) == "EUCLIDEAN") {
+			numDiff = diffEuclidean;
+		}
+		else {
+			cerr << "ERROR: [" << numMetric
+					<< "] is not a valid numeric metric type" << endl;
+			exit(1);
+		}
 	}
 
 	cout << Timestamp() << "ReliefF SNP weight update metric: " << snpMetric
@@ -399,9 +404,14 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType):
 	if (to_upper(numMetric) == "MANHATTAN") {
 		numDiff = diffManhattan;
 	} else {
-		cerr << "ERROR: [" << numMetric
-				<< "] is not a valid numeric metric type" << endl;
-		exit(EXIT_FAILURE);
+		if (to_upper(numMetric) == "EUCLIDEAN") {
+			numDiff = diffEuclidean;
+		}
+		else {
+			cerr << "ERROR: [" << numMetric
+					<< "] is not a valid numeric metric type" << endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	cout << Timestamp() << "ReliefF SNP distance metric: " << snpMetric << endl;

@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <vector>
 
 #include "ReliefF.h"
@@ -73,7 +74,11 @@ bool ReliefFSeq::ComputeAttributeScores() {
 	// using pseudo-code notation from white board discussion - 7/21/12
 	// changed to use Brett's email (7/21/12) equations - 7/23/12
 	cout << Timestamp() << "Running ReliefFSeq algorithm" << endl;
-
+	vector<string> numNames;
+	numNames = dataset->GetNumericsNames();
+	// DEBUG
+	ofstream outFile("rawscores.tab");
+	outFile << "gene\tmuMiss\tmuHit\tsigmaMiss\tsigmaHit\tnum\tden\tdms0\tsnr" << endl;
 #pragma omp parallel for
 	for(unsigned int alpha = 0; alpha < dataset->NumNumerics(); ++alpha) {
 
@@ -91,6 +96,10 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			// mode: snr (signal to noise ratio)
 			num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
 			den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
+			outFile << numNames[alpha]
+					<< "\t" << muDeltaMissAlpha << "\t" << muDeltaHitAlpha
+					<< "\t" << sigmaDeltaMissAlpha << "\t" << sigmaDeltaHitAlpha
+					<< "\t" << num << "\t" << den << "\t" << (den + s0);
 		}
 		else {
 			// mode: tstat (t-statistic)
@@ -109,9 +118,23 @@ bool ReliefFSeq::ComputeAttributeScores() {
 		}
 
 		W[alpha] = num / (den + s0);
+		// DEBUG
+		outFile << "\t" << W[alpha] << endl;
 	}
+	// DEBUG
+	outFile.close();
 
 	return true;
+}
+
+AttributeScores ReliefFSeq::GetScores() {
+	AttributeScores returnScores;
+	vector<string> numNames;
+	numNames = dataset->GetNumericsNames();
+	for(unsigned int alpha = 0; alpha < dataset->NumNumerics(); ++alpha) {
+		returnScores.push_back(make_pair(W[alpha], numNames[alpha]));
+	}
+	return returnScores;
 }
 
 pair<double, double> ReliefFSeq::MuDeltaAlphas(unsigned int alpha) {

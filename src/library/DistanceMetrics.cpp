@@ -297,6 +297,21 @@ double diffManhattan(unsigned int attributeIndex,
   return distance;
 }
 
+double diffEuclidean(unsigned int attributeIndex,
+                     DatasetInstance* dsi1,
+                     DatasetInstance* dsi2) {
+  double distance = 0.0;
+  pair<bool, double> checkMissing =
+          CheckMissingNumeric(attributeIndex, dsi1, dsi2);
+  if(checkMissing.first) {
+    distance = checkMissing.second;
+  } else {
+    distance =
+    		hypot(dsi1->numerics[attributeIndex], dsi2->numerics[attributeIndex]);
+  }
+  return distance;
+}
+
 double diffPredictedValueTau(DatasetInstance* dsi1, DatasetInstance* dsi2) {
 
   pair<double, double> minMax =

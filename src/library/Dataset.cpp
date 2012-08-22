@@ -2776,9 +2776,14 @@ bool Dataset::SetDistanceMetrics(string newSnpMetric, string newNumMetric) {
 	if (to_upper(newNumMetric) == "MANHATTAN") {
 		numDiff = diffManhattan;
 	} else {
-		cerr << "ERROR: [" << newNumMetric
-				<< "] is not a valid numeric metric type" << endl;
-		return false;
+		if (to_upper(newNumMetric) == "EUCLIDEAN") {
+			numDiff = diffEuclidean;
+		}
+		else {
+			cerr << "ERROR: [" << newNumMetric
+					<< "] is not a valid numeric metric type" << endl;
+			return false;
+		}
 	}
 	numMetric = newNumMetric;
 

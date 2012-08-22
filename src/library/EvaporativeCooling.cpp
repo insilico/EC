@@ -728,11 +728,19 @@ bool EvaporativeCooling::PrintKendallTaus() {
 }
 
 bool EvaporativeCooling::RunReliefF() {
-
+	/// postcondition: interactionScores contains the newly-computed scores
 	interactionScores = interactionAlgorithm->ComputeScores();
 	if(interactionScores.size() == 0) {
 		cerr << "ERROR: RunReliefF: No scores computed" << endl;
 		return false;
+	}
+
+	// added for rnaSeq analysis - bcw - 8/21/12
+	// normalizing "stretches" the distribution to many zeroes, thus
+	// complicating ranking of many ties; don't do it!
+	if(analysisType == RNASEQ_ANALYSIS) {
+		cout << Timestamp() << "rnaSeq skipping normalization."	<< endl;
+		return true;
 	}
 
 	cout << Timestamp() << "Normalizing ReliefF scores to 0-1" << endl;
@@ -750,7 +758,7 @@ bool EvaporativeCooling::RunReliefF() {
 		}
 	}
 
-	// normalize attribute scores
+	// normalize attribute scores if necessary
 	if (minRFScore == maxRFScore) {
 		cout << Timestamp() << "WARNING: Relief-F min and max scores are the same. "
 				<< "No normalization necessary" << endl;

@@ -106,6 +106,16 @@ double diffManhattan(unsigned int attributeIndex,
                      DatasetInstance* dsi1,
                      DatasetInstance* dsi2);
 /***************************************************************************//**
+ * Euclidean distance between continuous attributes.
+ * \param [in] attributeIndex index into the vector of attributes
+ * \param [in] dsi1 data set instance 1
+ * \param [in] dsi2 data set instance 2
+ * \return absolute value of difference divided by attribute's range
+ ******************************************************************************/
+double diffEuclidean(unsigned int attributeIndex,
+                     DatasetInstance* dsi1,
+                     DatasetInstance* dsi2);
+/***************************************************************************//**
  * Same as "Manhattan" distance but uses method calls versus public variables.
  * \param [in] attributeIndex index into the vector of attributes
  * \param [in] dsi1 data set instance 1

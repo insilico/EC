@@ -57,6 +57,7 @@ public:
    ****************************************************************************/
   ReliefFSeq(Dataset* ds, ConfigMap& configMap);
   bool ComputeAttributeScores();
+  AttributeScores GetScores();
   // average hit and miss diffs for gene alpha
   std::pair<double, double> MuDeltaAlphas(unsigned int alpha);
   /// standard deviations of hit and miss diffs for gene alpha
