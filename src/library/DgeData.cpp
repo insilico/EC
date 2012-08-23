@@ -288,10 +288,24 @@ void DgeData::PrintSampleStats() {
 		     << " min: " << minMaxSampleCounts[sampleIndex].first
 		     << " max: " << minMaxSampleCounts[sampleIndex].second
 		     << " zeroes: " << sampleZeroes[sampleIndex].size()
+		     << " depth: " << GetSequencingDepthForSample(sampleIndex)
 		     << endl;
 	}
 }
 
 string DgeData::GetCountsFilename() {
 	return countsFilename;
+}
+
+unsigned int DgeData::GetSequencingDepthForSample(unsigned int sampleIndex) {
+	if((sampleIndex < 0) || (sampleIndex >= sampleNames.size())) {
+		cerr << "ERROR: DgeData::GetSequencingDepthForSample: "
+				<< "Sample index out of range: " << sampleIndex << endl;
+		exit(EXIT_FAILURE);
+	}
+	unsigned int depth = 0;
+	for(unsigned int i=0; i < geneNames.size(); ++i) {
+		depth += counts[i][sampleIndex];
+	}
+	return depth;
 }

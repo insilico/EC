@@ -41,6 +41,8 @@ public:
 	void PrintSampleStats();
 	/// Get the original data set filename
 	std::string GetCountsFilename();
+	// Get the sequencing depth for a sample at index
+	unsigned int GetSequencingDepthForSample(unsigned int sampleIndex);
 private:
 	/// Filename containing DGE counts
 	std::string countsFilename;
