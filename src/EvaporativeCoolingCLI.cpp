@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
 		(
 		"numeric-transform,X",
 		po::value<string > (&numericTransform),
-		"perform numeric transformation: normalize, standardize, zscore, log, sqrt"
+		"perform numeric transformation: normalize, standardize, zscore, log, sqrt, anscombe"
 		)
 		(
 		"alternate-pheno-file,a",
@@ -778,6 +778,9 @@ int main(int argc, char** argv) {
 		}
 		if(numericTransform == "sqrt") {
 			ds->TransformNumericsSqrt();
+		}
+		if(numericTransform == "anscombe") {
+			ds->TransformNumericsAnscombe();
 		}
 		if(numericTransform == "zscore") {
 			ds->TransformNumericsZScore();

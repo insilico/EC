@@ -325,6 +325,9 @@ public:
   bool TransformNumericsLog();
   /// Replace numeric value x with sqrt(x).
   bool TransformNumericsSqrt();
+  /// Replace numeric value x with Anscombe(x).
+  /// see: http://en.wikipedia.org/wiki/Anscombe_transform
+  bool TransformNumericsAnscombe();
   /// Get the number of classes in the data set.
   unsigned int NumClasses();
   /// Get the class column as read from the file.

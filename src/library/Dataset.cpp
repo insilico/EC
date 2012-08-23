@@ -1440,6 +1440,24 @@ bool Dataset::TransformNumericsSqrt() {
 	return true;
 }
 
+bool Dataset::TransformNumericsAnscombe() {
+	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
+	double threeEighths = 3.0 / 8.0;
+	for (; nit != numericsMask.end(); ++nit) {
+		string thisNumName = nit->first;
+		unsigned int thisNumIndex = nit->second;
+		map<string, unsigned int>::const_iterator it;
+		for (it = instancesMask.begin(); it != instancesMask.end(); it++) {
+			DatasetInstance* dsi = instances[it->second];
+			double thisVal = dsi->GetNumeric(thisNumIndex);
+			if (thisVal != MISSING_NUMERIC_VALUE) {
+				dsi->numerics[thisNumIndex] = 2.0 * sqrt(thisVal + threeEighths);
+			}
+		}
+	}
+	return true;
+}
+
 unsigned int Dataset::NumClasses() {
 	if (hasPhenotypes) {
 		return classIndexes.size();
