@@ -74,14 +74,18 @@ bool ReliefFSeq::ComputeAttributeScores() {
 	// using pseudo-code notation from white board discussion - 7/21/12
 	// changed to use Brett's email (7/21/12) equations - 7/23/12
 	cout << Timestamp() << "Running ReliefFSeq algorithm" << endl;
-	vector<string> numNames;
-	numNames = dataset->GetNumericsNames();
+//	vector<string> numNames;
+//	numNames = dataset->GetNumericsNames();
+	vector<unsigned int> numericIndices =
+			dataset->MaskGetAttributeIndices(NUMERIC_TYPE);
 	// DEBUG
-	ofstream outFile("rawscores.tab");
-	outFile << "gene\tmuMiss\tmuHit\tsigmaMiss\tsigmaHit\tnum\tden\tdms0\tsnr" << endl;
+//	string rawScoresFileName = dataset->GetNumericsFilename() + "_rawscores.tab";
+//	ofstream outFile(rawScoresFileName.c_str());
+//	outFile << "gene\tmuMiss\tmuHit\tsigmaMiss\tsigmaHit\tnum\tden\tdms0\tsnr" << endl;
 #pragma omp parallel for
-	for(unsigned int alpha = 0; alpha < dataset->NumNumerics(); ++alpha) {
-
+	for (unsigned int numIdx = 0; numIdx < numericIndices.size();
+			++numIdx) {
+		unsigned int alpha = numericIndices[numIdx];
 		pair<double, double> muDeltaAlphas = MuDeltaAlphas(alpha);
 		double muDeltaHitAlpha = muDeltaAlphas.first;
 		double muDeltaMissAlpha = muDeltaAlphas.second;
@@ -96,10 +100,10 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			// mode: snr (signal to noise ratio)
 			num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
 			den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
-			outFile << numNames[alpha]
-					<< "\t" << muDeltaMissAlpha << "\t" << muDeltaHitAlpha
-					<< "\t" << sigmaDeltaMissAlpha << "\t" << sigmaDeltaHitAlpha
-					<< "\t" << num << "\t" << den << "\t" << (den + s0);
+//			outFile << numNames[numIdx]
+//					<< "\t" << muDeltaMissAlpha << "\t" << muDeltaHitAlpha
+//					<< "\t" << sigmaDeltaMissAlpha << "\t" << sigmaDeltaHitAlpha
+//					<< "\t" << num << "\t" << den << "\t" << (den + s0);
 		}
 		else {
 			// mode: tstat (t-statistic)
@@ -117,12 +121,13 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			den = pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2));
 		}
 
-		W[alpha] = num / (den + s0);
+		W[numIdx] = num / (den + s0);
+		// W[numIdx] = num; // should match ReliefF
 		// DEBUG
-		outFile << "\t" << W[alpha] << endl;
+//		outFile << "\t" << W[numIdx] << endl;
 	}
 	// DEBUG
-	outFile.close();
+//	outFile.close();
 
 	return true;
 }
