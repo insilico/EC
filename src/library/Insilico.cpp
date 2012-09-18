@@ -179,7 +179,8 @@ bool LoadNumericIds(string filename, vector<string>& retIds) {
 					<< "FID IID VAR1 ... VARn" << endl;
 			return false;
 		}
-		string ID = trim(fieldsStringVector[0]);
+	    // use the PLINK IID as the instance ID - 9/18/12
+		string ID = trim(fieldsStringVector[1]);
 		if (idsSeen.find(ID) == idsSeen.end()) {
 			idsSeen[ID] = true;
 			retIds.push_back(ID);
@@ -222,7 +223,8 @@ bool LoadPhenoIds(string filename, vector<string>& retIds) {
 					<< endl;
 			return false;
 		}
-		string ID = trim(fieldsStringVector[0]);
+	    // use the PLINK IID as the instance ID - 9/18/12
+		string ID = trim(fieldsStringVector[1]);
 		string pheno = trim(fieldsStringVector[2]);
 		if (pheno == "-9") {
 			continue;

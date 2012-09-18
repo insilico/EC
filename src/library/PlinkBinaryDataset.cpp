@@ -491,7 +491,8 @@ bool PlinkBinaryDataset::ReadFamFile(string famFilename) {
 
     vector<string> tokens;
     split(tokens, trimmedLine);
-    string ID = tokens[0];
+    // use the PLINK IID as the instance ID - 9/18/12
+    string ID = tokens[1];
     string thisClassString = tokens[5];
 
     /// assign class level
