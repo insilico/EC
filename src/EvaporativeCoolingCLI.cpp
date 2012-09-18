@@ -27,13 +27,13 @@
 
 #include "rjungle/librjungle.h"
 
-#include "EvaporativeCooling.h"
-#include "Insilico.h"
+#include "ec/EvaporativeCooling.h"
+#include "ec/Insilico.h"
 
 /// data types
-#include "Dataset.h"
-#include "DgeData.h"
-#include "BirdseedData.h"
+#include "ec/Dataset.h"
+#include "ec/DgeData.h"
+#include "ec/BirdseedData.h"
 
 using namespace std;
 using namespace boost;
@@ -821,7 +821,12 @@ int main(int argc, char** argv) {
 			resultsFilename += ".me";
 			break;
 		case EC_ALG_IT_ONLY:
-			resultsFilename += ".it";
+			if(ecItAlgorithm == "rf") {
+				resultsFilename += ".it";
+			}
+			if(ecItAlgorithm == "rfseq") {
+				resultsFilename += ".itseq";
+			}
 			break;
 		default:
 			// we should not get here by the CLI front end but it is possible to call

@@ -26,6 +26,9 @@
 #include <time.h>
 
 #include <boost/lexical_cast.hpp>
+#include <R.h>
+#include <Rcpp.h>
+#include <RInside.h>
 
 #include "gsl/gsl_cdf.h"
 #include "GSLRandomFlat.h"
@@ -2689,6 +2692,60 @@ bool Dataset::CalculateGainMatrix(double** gainMatrix, string matrixFilename) {
 			gainMatrix[i][j] = gainMatrix[j][i] = r["I_3_paper"];
 		}
 	}
+
+	if (matrixFilename != "") {
+		cout << Timestamp() << "Writing GAIN matrix to file [" << matrixFilename
+				<< "]" << endl;
+		ofstream outFile(matrixFilename.c_str());
+		/// write header
+		for (int i = 0; i < numAttributes; ++i) {
+			if (i) {
+				outFile << "\t" << attributeNames[i];
+			} else {
+				outFile << attributeNames[i];
+			}
+		}
+		outFile << endl;
+		/// write all m-by-m matrix entries
+		for (int i = 0; i < numAttributes; ++i) {
+			for (int j = i; j < numAttributes; ++j) {
+				if (j == i) { // fill in symmetric entries, replacing j < i with tabs					string tabs = "";
+					string tabs = "";
+					for (int k = 0; k < j; k++)
+						tabs += "\t";
+					outFile << tabs << gainMatrix[i][j];
+				} else
+					outFile << "\t" << gainMatrix[i][j];
+			}
+			outFile << endl;
+		}
+		outFile.close();
+	}
+
+	return true;
+}
+
+bool Dataset::CalculateRegainMatrix(double** gainMatrix,
+		string matrixFilename) {
+	if (HasGenotypes() || !HasNumerics()) {
+		cerr << "Dataset::CalculateRegainMatrix only works on numeric data" << endl;
+		return false;
+	}
+
+	if ((!HasPhenotypes()) || (NumClasses() != 2)) {
+		cerr
+				<< "Dataset::CalculateGainMatrix only works with case-control phenotypes"
+				<< endl;
+		return false;
+	}
+
+	map<string, unsigned int> attributeMask = MaskGetAttributeMask(
+			NUMERIC_TYPE);
+	vector<string> attributeNames = MaskGetAllVariableNames();
+	int numAttributes = attributeNames.size();
+
+	// do linear or logistic regression here
+
 
 	if (matrixFilename != "") {
 		cout << Timestamp() << "Writing GAIN matrix to file [" << matrixFilename

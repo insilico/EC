@@ -1,9 +1,10 @@
 /**
  * \class Dataset
  *
- * \brief Base class for collections of instances containing attributea and class.
+ * \brief Base class for collections of instances containing 
+ * attributes and class.
  *
- * Added interaction infomation week of 4/18-26/06
+ * Added interaction information week of 4/18-26/06
  * Totally redone for McKinney Lab. February 2011.
  *
  * \author Bill White
@@ -535,6 +536,15 @@ public:
    * \return success
    ****************************************************************************/
   bool CalculateGainMatrix(double** gainMatrix,
+  		std::string matrixFilename="");
+  /*************************************************************************//**
+   * Calculate the regression GAIN matrix to run snprank on this data set.
+   * Uses OpenMP to calculate matrix entries in parallel threads.
+   * \param [out] gainMatrix pointer to an allocated n x n matrix,
+   *                         n = number of attributes
+   * \return success
+   ****************************************************************************/
+  bool CalculateRegainMatrix(double** gainMatrix,
   		std::string matrixFilename="");
   /*************************************************************************//**
    * Calculate the instance-to-instance distance matrix for this data set.

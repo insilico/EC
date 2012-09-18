@@ -274,7 +274,10 @@ top_srcdir = @top_srcdir@
 xml2_config = @xml2_config@
 AUTOMAKE_OPTIONS = foreign
 LIBNAME = @LIBNAME@
-myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/library
+myincludes = -I$(top_srcdir)/src -I$(top_srcdir) \
+	-I$(top_srcdir)/src/library \
+	-I/usr/local/lib/R/site-library/RInside/include \
+	-I/usr/lib/R/site-library/Rcpp/include -I/usr/share/R/include
 mycppflags = $(CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 AM_CXXFLAGS = $(my_cpp_flags) -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen \
 	-DHAVE__BOOL -D__NOPLUGIN__

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="80">
+<configurationDescriptor version="84">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df name="cppec" root=".">
       <df name="autom4te.cache">
@@ -8,7 +8,7 @@
       </df>
       <df name="build-aux">
       </df>
-      <df name="doxygen-doc">
+      <df name="doc">
         <df name="html">
           <df name="d0">
             <df name="d00">
@@ -16480,21 +16480,25 @@
         <df name="library">
           <in>ArffDataset.cpp</in>
           <in>ArffDataset.h</in>
+          <in>AttributeRanker.cpp</in>
+          <in>AttributeRanker.h</in>
+          <in>BestN.h</in>
+          <in>BirdseedData.cpp</in>
+          <in>BirdseedData.h</in>
           <in>ChiSquared.cpp</in>
           <in>ChiSquared.h</in>
-          <in>CleanSnpDataset.cpp</in>
-          <in>CleanSnpDataset.h</in>
           <in>Dataset.cpp</in>
           <in>Dataset.h</in>
           <in>DatasetInstance.cpp</in>
           <in>DatasetInstance.h</in>
-          <in>Debugging.h</in>
+          <in>Deseq.cpp</in>
+          <in>Deseq.h</in>
+          <in>DgeData.cpp</in>
+          <in>DgeData.h</in>
           <in>DistanceMetrics.cpp</in>
           <in>DistanceMetrics.h</in>
           <in>EvaporativeCooling.cpp</in>
           <in>EvaporativeCooling.h</in>
-          <in>FilesystemUtils.cpp</in>
-          <in>FilesystemUtils.h</in>
           <in>GSLRandomBase.h</in>
           <in>GSLRandomFlat.h</in>
           <in>Insilico.cpp</in>
@@ -16511,12 +16515,16 @@
           <in>RandomJungle.h</in>
           <in>ReliefF.cpp</in>
           <in>ReliefF.h</in>
+          <in>ReliefFSeq.cpp</in>
+          <in>ReliefFSeq.h</in>
+          <in>SNReliefF.cpp</in>
+          <in>SNReliefF.h</in>
           <in>Statistics.cpp</in>
           <in>Statistics.h</in>
           <in>StringUtils.h</in>
-          <in>best_n.h</in>
         </df>
         <in>EvaporativeCoolingCLI.cpp</in>
+        <in>EvaporativeCoolingCLINewAPI.cpp</in>
       </df>
       <in>config.h</in>
     </df>
@@ -16538,6 +16546,8 @@
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
       </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
@@ -16593,18 +16603,30 @@
         <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
         <compilerSet>GNU|GNU</compilerSet>
       </toolsSet>
+      <codeAssistance>
+      </codeAssistance>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
           <buildCommand>${MAKE} </buildCommand>
           <cleanCommand>${MAKE} clean</cleanCommand>
           <executablePath>ec</executablePath>
+          <cTool>
+            <incDir>
+              <pElem>/usr/share/R/include</pElem>
+              <pElem>/usr/local/lib/R/site-library/Rcpp/include</pElem>
+              <pElem>/usr/local/lib/R/site-library/RInside/include</pElem>
+            </incDir>
+          </cTool>
           <ccTool>
             <incDir>
               <pElem>../cpprelieff</pElem>
               <pElem>/usr/local/include</pElem>
               <pElem>/usr/local/include/rjungle</pElem>
               <pElem>/sw/include</pElem>
+              <pElem>/usr/share/R/include</pElem>
+              <pElem>/usr/local/lib/R/site-library/Rcpp/include</pElem>
+              <pElem>/usr/local/lib/R/site-library/RInside/include</pElem>
             </incDir>
             <preprocessorList>
               <Elem>HAVE__BOOL</Elem>

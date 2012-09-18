@@ -18,6 +18,7 @@
 #include <map>
 #include <sstream>
 #include <vector>
+#include <ctime>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/positional_options.hpp>
@@ -25,10 +26,10 @@
 
 #include "rjungle/librjungle.h"
 
-#include "EvaporativeCooling.h"
-#include "Insilico.h"
-#include "Dataset.h"
-#include "DgeData.h"
+#include "ec/EvaporativeCooling.h"
+#include "ec/Insilico.h"
+#include "ec/Dataset.h"
+#include "ec/DgeData.h"
 
 using namespace std;
 namespace po = boost::program_options;

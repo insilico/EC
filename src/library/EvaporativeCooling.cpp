@@ -628,7 +628,12 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		outFile.close();
 		break;
 	case EC_ALG_IT_ONLY:
-		resultsFilename += ".it";
+		if(itAlgorithmType == EC_IT_ALG_RF) {
+			resultsFilename += ".it";
+		}
+		if(itAlgorithmType == EC_IT_ALG_RFSEQ) {
+			resultsFilename += ".itseq";
+		}
 		outFile.open(resultsFilename.c_str());
 		if (outFile.bad()) {
 			cerr << "ERROR: Could not open scores file " << resultsFilename
@@ -738,7 +743,7 @@ bool EvaporativeCooling::RunReliefF() {
 	// added for rnaSeq analysis - bcw - 8/21/12
 	// normalizing "stretches" the distribution to many zeroes, thus
 	// complicating ranking of many ties; don't do it!
-	if(analysisType == RNASEQ_ANALYSIS) {
+	if(itAlgorithmType == EC_IT_ALG_RFSEQ) {
 		cout << Timestamp() << "rnaSeq skipping normalization."	<< endl;
 		return true;
 	}

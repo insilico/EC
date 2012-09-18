@@ -9,6 +9,8 @@
 #include <iomanip>
 #include <vector>
 
+#include <gsl/gsl_cdf.h>
+
 #include "ReliefF.h"
 #include "ReliefFSeq.h"
 #include "Dataset.h"
@@ -95,7 +97,8 @@ bool ReliefFSeq::ComputeAttributeScores() {
 		double sigmaDeltaHitAlpha = sigmaDeltaAlphas.first;
 		double sigmaDeltaMissAlpha = sigmaDeltaAlphas.second;
 
-		double num=0.0, den=0.0;
+		double num = 0.0, den = 0.0;
+		double alphaWeight = 0.0;
 		if(mode == "snr") {
 			// mode: snr (signal to noise ratio)
 			num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
@@ -104,6 +107,7 @@ bool ReliefFSeq::ComputeAttributeScores() {
 //					<< "\t" << muDeltaMissAlpha << "\t" << muDeltaHitAlpha
 //					<< "\t" << sigmaDeltaMissAlpha << "\t" << sigmaDeltaHitAlpha
 //					<< "\t" << num << "\t" << den << "\t" << (den + s0);
+			alphaWeight = num / (den + s0);
 		}
 		else {
 			// mode: tstat (t-statistic)
@@ -119,9 +123,22 @@ bool ReliefFSeq::ComputeAttributeScores() {
 					sqrt(((n1 - 1) * variance1 + (n2 - 1) * variance2) / (n1 + n2 - 2));
 			num = muDeltaMissAlpha - muDeltaHitAlpha;
 			den = pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2));
+			double t = num / (den + s0);
+			double df =  n1 + n2 - 2;
+			double gslPval = 1.0;
+			if(t < 0) {
+				gslPval = gsl_cdf_tdist_P(-t, df);
+			}
+			else {
+				gslPval = gsl_cdf_tdist_P(t, df);
+			}
+			alphaWeight = 1.0 - (2.0 * (1.0 - gslPval));
+			// DEBUG
+//			cout << setprecision(8);
+//			cout << numIdx << "\t" << t << "\t" << gslPval << "\t" << alphaWeight << endl;
+//			alphaWeight = fabs(t);
 		}
-
-		W[numIdx] = num / (den + s0);
+		W[numIdx] = alphaWeight;
 		// W[numIdx] = num; // should match ReliefF
 		// DEBUG
 //		outFile << "\t" << W[numIdx] << endl;
