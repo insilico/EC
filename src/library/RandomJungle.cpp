@@ -216,9 +216,8 @@ RandomJungle::RandomJungle(Dataset* ds, ConfigMap& configMap):
 		unsigned int numTrees = lexical_cast<unsigned int>(configValue);
 		rjParams.ntree = numTrees;
 	} else {
-		cerr << "RandomJungle constructor: Unexpected condition."
-				<< "rj-num-trees should have a default" << endl;
-		exit(1);
+		cout << Timestamp() << "Setting RandomJungle number of trees to 500" << endl;
+		rjParams.ntree = 500;
 	}
 
 	// added new RJ params 5/24/12 per Scott Dudek request/experience
