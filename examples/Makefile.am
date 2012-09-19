@@ -4,10 +4,14 @@ LIBDIR=@LIBDIR@
 EXECNAME=@EXECNAME@
 LIBNAME=@LIBNAME@
 
-# project flags
-AM_CXXFLAGS = -I$(top_srcdir)/src/library -I$(top_srcdir)/src -I$(top_srcdir)
-# library flags
-AM_CXXFLAGS += $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+my_include_paths = -I$(top_srcdir)/src -I$(top_srcdir)/src/library
+
+AM_CXXFLAGS = $(CXXFLAGS) -I$(my_include_paths) $(BOOST_CPPFLAGS)
+AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__
+AM_FFLAGS = $(my_include_paths) -x f77-cpp-input
+
+my_ld_flags = $(LDFLAGS) -lec -lgsl -lgslcblas $(BOOST_PROGRAM_OPTIONS_LIBS) @FLIBS@
+my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR)  
 
 noinst_PROGRAMS = example1 example2 example3 example4
 example1_SOURCES=example1.cpp
@@ -16,7 +20,7 @@ example3_SOURCES=example3.cpp
 example4_SOURCES=example4.cpp
 
 # libtool libraries
-example1_LDADD=$(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example2_LDADD=$(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example3_LDADD=$(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example4_LDADD=$(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
+example1_LDADD=$(my_ld_flags) $(my_ld_paths)
+example2_LDADD=$(my_ld_flags) $(my_ld_paths)
+example3_LDADD=$(my_ld_flags) $(my_ld_paths)
+example4_LDADD=$(my_ld_flags) $(my_ld_paths)

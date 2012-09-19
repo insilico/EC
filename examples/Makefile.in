@@ -55,16 +55,17 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_example1_OBJECTS = example1.$(OBJEXT)
 example1_OBJECTS = $(am_example1_OBJECTS)
 am__DEPENDENCIES_1 =
-example1_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+example1_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_example2_OBJECTS = example2.$(OBJEXT)
 example2_OBJECTS = $(am_example2_OBJECTS)
-example2_DEPENDENCIES = $(am__DEPENDENCIES_1)
+example2_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_example3_OBJECTS = example3.$(OBJEXT)
 example3_OBJECTS = $(am_example3_OBJECTS)
-example3_DEPENDENCIES = $(am__DEPENDENCIES_1)
+example3_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am_example4_OBJECTS = example4.$(OBJEXT)
 example4_OBJECTS = $(am_example4_OBJECTS)
-example4_DEPENDENCIES = $(am__DEPENDENCIES_1)
+example4_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
@@ -252,21 +253,22 @@ xml2_config = @xml2_config@
 AUTOMAKE_OPTIONS = foreign
 EXECNAME = @EXECNAME@
 LIBNAME = @LIBNAME@
-
-# project flags
-# library flags
-AM_CXXFLAGS = -I$(top_srcdir)/src/library -I$(top_srcdir)/src \
-	-I$(top_srcdir) $(OPENMP_CXXFLAGS) $(BOOST_CPPFLAGS)
+my_include_paths = -I$(top_srcdir)/src -I$(top_srcdir)/src/library
+AM_CXXFLAGS = $(CXXFLAGS) -I$(my_include_paths) $(BOOST_CPPFLAGS) \
+	-DHAVE__BOOL -D__NOPLUGIN__
+AM_FFLAGS = $(my_include_paths) -x f77-cpp-input
+my_ld_flags = $(LDFLAGS) -lec -lgsl -lgslcblas $(BOOST_PROGRAM_OPTIONS_LIBS) @FLIBS@
+my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR)  
 example1_SOURCES = example1.cpp
 example2_SOURCES = example2.cpp
 example3_SOURCES = example3.cpp
 example4_SOURCES = example4.cpp
 
 # libtool libraries
-example1_LDADD = $(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example2_LDADD = $(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example3_LDADD = $(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
-example4_LDADD = $(RJ_LIBS) -lec $(OPENMP_LDFLAGS) $(BOOST_PROGRAM_OPTIONS_LIBS)
+example1_LDADD = $(my_ld_flags) $(my_ld_paths)
+example2_LDADD = $(my_ld_flags) $(my_ld_paths)
+example3_LDADD = $(my_ld_flags) $(my_ld_paths)
+example4_LDADD = $(my_ld_flags) $(my_ld_paths)
 all: all-am
 
 .SUFFIXES:
