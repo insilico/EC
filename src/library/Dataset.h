@@ -131,8 +131,8 @@ public:
                          std::string newDatasetFilename);
   /*************************************************************************//**
    * Swap two attributes/columns in the dataset.
-   * \param [in] a1 attribue index 1
-   * \param [in] a2 attribue index 2
+   * \param [in] a1 attribute index 1
+   * \param [in] a2 attribute index 2
    * \return success
    ****************************************************************************/
   bool SwapAttributes(unsigned int a1, unsigned int a2);
@@ -651,7 +651,13 @@ protected:
    * \return success
    ****************************************************************************/
   bool WriteNewPlinkPedDataset(std::string baseDatasetFilename);
-
+  /*************************************************************************//**
+   * Write the dataset to a new PLINK covar format, respecting masked
+   * attributes class/phenotype data type.
+   * \param [in] baseDatasetFilename base data set filename without extension
+   * \return success
+   ****************************************************************************/
+  bool WriteNewPlinkCovarDataset(std::string baseDatasetFilename);
   /*************************************************************************//**
    * Compute the discrete difference in an attribute between two instances
    * for determining nearest neighbors.

@@ -27,13 +27,13 @@
 
 #include "rjungle/librjungle.h"
 
-#include "ec/EvaporativeCooling.h"
-#include "ec/Insilico.h"
+#include "EvaporativeCooling.h"
+#include "Insilico.h"
 
 /// data types
-#include "ec/Dataset.h"
-#include "ec/DgeData.h"
-#include "ec/BirdseedData.h"
+#include "Dataset.h"
+#include "DgeData.h"
+#include "BirdseedData.h"
 
 using namespace std;
 using namespace boost;
@@ -91,6 +91,8 @@ int main(int argc, char** argv) {
 	string ecItAlgorithm = "rf";
 	string ecSeqAlgorithmMode = "snr";
 	double ecSeqAlgorithmS0 = 0.05;
+	string ecSeqSnrMode = "snr";
+	string ecSeqTstatMode = "pval";
 	unsigned int ecNumTarget = 0;
 	unsigned int ecIterNumToRemove = 0;
 	unsigned int ecIterPercentToRemove = 0;
@@ -106,59 +108,69 @@ int main(int argc, char** argv) {
 		("optimize-temp,T", "optimize coupling constant T")
 		(
 		"config-file,c",
-		po::value<string > (&configFilename),
+		po::value<string>(&configFilename),
 		"read configuration options from file - command line overrides these"
 		)
 		(
 		"snp-data,s",
-		po::value<string > (&snpsFilename),
+		po::value<string>(&snpsFilename),
 		"read SNP attributes from genotype filename: txt, ARFF, plink (map/ped, binary, raw)"
 		)
 		(
 		"snp-file-type",
-		po::value<string > (&snpsFileType),
+		po::value<string>(&snpsFileType),
 		"Ignore file extension and use type: textwhitesp, wekaarff, plinkped, "
 		"plinkbed, plinkraw, mayogeo, birdseed"
 		)
 		(
 		"numeric-data,n",
-		po::value<string > (&numericsFilename),
+		po::value<string>(&numericsFilename),
 		"read continuous attributes from PLINK-style covar file"
 		)
 		(
 		"numeric-transform,X",
-		po::value<string > (&numericTransform),
+		po::value<string>(&numericTransform),
 		"perform numeric transformation: normalize, standardize, zscore, log, sqrt, anscombe"
 		)
 		(
 		"alternate-pheno-file,a",
-		po::value<string > (&altPhenotypeFilename),
+		po::value<string>(&altPhenotypeFilename),
 		"specifies an alternative phenotype/class label file; one value per line"
 		)
 		(
 		"ec-algorithm-steps,g",
-		po::value<string > (&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
+		po::value<string>(&ecAlgorithmSteps)->default_value(ecAlgorithmSteps),
 		"EC steps to run (all|me=main effects only|it=interaction effects only)"
 		)
 		(
 		"ec-me-algorithm",
-		po::value<string > (&ecMeAlgorithm)->default_value(ecMeAlgorithm),
+		po::value<string>(&ecMeAlgorithm)->default_value(ecMeAlgorithm),
 		"Main effects algorithm (rj|deseq)"
 		)
 		(
 		"ec-it-algorithm",
-		po::value<string > (&ecItAlgorithm)->default_value(ecItAlgorithm),
+		po::value<string>(&ecItAlgorithm)->default_value(ecItAlgorithm),
 		"Interaction effects algorithm (rf|rfseq)"
 		)
 		(
 		"ec-seq-algorithm-mode",
-		po::value<string > (&ecSeqAlgorithmMode)->default_value(ecSeqAlgorithmMode),
+		po::value<string>(&ecSeqAlgorithmMode)->default_value(ecSeqAlgorithmMode),
 		"Seq interaction algorithm mode (snr|tstat)"
 		)
 		(
 		"ec-seq-algorithm-s0",
-		po::value<double > (&ecSeqAlgorithmS0)->default_value(ecSeqAlgorithmS0),
+		po::value<double>(&ecSeqAlgorithmS0)->default_value(ecSeqAlgorithmS0),
 		"Seq interaction algorithm s0 (0.0 <= s0 <= 1.0)"
+		)
+		(
+		"ec-seq-snr-mode",
+		po::value<string>(&ecSeqSnrMode)->default_value(ecSeqSnrMode),
+		"Seq interaction algorithm SNR mode (snr|relieff)"
+		)
+		(
+		"ec-seq-tstat-mode",
+		po::value<string>(&ecSeqTstatMode)->default_value(ecSeqTstatMode),
+		"Seq interaction algorithm t-statistic mode (pval|abst)"
 		)
 		(
 		"ec-num-target,t",
@@ -391,9 +403,14 @@ int main(int argc, char** argv) {
 						outputDatasetType = PLINK_PED_DATASET;
 					}
 					else {
-						cerr << "Unrecognized output data set filename extension: ["
-									<< outFileExtension << "]" << endl;
-						exit(COMMAND_LINE_ERROR);
+						if(outFileExtension == "cov") {
+							outputDatasetType = PLINK_COVAR_DATASET;
+						}
+						else {
+							cerr << "Unrecognized output data set filename extension: ["
+										<< outFileExtension << "]" << endl;
+							exit(COMMAND_LINE_ERROR);
+						}
 					}
 				}
 			}
@@ -622,6 +639,9 @@ int main(int argc, char** argv) {
 					case PLINK_BED_DATASET:
 						cout << "PLINK BED output format not supported yet" << endl;
 						exit(COMMAND_LINE_ERROR);
+						break;
+					case PLINK_COVAR_DATASET:
+						ds->WriteNewDataset(outputDatasetFilename, outputDatasetType);
 						break;
 					case NO_OUTPUT_DATASET:
 					default:

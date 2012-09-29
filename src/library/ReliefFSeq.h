@@ -65,7 +65,15 @@ public:
   		double muDeltaHit, double muDeltaMiss);
   virtual ~ReliefFSeq();
 private:
+	/// ReliefSeq mode: signal-to-noise ratio (snr) or t-statistic (tstat)
   std::string mode;
+	/// ReliefSeq signal-to-noise ratio mode: signal-to-noise ratio (snr) or
+	/// ReliefF (relieff)
+	std::string snrMode;
+	/// ReliefFSeq t-statistic mode: 1-pvalue (pval) or the absolute value
+	/// of the t-statistic (abst)
+	std::string tstatMode;
+	/// variance denominator adjustment s0
   double s0;
 };
 

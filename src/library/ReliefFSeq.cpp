@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <vector>
 
+#include <boost/lexical_cast.hpp>
 #include <gsl/gsl_cdf.h>
 
 #include "ReliefF.h"
@@ -20,9 +21,14 @@
 #include "Statistics.h"
 
 using namespace std;
+using namespace boost;
 
 ReliefFSeq::ReliefFSeq(Dataset* ds) :
 		ReliefF::ReliefF(ds, RNASEQ_ANALYSIS) {
+	mode = "snr";
+	snrMode = "snr";
+	tstatMode = "pval";
+	s0 = 0.05;
 	cout << Timestamp() << "ReliefFSeq initializing with data set only" << endl;
 }
 
@@ -30,17 +36,39 @@ ReliefFSeq::ReliefFSeq(Dataset* ds, po::variables_map& vm) :
 		ReliefF::ReliefF(ds, vm, RNASEQ_ANALYSIS) {
 	cout << Timestamp() << "ReliefFSeq initializing with Boost parameters"
 			<< endl;
+	/// set the various algorithm modes to one of four combinations:
+	/// snr-snr, snr-relieff, tstat-pval, tstat-abst
 	mode = "snr";
+	snrMode = "snr";
+	tstatMode = "pval";
 	if(vm.count("ec-seq-algorithm-mode")) {
 		mode = vm["ec-seq-algorithm-mode"].as<string>();
-		if((mode =="snr") || (mode == "tstat")) {
+		if((mode == "snr") || (mode == "tstat")) {
 			cout << Timestamp() << "ReliefFSeq mode set to: " << mode << endl;
+			if((mode == "snr") && vm.count("ec-seq-snr-mode")) {
+				snrMode = vm["ec-seq-snr-mode"].as<string>();
+				if((snrMode != "snr") && (snrMode != "relieff")) {
+					cerr << "ERROR: Unrecognized ReliefFSeq SNR mode: " << snrMode << endl;
+					exit(EXIT_FAILURE);
+				}
+				cout << Timestamp() << "ReliefFSeq SNR mode set to: " << snrMode << endl;
+			}
+			if((mode == "tstat") && vm.count("ec-seq-tstat-mode")) {
+				tstatMode = vm["ec-seq-tstat-mode"].as<string>();
+				if((tstatMode != "pval") && (tstatMode != "abst")) {
+					cerr << "ERROR: Unrecognized ReliefFSeq t-statistic mode: " << tstatMode << endl;
+					exit(EXIT_FAILURE);
+				}
+				cout << Timestamp() << "ReliefFSeq t-statistic mode set to: " << tstatMode << endl;
+			}
 		}
 		else {
 			cerr << "ERROR: Unrecognized ReliefFSeq mode: " << mode << endl;
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	/// set the s0 value
 	s0 = 0.05;
 	if(vm.count("ec-seq-algorithm-s0")) {
 		s0 = vm["ec-seq-algorithm-s0"].as<double>();
@@ -51,12 +79,58 @@ ReliefFSeq::ReliefFSeq(Dataset* ds, po::variables_map& vm) :
 			cerr << "ERROR: ReliefFSeq s0 out of range (0, 1): " << s0 << endl;
 			exit(EXIT_FAILURE);
 		}
-
 	}
+
 }
 
 ReliefFSeq::ReliefFSeq(Dataset* ds, ConfigMap& configMap) :
 		ReliefF::ReliefF(ds, configMap, RNASEQ_ANALYSIS) {
+	string configValue;
+	/// set the various algorithm modes to one of four combinations:
+	/// snr-snr, snr-relieff, tstat-pval, tstat-abst
+	mode = "snr";
+	snrMode = "snr";
+	tstatMode = "pval";
+	if(GetConfigValue(configMap, "ec-seq-algorithm-mode", configValue)) {
+		mode = configValue;
+		if((mode == "snr") || (mode == "tstat")) {
+			cout << Timestamp() << "ReliefFSeq mode set to: " << mode << endl;
+			if((mode == "snr") && GetConfigValue(configMap, "ec-seq-snr-mode", configValue)) {
+				snrMode = configValue;
+				if((snrMode != "snr") && (snrMode != "relieff")) {
+					cerr << "ERROR: Unrecognized ReliefFSeq SNR mode: " << snrMode << endl;
+					exit(EXIT_FAILURE);
+				}
+				cout << Timestamp() << "ReliefFSeq SNR mode set to: " << snrMode << endl;
+			}
+			if((mode == "tstat") && GetConfigValue(configMap, "ec-seq-tstat-mode", configValue)) {
+				tstatMode = configValue;
+				if((tstatMode != "pval") && (tstatMode != "abst")) {
+					cerr << "ERROR: Unrecognized ReliefFSeq t-statistic mode: " << tstatMode << endl;
+					exit(EXIT_FAILURE);
+				}
+				cout << Timestamp() << "ReliefFSeq t-statistic mode set to: " << tstatMode << endl;
+			}
+		}
+		else {
+			cerr << "ERROR: Unrecognized ReliefFSeq mode: " << mode << endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/// set the s0 value
+	s0 = 0.05;
+	if(GetConfigValue(configMap, "ec-seq-algorithm-s0", configValue)) {
+		s0 = lexical_cast<double>(configValue);
+		if((s0 >= 0) || (s0 <= 1.0)) {
+			cout << Timestamp() << "ReliefFSeq s0 set to: " << s0 << endl;
+		}
+		else {
+			cerr << "ERROR: ReliefFSeq s0 out of range (0, 1): " << s0 << endl;
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	cout << Timestamp() << "ReliefFSeq initializing with config map" << endl;
 }
 
@@ -76,14 +150,16 @@ bool ReliefFSeq::ComputeAttributeScores() {
 	// using pseudo-code notation from white board discussion - 7/21/12
 	// changed to use Brett's email (7/21/12) equations - 7/23/12
 	cout << Timestamp() << "Running ReliefFSeq algorithm" << endl;
-//	vector<string> numNames;
-//	numNames = dataset->GetNumericsNames();
+	//	vector<string> numNames;
+	//	numNames = dataset->GetNumericsNames();
 	vector<unsigned int> numericIndices =
 			dataset->MaskGetAttributeIndices(NUMERIC_TYPE);
 	// DEBUG
-//	string rawScoresFileName = dataset->GetNumericsFilename() + "_rawscores.tab";
-//	ofstream outFile(rawScoresFileName.c_str());
-//	outFile << "gene\tmuMiss\tmuHit\tsigmaMiss\tsigmaHit\tnum\tden\tdms0\tsnr" << endl;
+	//	string rawScoresFileName = dataset->GetNumericsFilename() + "_rawscores.tab";
+	//	ofstream outFile(rawScoresFileName.c_str());
+	//	outFile << "gene\tmuMiss\tmuHit\tsigmaMiss\tsigmaHit\tnum\tden\tdms0\tsnr" << endl;
+
+	/// run this loop on as many cores as possible through OpenMP
 #pragma omp parallel for
 	for (unsigned int numIdx = 0; numIdx < numericIndices.size();
 			++numIdx) {
@@ -97,33 +173,41 @@ bool ReliefFSeq::ComputeAttributeScores() {
 		double sigmaDeltaHitAlpha = sigmaDeltaAlphas.first;
 		double sigmaDeltaMissAlpha = sigmaDeltaAlphas.second;
 
-		double num = 0.0, den = 0.0;
+		double snrNum = 0.0, snrDen = 0.0;
+		double tstatNum = 0.0, tstatDen = 0.0;
 		double alphaWeight = 0.0;
 		if(mode == "snr") {
 			// mode: snr (signal to noise ratio)
-			num = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
-			den = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
+			snrNum = fabs(muDeltaMissAlpha - muDeltaHitAlpha);
+			snrDen = sigmaDeltaMissAlpha + sigmaDeltaHitAlpha;
 //			outFile << numNames[numIdx]
 //					<< "\t" << muDeltaMissAlpha << "\t" << muDeltaHitAlpha
 //					<< "\t" << sigmaDeltaMissAlpha << "\t" << sigmaDeltaHitAlpha
 //					<< "\t" << num << "\t" << den << "\t" << (den + s0);
-			alphaWeight = num / (den + s0);
+			if(snrMode == "snr") {
+				alphaWeight = snrNum / (snrDen + s0);
+			}
+			else {
+				alphaWeight = snrNum;
+			}
 		}
 		else {
 			// mode: tstat (t-statistic)
 			// from Brett's email - 8/15/12
 			// Also we could change the score to a real t-statistic:
-			// (xbar1 – xbar2)/(Sp*sqrt(1/n1 + 1/n2)), where Sp = pooled standard
-			// deviation=sqrt(((n1-1)*variance1 + (n2-1)*variance2)/(n1+n2-2)).
+			// (xbar1 – xbar2)/(Sp*sqrt(1/n1 + 1/n2)), 
+			// where Sp = pooled standard deviation=
+			// sqrt(((n1-1)*variance1 + (n2-1)*variance2)/(n1+n2-2)).
 			double n1, n2;
 			n1 = n2 = k;
 			double variance1 = sigmaDeltaHitAlpha;
 			double variance2 = sigmaDeltaMissAlpha;
 			double pooledStdDev =
 					sqrt(((n1 - 1) * variance1 + (n2 - 1) * variance2) / (n1 + n2 - 2));
-			num = muDeltaMissAlpha - muDeltaHitAlpha;
-			den = pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2));
-			double t = num / (den + s0);
+			tstatNum = muDeltaMissAlpha - muDeltaHitAlpha;
+			tstatDen = pooledStdDev * sqrt((1.0 / n1) + (1.0 / n2));
+			// make into a t-statistic and use for pvalue
+			double t = tstatNum / (tstatDen + s0);
 			double df =  n1 + n2 - 2;
 			double gslPval = 1.0;
 			if(t < 0) {
@@ -132,19 +216,24 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			else {
 				gslPval = gsl_cdf_tdist_P(t, df);
 			}
-			alphaWeight = 1.0 - (2.0 * (1.0 - gslPval));
-			// DEBUG
-//			cout << setprecision(8);
-//			cout << numIdx << "\t" << t << "\t" << gslPval << "\t" << alphaWeight << endl;
-//			alphaWeight = fabs(t);
+			if(tstatMode == "pval") {
+				// use 1-pvalue as the attribute scrore
+				alphaWeight = 1.0 - (2.0 * (1.0 - gslPval));
+			}
+			else {
+				// use absolute value of the t statistic as the weight
+				alphaWeight = fabs(t);
+			}
 		}
+	
+		/// assign a weight to this variable index
 		W[numIdx] = alphaWeight;
-		// W[numIdx] = num; // should match ReliefF
 		// DEBUG
-//		outFile << "\t" << W[numIdx] << endl;
-	}
+		// outFile << "\t" << W[numIdx] << endl;
+	} // for all gene alpha
+
 	// DEBUG
-//	outFile.close();
+	// outFile.close();
 
 	return true;
 }

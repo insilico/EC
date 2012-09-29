@@ -359,15 +359,18 @@ AttributeScores RandomJungle::ComputeScores() {
 			<< rjParams.nrow << " rows and " << rjParams.ncol << " columns."
 			<< endl << Timestamp();
 	cout.flush();
+	// added this 9/29/12 to avoid name lookups in the inner loop
+	vector<unsigned int> attrIndices(attributeNames.size());
+	for(unsigned int i=0; i < attributeNames.size(); ++i) {
+		attrIndices[i] = dataset->GetAttributeIndexFromName(attributeNames[i]);
+	}
 	for (unsigned int i = 0; i < numInstances; ++i) {
 		unsigned int instanceIndex;
 		dataset->GetInstanceIndexForID(instanceIds[i], instanceIndex);
 		unsigned int j = 0;
-		for (unsigned int aIdx = 0; aIdx < attributeNames.size(); aIdx++) {
-			unsigned int attrIdx = dataset->GetAttributeIndexFromName(
-					attributeNames[aIdx]);
+		for (unsigned int aIdx = 0; aIdx < attrIndices.size(); aIdx++) {
 			AttributeLevel A =
-					dataset->GetInstance(instanceIndex)->attributes[attrIdx];
+					dataset->GetInstance(instanceIndex)->attributes[attrIndices[aIdx]];
 			data->set(i, j, static_cast<double>(A));
 			++j;
 		}
@@ -395,12 +398,7 @@ AttributeScores RandomJungle::ComputeScores() {
 		}
 		// happy lights
 		if (i && ((i % 100) == 0)) {
-			cout << i << "/" << numInstances << " ";
-			cout.flush();
-		}
-		// happy lights
-		if (i && ((i % 1000) == 0)) {
-			cout << endl << Timestamp();
+			cout << Timestamp() << i << "/" << numInstances << endl;
 		}
 	}
 	cout << numInstances << "/" << numInstances << endl;

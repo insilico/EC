@@ -474,6 +474,13 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 		} else {
 			return true;
 		}
+	case PLINK_COVAR_DATASET:
+		if (!WriteNewPlinkCovarDataset(GetFileBasename(newDatasetFilename))) {
+			cerr << "ERROR: Failed to write new PLINK ped data set";
+			return false;
+		} else {
+			return true;
+		}
 	case TAB_DELIMITED_DATASET:
 	case CSV_DELIMITED_DATASET:
 	case ARFF_DATASET:
@@ -3870,5 +3877,10 @@ bool Dataset::WriteNewPlinkPedDataset(string baseDatasetFilename) {
 	}
 	newPedStream.close();
 
+	return true;
+}
+
+bool Dataset::WriteNewPlinkCovarDataset(string baseDatasetFilename) {
+	// not sure I need this
 	return true;
 }

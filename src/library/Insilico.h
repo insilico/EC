@@ -92,6 +92,7 @@ enum OutputDatasetType {
 	ARFF_DATASET, /**< WEKA ARFF format .arff file */
 	PLINK_PED_DATASET, /**< PLINK ped/map format */
 	PLINK_BED_DATASET, /**< PLINK bed/bim/fam format */
+	PLINK_COVAR_DATASET, /**< PLINK style covariate format format */
 	NO_OUTPUT_DATASET /**< no output data set specified */
 };
 

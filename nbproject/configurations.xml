@@ -16620,10 +16620,7 @@
           </cTool>
           <ccTool>
             <incDir>
-              <pElem>../cpprelieff</pElem>
               <pElem>/usr/local/include</pElem>
-              <pElem>/usr/local/include/rjungle</pElem>
-              <pElem>/sw/include</pElem>
               <pElem>/usr/share/R/include</pElem>
               <pElem>/usr/local/lib/R/site-library/Rcpp/include</pElem>
               <pElem>/usr/local/lib/R/site-library/RInside/include</pElem>
@@ -16634,28 +16631,6 @@
             </preprocessorList>
           </ccTool>
         </makeTool>
-        <requiredProjects>
-          <makeArtifact PL="../cpprelieff_fucku"
-                        CT="0"
-                        CN="Default"
-                        AC="false"
-                        BL="true"
-                        WD="../cpprelieff_fucku"
-                        BC="${MAKE}  -f cpprelieff_fucku-Makefile.mk CONF=Default"
-                        CC="${MAKE}  -f cpprelieff_fucku-Makefile.mk CONF=Default clean"
-                        OP="../cpprelieff/relieff">
-          </makeArtifact>
-          <makeArtifact PL="../randomjungle-1.2.362"
-                        CT="0"
-                        CN="Default"
-                        AC="true"
-                        BL="false"
-                        WD="../randomjungle-1.2.362"
-                        BC="${MAKE}  -f Makefile-randomjungle-1.2.362.mk CONF=Default"
-                        CC="${MAKE}  -f Makefile-randomjungle-1.2.362.mk CONF=Default clean"
-                        OP="">
-          </makeArtifact>
-        </requiredProjects>
       </makefileType>
       <folder path="cppec">
         <ccTool>
