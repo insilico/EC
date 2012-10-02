@@ -199,7 +199,7 @@ bool ReliefFSeq::ComputeAttributeScores() {
 			// where Sp = pooled standard deviation=
 			// sqrt(((n1-1)*variance1 + (n2-1)*variance2)/(n1+n2-2)).
 			double n1, n2;
-			n1 = n2 = k;
+			n1 = n2 = m * k;
 			double variance1 = sigmaDeltaHitAlpha;
 			double variance2 = sigmaDeltaMissAlpha;
 			double pooledStdDev =
