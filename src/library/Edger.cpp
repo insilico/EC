@@ -1,7 +1,7 @@
 /*
- * Deseq.cpp - Bill White - 8/8/12
+ * Edger.cpp - Bill White - 10/2/12
  * 
- * Deseq algorithm implementation.
+ * Edger algorithm implementation.
  */
 
 #include <cstdlib>
@@ -14,7 +14,7 @@
 
 #include "boost/lexical_cast.hpp"
 
-#include "Deseq.h"
+#include "Edger.h"
 #include "Dataset.h"
 #include "Insilico.h"
 #include "StringUtils.h"
@@ -22,59 +22,64 @@
 using namespace std;
 using namespace insilico;
 
-Deseq::Deseq(Dataset* ds): AttributeRanker::AttributeRanker(ds) {
+Edger::Edger(Dataset* ds): AttributeRanker::AttributeRanker(ds) {
   if(ds) {
   	if(!ds->HasNumerics()) {
-      cerr << "ERROR: Deseq::constructor: data set must have numeric data"
+      cerr << "ERROR: Edger::constructor: data set must have numeric data"
       		<< endl;
       exit(-1);
   	}
     dataset = ds;
   } else {
-    cerr << "ERROR: Deseq::constructor: data set is NULL" << endl;
+    cerr << "ERROR: Edger::constructor: data set is NULL" << endl;
     exit(-1);
   }
 }
 
-Deseq::~Deseq() {
+Edger::~Edger() {
 }
 
-vector<pair<double, string> > Deseq::ComputeScores() {
-	cout << Timestamp() << "Running DESeq through C system() call" << endl;
+vector<pair<double, string> > Edger::ComputeScores() {
+	cout << Timestamp() << "Running Edger through C system() call" << endl;
 
-	/// save the current data set to a temporary file for DESeq
+	/// save the current data set to a temporary file for Edger
 	string tempFile = dataset->GetNumericsFilename() + "_tmp.csv";
-	cout << Timestamp() << "Writing temporary file for DESeq: " << tempFile
+	cout << Timestamp() << "Writing temporary file for Edger: " << tempFile
 			<< endl;
 	WriteDatasetInMayoFormat(tempFile);
 
-	/// run DESeq through a system call to the shell
-	stringstream deseqCmd;
-	deseqCmd << "bash run_mayo_deseq.sh " << tempFile << " 1";
-	cout << Timestamp() << "Running DESeq command: " << deseqCmd.str() << endl;
-	int systemCallReturnStatus = system(deseqCmd.str().c_str());
+	/// run edgeR through a system call to the shell
+	stringstream edgerCmd;
+	edgerCmd << "bash run_mayo_edge.sh " << tempFile << " 1";
+	cout << Timestamp() << "Running edgeR command: " << edgerCmd.str() << endl;
+	int systemCallReturnStatus = system(edgerCmd.str().c_str());
 	if (systemCallReturnStatus == -1) {
-		cerr << "ERROR: Calling R script for DESeq. -1 return code" << endl;
+		cerr << "ERROR: Calling R script for edgeR. -1 return code" << endl;
 		exit(-1);
 	}
 
-	/// loads DESeq scores map from the output file
-	string resultsFilename = tempFile + ".1.deseq.results.txt.sorted";
-	ReadDeseqScores(resultsFilename);
+	/// loads edgeR scores map from the output file
+	// main1.csv.1.ranks.txt.sorted
+	string resultsFilename = tempFile + ".1.ranks.txt.sorted";
+	ReadEdgerScores(resultsFilename);
 
-	/// remove the temporary file
-	cout << Timestamp() << "Removing temporary file for Deseq: " << tempFile
+	/// remove the temporary files
+	cout << Timestamp() << "Removing temporary file for edger: " << tempFile
 			<< endl;
 	vector<string> tempFiles;
 	tempFiles.push_back(tempFile);
-	tempFiles.push_back(tempFile + ".1.deseq." + "viz.png");
-	tempFiles.push_back(tempFile + ".1.deseq." + "hist.png");
-	tempFiles.push_back(tempFile + ".1.deseq." + "sig.results.txt");
-	tempFiles.push_back(tempFile + ".1.deseq." + "results.txt");
-	tempFiles.push_back(tempFile + ".1.deseq." + "sig.dn.results.txt");
-	tempFiles.push_back(tempFile + ".1.deseq." + "sig.up.results.txt");
-	tempFiles.push_back(tempFile + ".1.deseq." + "ncctrl.png");
-	tempFiles.push_back(tempFile + ".1.deseq." + "results.txt.sorted");
+	//-rwxrwxr-x 1 bwhite bwhite   63850 2012-05-24 22:23 mainresults_edgeR/main1.csv.1.edger.viz.png
+	//-rwxr-xr-x 1 bwhite bwhite     829 2012-03-22 20:57 mainresults_edgeR/main1.csv.1.normfactors
+	//-rw-rw-r-- 1 bwhite bwhite 1064091 2012-10-01 13:38 mainresults_edgeR/main1.csv.1.ranks.txt
+	//-rw-rw-r-- 1 bwhite bwhite 1064091 2012-10-01 13:38 mainresults_edgeR/main1.csv.1.ranks.txt.sorted
+	//-rwxrwxr-x 1 bwhite bwhite   17439 2012-05-24 22:23 mainresults_edgeR/main1.csv.1.siggenes.dn.txt
+	//-rwxrwxr-x 1 bwhite bwhite   15629 2012-05-24 22:23 mainresults_edgeR/main1.csv.1.siggenes.up.txt
+	tempFiles.push_back(tempFile + ".1.edger." + "viz.png");
+	tempFiles.push_back(tempFile + ".1.edger." + "normfactors");
+	tempFiles.push_back(tempFile + ".1.edger." + "ranks.txt");
+	tempFiles.push_back(tempFile + ".1.edger." + "ranks.txt.sorted");
+	tempFiles.push_back(tempFile + ".1.edger." + "siggenes.dn.results.txt");
+	tempFiles.push_back(tempFile + ".1.edger." + "siggenes.up.results.txt");
 	for(unsigned int i=0; i < tempFiles.size(); ++i) {
 		unlink(tempFiles[i].c_str());
 	}
@@ -82,12 +87,12 @@ vector<pair<double, string> > Deseq::ComputeScores() {
   return scores;
 }
 
-void Deseq::PrintScores(ofstream& outFile, unsigned int topN) {
+void Edger::PrintScores(ofstream& outFile, unsigned int topN) {
   if(topN == 0 || topN >= dataset->NumNumerics()) {
     topN = dataset->NumAttributes();
-    cout << Timestamp() << "Deseq values (1-pvalue) for all attributes:" << endl;
+    cout << Timestamp() << "Edger values (1-pvalue) for all attributes:" << endl;
   } else {
-    cout << Timestamp() << "Deseq values (1-pvalue) for top [" << topN
+    cout << Timestamp() << "Edger values (1-pvalue) for top [" << topN
             << "] attributes:" << endl;
   }
   vector<pair<double, string> >::const_iterator aIt = scores.begin();
@@ -97,12 +102,12 @@ void Deseq::PrintScores(ofstream& outFile, unsigned int topN) {
   }
 }
 
-void Deseq::WriteScores(string outFilename, unsigned int topN) {
+void Edger::WriteScores(string outFilename, unsigned int topN) {
   if(topN == 0 || topN >= dataset->NumAttributes()) {
     topN = dataset->NumAttributes();
   }
   ostringstream resultsFilename;
-  resultsFilename << outFilename << ".deseq";
+  resultsFilename << outFilename << ".edger";
   ofstream outFile;
   outFile.open(resultsFilename.str().c_str());
   if(outFile.bad()) {
@@ -113,11 +118,11 @@ void Deseq::WriteScores(string outFilename, unsigned int topN) {
   outFile.close();
 }
 
-void Deseq::WriteDatasetInMayoFormat(string filename) {
+void Edger::WriteDatasetInMayoFormat(string filename) {
   ofstream outFile;
   outFile.open(filename.c_str());
   if(outFile.bad()) {
-    cerr << "ERROR: Deseq::WriteDatasetInMayoFormat: " <<
+    cerr << "ERROR: Edger::WriteDatasetInMayoFormat: " <<
     		"Could not open file for writing"	<< endl;
     exit(-1);
   }
@@ -147,10 +152,10 @@ void Deseq::WriteDatasetInMayoFormat(string filename) {
 	outFile.close();
 }
 
-bool Deseq::ReadDeseqScores(string resultsFilename) {
+bool Edger::ReadEdgerScores(string resultsFilename) {
 	ifstream resultsStream(resultsFilename.c_str());
 	if (!resultsStream.is_open()) {
-		cerr << "ERROR: Could not open DESeq results file: "
+		cerr << "ERROR: Could not open edgeR results file: "
 				<< resultsFilename << endl;
 		return false;
 	}
@@ -163,18 +168,18 @@ bool Deseq::ReadDeseqScores(string resultsFilename) {
 	while (getline(resultsStream, line)) {
 		++lineNumber;
 		vector<string> tokens;
-		split(tokens, line, " ");
-		// "id" "gene" "baseMean" "baseMeanA" "baseMeanB" "foldChange" "log2FoldChange" "pval" "padj" "resVarA" "resVarB"
-		//  0    1      2          3           4           5            6                7      8      9         10
-		if (tokens.size() != 9) {
-			cerr << "ERROR: EvaporativeCooling::ReadDeseqScores: "
+		split(tokens, line, "\t");
+		// gene logConc logFC   p.value
+		// 0    1       2       3
+		if (tokens.size() != 4) {
+			cerr << "ERROR: EvaporativeCooling::ReadEdgerScores: "
 					<< "error parsing line " << lineNumber << " of "
 					<< resultsFilename << ". Read " << tokens.size()
-					<< " columns. Should " << "be 9" << endl;
+					<< " columns. Should " << "be 4" << endl;
 			return false;
 		}
 		string gene = tokens[1];
-		string genePval = tokens[7];
+		string genePval = tokens[3];
 		double score = 1.0 - boost::lexical_cast<double>(genePval.c_str());
 		// cout << "Storing Deseq: " << key << " => " << val << " form " << keyVal << endl;
 		scores.push_back(make_pair(score, gene));

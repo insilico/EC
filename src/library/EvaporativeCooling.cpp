@@ -35,6 +35,7 @@
 #include "StringUtils.h"
 #include "RandomJungle.h"
 #include "Deseq.h"
+#include "Edger.h"
 #include "ReliefF.h"
 #include "RReliefF.h"
 #include "ReliefFSeq.h"
@@ -147,6 +148,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 		break;
 	case EC_ME_ALG_DESEQ:
 		maineffectAlgorithm = new Deseq(ds);
+		break;
+	case EC_ME_ALG_EDGER:
+		maineffectAlgorithm = new Edger(ds);
 		break;
 	}
 
@@ -289,9 +293,15 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 				cout << Timestamp()
 						<< "Running EC in main effects algorithm set to: DESeq" << endl;
 			} else {
-				cerr << "ERROR: --ec-me-algorithm must be one of: "
-						<< "rj or deseq" << endl;
-				exit(EXIT_FAILURE);
+				if (ecMeAlgParam == "EDGER") {
+					meAlgorithmType = EC_ME_ALG_EDGER;
+					cout << Timestamp()
+							<< "Running EC in main effects algorithm set to: edgeR" << endl;
+				} else {
+					cerr << "ERROR: --ec-me-algorithm must be one of: "
+							<< "rj or deseq or edger" << endl;
+					exit(EXIT_FAILURE);
+				}
 			}
 		}
 	}
@@ -302,6 +312,9 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, ConfigMap& configMap,
 		break;
 	case EC_ME_ALG_DESEQ:
 		maineffectAlgorithm = new Deseq(ds);
+		break;
+	case EC_ME_ALG_EDGER:
+		maineffectAlgorithm = new Edger(ds);
 		break;
 	}
 

@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
 		(
 		"ec-me-algorithm",
 		po::value<string>(&ecMeAlgorithm)->default_value(ecMeAlgorithm),
-		"Main effects algorithm (rj|deseq)"
+		"Main effects algorithm (rj|deseq|edger)"
 		)
 		(
 		"ec-it-algorithm",

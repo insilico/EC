@@ -206,6 +206,7 @@ enum EcMeAlgorithmType
 {
 	EC_ME_ALG_RJ, /**< Random Jungle main effects algorithm */
 	EC_ME_ALG_DESEQ,  /**< DESeq main effects algorithm */
+	EC_ME_ALG_EDGER  /**< edgeR main effects algorithm */
 };
 
 /**
