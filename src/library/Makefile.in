@@ -82,9 +82,9 @@ am_libec_la_OBJECTS = libec_la-Insilico.lo libec_la-DistanceMetrics.lo \
 	libec_la-DgeData.lo libec_la-BirdseedData.lo \
 	libec_la-DatasetInstance.lo libec_la-AttributeRanker.lo \
 	libec_la-ChiSquared.lo libec_la-RandomJungle.lo \
-	libec_la-Deseq.lo libec_la-ReliefF.lo libec_la-RReliefF.lo \
-	libec_la-SNReliefF.lo libec_la-ReliefFSeq.lo \
-	libec_la-EvaporativeCooling.lo
+	libec_la-Deseq.lo libec_la-Edger.lo libec_la-ReliefF.lo \
+	libec_la-RReliefF.lo libec_la-SNReliefF.lo \
+	libec_la-ReliefFSeq.lo libec_la-EvaporativeCooling.lo
 libec_la_OBJECTS = $(am_libec_la_OBJECTS)
 libec_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -282,13 +282,13 @@ mycppflags = $(CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 AM_CXXFLAGS = $(my_cpp_flags) -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen \
 	-DHAVE__BOOL -D__NOPLUGIN__
 
-# shared library build
+# libec library
 lib_LTLIBRARIES = libec.la
 libec_la_SOURCES = \
 Insilico.cpp DistanceMetrics.cpp Statistics.cpp \
 Dataset.cpp ArffDataset.cpp PlinkDataset.cpp  PlinkBinaryDataset.cpp \
 PlinkRawDataset.cpp DgeData.cpp BirdseedData.cpp DatasetInstance.cpp \
-AttributeRanker.cpp ChiSquared.cpp RandomJungle.cpp Deseq.cpp \
+AttributeRanker.cpp ChiSquared.cpp RandomJungle.cpp Deseq.cpp Edger.cpp \
 ReliefF.cpp RReliefF.cpp SNReliefF.cpp ReliefFSeq.cpp \
 EvaporativeCooling.cpp
 
@@ -298,7 +298,7 @@ libec_la_HEADERS = \
 ArffDataset.h ChiSquared.h Dataset.h DatasetInstance.h DistanceMetrics.h \
 EvaporativeCooling.h GSLRandomBase.h GSLRandomFlat.h Insilico.h \
 PlinkBinaryDataset.h PlinkDataset.h PlinkRawDataset.h AttributeRanker.h \
-RReliefF.h SNReliefF.h ReliefFSeq.h RandomJungle.h ReliefF.h Deseq.h \
+RReliefF.h SNReliefF.h ReliefFSeq.h RandomJungle.h ReliefF.h Deseq.h Edger.h \
 DgeData.h Statistics.h StringUtils.h BestN.h BirdseedData.h
 
 libec_la_CPPFLAGS = $(mycppflags)
@@ -391,6 +391,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Deseq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-DgeData.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-DistanceMetrics.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Edger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-EvaporativeCooling.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-Insilico.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libec_la-PlinkBinaryDataset.Plo@am__quote@
@@ -528,6 +529,13 @@ libec_la-Deseq.lo: Deseq.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Deseq.cpp' object='libec_la-Deseq.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-Deseq.lo `test -f 'Deseq.cpp' || echo '$(srcdir)/'`Deseq.cpp
+
+libec_la-Edger.lo: Edger.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-Edger.lo -MD -MP -MF $(DEPDIR)/libec_la-Edger.Tpo -c -o libec_la-Edger.lo `test -f 'Edger.cpp' || echo '$(srcdir)/'`Edger.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libec_la-Edger.Tpo $(DEPDIR)/libec_la-Edger.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='Edger.cpp' object='libec_la-Edger.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libec_la-Edger.lo `test -f 'Edger.cpp' || echo '$(srcdir)/'`Edger.cpp
 
 libec_la-ReliefF.lo: ReliefF.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libec_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libec_la-ReliefF.lo -MD -MP -MF $(DEPDIR)/libec_la-ReliefF.Tpo -c -o libec_la-ReliefF.lo `test -f 'ReliefF.cpp' || echo '$(srcdir)/'`ReliefF.cpp
@@ -794,12 +802,12 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-libec_laHEADERS
 
 
 #library_includedir=$(includedir)
-#library_include_HEADERS = ec/ArffDataset.h ec/ChiSquared.h ec/CleanSnpDataset.h \
+# library_include_HEADERS = ec/ArffDataset.h ec/ChiSquared.h ec/CleanSnpDataset.h \
 #ec/Dataset.h ec/DatasetInstance.h ec/Debugging.h ec/DistanceMetrics.h \
 #ec/EvaporativeCooling.h ec/FilesystemUtils.h ec/GSLRandomBase.h \
 #ec/GSLRandomFlat.h ec/Insilico.h ec/PlinkBinaryDataset.h ec/PlinkDataset.h \
 #ec/PlinkRawDataset.h ec/RReliefF.h ec/RandomJungle.h ec/ReliefF.h \
-#ec/Statistics.h ec/StringUtils.h ec/best_n.h ec/BirdseedData.h
+#ec/Statistics.h ec/StringUtils.h ec/best_n.h ec/BirdseedData.h 
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

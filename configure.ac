@@ -8,14 +8,14 @@
 
 AC_PREREQ(2.61)
 
-AC_INIT(ec, 1.0, bill-whit@utulsa.edu, http://insilico.utulsa.edu/evaporative-cooling)
+AC_INIT([ec], [1.0], [bill-white@utulsa.edu], [http://insilico.utulsa.edu/evaporative-cooling])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR([build-aux])
-AC_CONFIG_SRCDIR(src/library/EvaporativeCooling.cpp)
+AC_CONFIG_SRCDIR([src/library/EvaporativeCooling.cpp])
 AC_CONFIG_HEADERS([config.h])
 
-AM_INIT_AUTOMAKE(ec, 1.0)
+AM_INIT_AUTOMAKE([ec], [1.0])
 
 AC_SUBST(SRCDIR, src)
 AC_SUBST(LIBDIR, library)
@@ -34,13 +34,25 @@ AC_PROG_LIBTOOL
 # Use libtool for all builds
 LT_INIT
 
-# add parameter(s)
-AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), [debug_ec=yes])
-
 # Set variables for basic compile debug/release
+AC_ARG_ENABLE(debug, 
+AC_HELP_STRING([--enable-debug],[Compile code for debugging.]), 
+[debug_ec=yes]
+)
 if test "$debug_ec" == 'yes' ; then
-    CXXFLAGS="-O0 -gdwarf-2 -Wall -D__DEBUG__ $CXXFLAGS "
+    CXXFLAGS="-O0 -gdwarf-2 -Wall -D__DEBUG__ $CXXFLAGS"
 fi
+
+AC_ARG_ENABLE(static,
+[  --enable-static    Turn on static builds],
+[case "${enableval}" in
+  yes) static=true ;;
+  no)  static=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-static) ;;
+esac],
+[static=false]
+)
+AM_CONDITIONAL(STATIC, test x$static = xtrue)
 
 # Checks for header files.
 AC_CHECK_HEADERS([math.h stdlib.h string.h sys/time.h])
@@ -87,7 +99,6 @@ AC_ARG_WITH([xml],
                     [disable XML support])],
     [with_xml=$withval],
     [with_xml=$have_x])
-
 if test "$with_xml" != 'yes' ; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-xml=$with_xml "
 fi
@@ -135,13 +146,18 @@ if test "$with_xml" != 'no'; then
         AC_MSG_RESULT([no])
     fi
 fi
-
 AM_CONDITIONAL(XML_DELEGATE,test "$have_xml" = 'yes')
 AC_SUBST(XML_LIBS)
 
-# check for RandomJungle dependency
-AC_CHECK_LIB([rjungle], [main])
-AC_CHECK_LIB([lr], [mk_lr_options])
+# check for RandomJungle
+AC_CHECK_LIB([rjungle], [main],
+	[],
+	AC_MSG_ERROR(test for Random Jungle failed)
+)
+AC_CHECK_LIB([lr], [main],
+	[],
+	AC_MSG_ERROR(test for Random Jungle linear regession library liblr failed)
+)
 LDFLAGS="$LDFLAGS -llr -lrjungle"
 
 ######################################################################

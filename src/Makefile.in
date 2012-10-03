@@ -34,7 +34,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT) ec_static$(EXEEXT)
+@STATIC_FALSE@bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT)
+@STATIC_TRUE@bin_PROGRAMS = ec$(EXEEXT) ecm$(EXEEXT) \
+@STATIC_TRUE@	ec_static$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4

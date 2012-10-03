@@ -14,7 +14,11 @@ my_ld_flags = $(LDFLAGS) -lec -lgsl -lgslcblas $(BOOST_PROGRAM_OPTIONS_LIBS) @FL
 my_ld_paths = -L$(top_srcdir)/src/$(LIBDIR)  
 
 # make ec and ecm (iMproved!)
+if STATIC
 bin_PROGRAMS = ec ecm ec_static
+else
+bin_PROGRAMS = ec ecm
+endif
 
 ec_SOURCES = EvaporativeCoolingCLI.cpp
 

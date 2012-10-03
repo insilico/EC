@@ -17,7 +17,7 @@
 #define HAVE_LIBGOMP 1
 
 /* Define to 1 if you have the `lr' library (-llr). */
-/* #undef HAVE_LIBLR */
+#define HAVE_LIBLR 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
@@ -72,7 +72,7 @@
 #define PACKAGE "ec"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "bill-whit@utulsa.edu"
+#define PACKAGE_BUGREPORT "bill-white@utulsa.edu"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "ec"
