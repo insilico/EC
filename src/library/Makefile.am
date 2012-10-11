@@ -4,9 +4,9 @@ LIBDIR=@LIBDIR@
 LIBNAME=@LIBNAME@
 
 myincludes = -I$(top_srcdir)/src -I$(top_srcdir) -I$(top_srcdir)/src/library
-myincludes += -I/usr/local/lib/R/site-library/RInside/include
-myincludes += -I/usr/lib/R/site-library/Rcpp/include
-myincludes += -I/usr/share/R/include
+#myincludes += -I/usr/local/lib/R/site-library/RInside/include
+#myincludes += -I/usr/lib/R/site-library/Rcpp/include
+#myincludes += -I/usr/share/R/include
 mycppflags = $(CXXFLAGS) $(BOOST_CPPFLAGS) $(myincludes)
 AM_CXXFLAGS = $(my_cpp_flags) -D_FILE_OFFSET_BITS=64 -Dfopen64=fopen
 AM_CXXFLAGS += -DHAVE__BOOL  -D__NOPLUGIN__

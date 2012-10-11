@@ -26,9 +26,9 @@
 #include <time.h>
 
 #include <boost/lexical_cast.hpp>
-#include <R.h>
-#include <Rcpp.h>
-#include <RInside.h>
+//#include <R.h>
+//#include <Rcpp.h>
+//#include <RInside.h>
 
 #include "gsl/gsl_cdf.h"
 #include "GSLRandomFlat.h"

@@ -20705,7 +20705,8 @@ _ACEOF
   LIBS="-lrjungle $LIBS"
 
 else
-  as_fn_error $? "test for Random Jungle failed" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: test for Random Jungle failed" >&5
+$as_echo "$as_me: test for Random Jungle failed" >&6;}
 
 fi
 
@@ -20747,7 +20748,8 @@ _ACEOF
   LIBS="-llr $LIBS"
 
 else
-  as_fn_error $? "test for Random Jungle linear regession library liblr failed" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: test for Random Jungle linear regession library liblr failed" >&5
+$as_echo "$as_me: test for Random Jungle linear regession library liblr failed" >&6;}
 
 fi
 

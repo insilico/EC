@@ -152,11 +152,11 @@ AC_SUBST(XML_LIBS)
 # check for RandomJungle
 AC_CHECK_LIB([rjungle], [main],
 	[],
-	AC_MSG_ERROR(test for Random Jungle failed)
+	AC_MSG_NOTICE(test for Random Jungle failed)
 )
 AC_CHECK_LIB([lr], [main],
 	[],
-	AC_MSG_ERROR(test for Random Jungle linear regession library liblr failed)
+	AC_MSG_NOTICE(test for Random Jungle linear regession library liblr failed)
 )
 LDFLAGS="$LDFLAGS -llr -lrjungle"
 
