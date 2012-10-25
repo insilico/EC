@@ -522,7 +522,8 @@ bool RandomJungle::ComputeAttributeScoresFileIO() {
 	/// rj classification error
 	// from confusion file - 4/11/12
 	// added the new getOob - 7/1/12
-	classificationAccuracy = ReadClassificationError(confusionFilename);
+	// sets classificationAccuracy as a side effect!
+	ReadClassificationError(confusionFilename);
 	cout << Timestamp() << "RJ classification accuracy: "
 			<< classificationAccuracy << endl;
 
@@ -681,14 +682,15 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename) {
 			(RandomJungleTreeType) rjParams.treeType, classifierError)) {
 		return false;
 	}
-	classificationAccuracy = classifierError;
+	classificationAccuracy = 1.0 - classifierError;
 
 	return true;
 }
 
 bool RandomJungle::GetLibraryClassificationAccuracy() {
 	double classifierError = 1.0;
-	classificationAccuracy = classifierError;
+
+	classificationAccuracy = 1.0 - classifierError;
 
 	return true;
 }
