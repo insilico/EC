@@ -39,7 +39,8 @@ public:
   		RandomJungleTreeType treeType, double& classError);
   /// Read the classification error from file into variable
   static bool ReadClassificationError(std::string confusionFilename,
-  		RandomJungleTreeType treeType, double& classifierError);
+  		RandomJungleTreeType treeType, double& classifierError,
+  		std::string delim="\t");
 
   /*************************************************************************//**
    * Construct an RandomJungle algorithm object.

@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
 	uli_t rjNumTrees = 500;
 	uli_t rjTreeType = NOMINAL_NUMERIC_TREE;
 	uli_t rjMemoryMode = 0;
-	uli_t rjRunMode = LIBRARY_RUN_MODE;
+	uli_t rjRunMode = LIBRARY_FILE_RUN_MODE;
 	// added new RJ params 5/24/12 per Scott Dudek request/experience
 	uli_t rjMtry;
 	unsigned int rjImpMeasure = 1;
@@ -220,9 +220,9 @@ int main(int argc, char** argv) {
 		(
 		"rj-run-mode,R",
 		po::value<unsigned int> (&rjRunMode)->default_value(rjRunMode),
-		"Random Jungle run mode: 1 (default=library call with memory I/O) "
+		"Random Jungle run mode: 1 (library call with memory I/O) "
 		"/ 2 (system call)"
-		"/ 3 (library call with file I/O)"
+		"/ 3 (default=library call with file I/O)"
 		)
 		(
 		"rj-num-trees,j",
@@ -805,11 +805,11 @@ int main(int argc, char** argv) {
 		if(numericTransform == "zscore") {
 			ds->TransformNumericsZScore();
 		}
-//		cout << "DEBUG: writing debug_transformed.txt, transformed by: "
-//				<< numericTransform << ", and exiting."
-//				<< endl << endl;
-//		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
-//		exit(0);
+		//		cout << "DEBUG: writing debug_transformed.txt, transformed by: "
+		//				<< numericTransform << ", and exiting."
+		//				<< endl << endl;
+		//		ds->WriteNewDataset("debug_transformed.txt", TAB_DELIMITED_DATASET);
+		//		exit(0);
 	}
 
 	// ---------------------------------------------------------------------------
@@ -822,42 +822,25 @@ int main(int argc, char** argv) {
 	}
 
 	// IS THIS CROSS-PLATFORM/POSIX COMPATIBLE?
-//  struct rusage s;
-//  struct rusage*p = &s;
-//  getrusage(RUSAGE_SELF, p);
-//  cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
-//         << " MB" << endl;
+	//  struct rusage s;
+	//  struct rusage*p = &s;
+	//  getrusage(RUSAGE_SELF, p);
+	//  cout << Timestamp() << "EC Max RAM used: " << (p->ru_maxrss / (1024 * 1024))
+	//         << " MB" << endl;
 
 	cout << Timestamp() << "EC done" << endl;
 
 	// ---------------------------------------------------------------------------
-	// write the scores to the same name as the data set with algorithm suffix
-	string resultsFilename = outputFilesPrefix;
-	switch(ec.GetAlgorithmType()) {
-		case EC_ALG_ME_IT:
-			resultsFilename += ".ec";
-			break;
-		case EC_ALG_ME_ONLY:
-			resultsFilename += ".me";
-			break;
-		case EC_ALG_IT_ONLY:
-			if(ecItAlgorithm == "rf") {
-				resultsFilename += ".it";
-			}
-			if(ecItAlgorithm == "rfseq") {
-				resultsFilename += ".itseq";
-			}
-			break;
-		default:
-			// we should not get here by the CLI front end but it is possible to call
-			// this from other programs in the future or when used as a library
-			cerr << "ERROR: Attempting to write attribute scores before the algorithm "
-							<< "type was determined. " << endl;
-			return false;
-	}
+	// write results files
 	ec.WriteAttributeScores(outputFilesPrefix);
+	if((ecAlgorithmSteps == "all") || (ecAlgorithmSteps == "rj")) {
+		ec.WriteClassificationErrors(outputFilesPrefix + ".acc");
+	}
+	if(vm.count("optimize-temp")) {
+		ec.WriteTemperatures(outputFilesPrefix + ".temps");
+	}
 
-	/// write the ReliefF filtered attributes as a new data set
+	/// write the ranked/filtered attributes as a new data set
 	switch(outputDatasetType) {
 		case TAB_DELIMITED_DATASET:
 			cout << Timestamp() << "Writing new TAB file" << endl;
@@ -888,7 +871,6 @@ int main(int argc, char** argv) {
 	}
 
 	cout << Timestamp() << "EC elapsed time " << t.elapsed() << " secs" << endl;
-
 	cout << Timestamp() << argv[0] << " done" << endl;
 
 	return 0;

@@ -54,14 +54,29 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 	/// run rjungle through a system call to the shell
 	stringstream rjCmd;
 	rjCmd << "rjungle" << " -f " << csvFile << " -e ','" << " -D 'Class'"
-			<< " -o " << outPrefix << " -U " << vm["num-threads"] << " -t "
-			<< vm["rj-num-trees"] << " -B " << vm["rj-backsel"] << " -i "
-			<< vm["rj-impmeasure"] << " -j " << vm["rj-nimpvar"] << " -y "
-			<< treeType;
-	if (vm.find("rj-mtry") != vm.end()) {
+			<< " -o " << outPrefix;
+	if(vm.find("num-threads") != vm.end()) {
+		rjCmd << " -U " << vm["num-threads"];
+	}
+	if(vm.find("num-trees") != vm.end()) {
+		rjCmd << " -t " << vm["rj-num-trees"];
+	}
+	if(vm.find("num-trees") != vm.end()) {
+		rjCmd << " -B " << vm["rj-backsel"];
+	}
+	if(vm.find("num-trees") != vm.end()) {
+		rjCmd << " -i "	<< vm["rj-impmeasure"];
+	}
+	if(vm.find("num-trees") != vm.end()) {
+		rjCmd << " -j " << vm["rj-nimpvar"];
+	}
+	if(vm.find("num-trees") != vm.end()) {
+		rjCmd << " -y "	<< treeType;
+	}
+	if(vm.find("rj-mtry") != vm.end()) {
 		rjCmd << " -m " << vm["rj-mtry"];
 	}
-	if (vm["verbose"] == "true") {
+	if(vm["verbose"] == "true") {
 		rjCmd << " -v";
 	}
 	cout << Timestamp() << "Running RJ command: " << rjCmd.str() << endl;
@@ -74,7 +89,7 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 	/// loads rj classification error from confusion file
 	cout << Timestamp() << "Loading RJ classification error " << "from ["
 			<< confusionFilename << "]" << endl;
-	if (!ReadClassificationError(confusionFilename, treeType, classError)) {
+	if(!ReadClassificationError(confusionFilename, treeType, classError, ",")) {
 		cerr << "ERROR: Could not read Random Jungle classification error"
 				<< endl;
 		return false;
@@ -84,7 +99,7 @@ bool RandomJungle::RunClassifier(string csvFile, ConfigMap& vm,
 }
 
 bool RandomJungle::ReadClassificationError(std::string confusionFilename,
-		RandomJungleTreeType treeType, double& classifierError) {
+		RandomJungleTreeType treeType, double& classifierError, string delim) {
 	/// open the confusion file
 	ifstream confusionStream(confusionFilename.c_str());
 	if (!confusionStream.is_open()) {
@@ -97,7 +112,7 @@ bool RandomJungle::ReadClassificationError(std::string confusionFilename,
 	getline(confusionStream, line);
 	getline(confusionStream, line);
 	vector<string> tokens;
-	split(tokens, line, "\t");
+	split(tokens, line, delim);
 	if (tokens.size() != 5) {
 		cerr << "ERROR: RandomJungle::GetClassificationError: "
 				<< "error parsing " << confusionFilename << "." << endl;

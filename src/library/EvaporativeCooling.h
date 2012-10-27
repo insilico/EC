@@ -70,6 +70,16 @@ public:
 	 ****************************************************************************/
 	void WriteAttributeScores(std::string baseFilename);
 	/*************************************************************************//**
+	 * Write the classification errors to file.
+	 * \param [in] filename filename to write classification errors
+	 ****************************************************************************/
+	void WriteClassificationErrors(std::string filename);
+	/*************************************************************************//**
+	 * Write the temperatures to file.
+	 * \param [in] filename filename to write temperatures
+	 ****************************************************************************/
+	void WriteTemperatures(std::string filename);
+	/*************************************************************************//**
 	 * Write the EC scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
@@ -86,7 +96,7 @@ public:
 	void PrintInteractionAttributeScores(std::ofstream& outStream);
 	/// Print the current attributes scores to stdout in tab-delimited format.
 	bool PrintAllScoresTabular();
-	/// Print the kendall taus between the main effects and interactions scores.
+	/// Print the Kendall taus between the main effects and interactions scores.
 	bool PrintKendallTaus();
 private:
 	/// Run the ReliefF algorithm.
@@ -133,7 +143,10 @@ private:
 
 	bool optimizeTemperature;
 	double optimalTemperature;
+	std::vector<double> temperatures;
 	double bestClassificationError;
+	/// classification errors used by the T optimization algorithm
+	std::vector<double> classificationErrors;
 
 	/// current random jungle scores
 	AttributeScores maineffectScores;

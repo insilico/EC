@@ -420,7 +420,8 @@ bool EvaporativeCooling::ComputeECScores() {
 		cout << Timestamp() << "EC algorithm...iteration: " << iteration
 				<< ", working attributes: " << numWorkingAttributes
 				<< ", target attributes: " << numTargetAttributes
-				<< ", temperature: " << optimalTemperature << endl;
+				<< ", temperature: " << optimalTemperature
+				<< ", best CE: " << bestClassificationError << endl;
 		cout << Timestamp()
 				<< "Ti/Tv: transitions: " << titvCounts.first
 				<< " transversions: " << titvCounts.second
@@ -433,7 +434,11 @@ bool EvaporativeCooling::ComputeECScores() {
 		if ((algorithmType == EC_ALG_ME_IT) || (algorithmType == EC_ALG_ME_ONLY)) {
 			cout << Timestamp() << "Running Random Jungle" << endl;
 			maineffectScores = maineffectAlgorithm->ComputeScores();
-			bestClassificationError = maineffectAlgorithm->GetClassificationError();
+			double classificationError = maineffectAlgorithm->GetClassificationError();
+			if(classificationError < bestClassificationError) {
+				bestClassificationError = classificationError;
+			}
+			classificationErrors.push_back(classificationError);
 			cout << Timestamp() << "Main effects ranker finished in " << t.elapsed()
 					<< " secs" << endl;
 			// RJ standalone runs
@@ -489,8 +494,9 @@ bool EvaporativeCooling::ComputeECScores() {
 			temperatureDeltas.push_back(-0.2);
 			temperatureDeltas.push_back(0.2);
 			optimalTemperature = OptimizeTemperature(temperatureDeltas);
+			temperatures.push_back(optimalTemperature);
 			cout << Timestamp() << "T optimization: " << optimalTemperature
-					<< ", complete in " << t.elapsed() << " secs" << endl;
+					<< ", complete in " << t.elapsed() << " seconds" << endl;
 		}
 
 		// -------------------------------------------------------------------------
@@ -535,7 +541,8 @@ bool EvaporativeCooling::ComputeECScores() {
 	// new dataset to be analyzed with (re)GAIN + SNPrank
 	sort(freeEnergyScores.begin(), freeEnergyScores.end(), scoresSortDesc);
 	ecScores.resize(numTargetAttributes);
-	copy(freeEnergyScores.begin(), freeEnergyScores.begin() + numTargetAttributes,
+	copy(freeEnergyScores.begin(),
+			freeEnergyScores.begin() + numTargetAttributes,
 			ecScores.begin());
 
 	return true;
@@ -667,6 +674,40 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 				<< "type was determined. " << endl;
 		return;
 	}
+}
+
+void EvaporativeCooling::WriteClassificationErrors(string filename) {
+	ofstream outFile;
+	outFile.open(filename.c_str());
+	if (outFile.bad()) {
+		cerr << "ERROR: Could not open classification errors file "
+				<< filename	<< "for writing" << endl;
+		exit(1);
+	}
+	cout << Timestamp()
+			<< "Writing EC classification errors to [" + filename + "]" << endl;
+	vector<double>::const_iterator ceIt = classificationErrors.begin();
+	for(; ceIt != classificationErrors.end(); ++ceIt) {
+		outFile << *ceIt << endl;
+	}
+	outFile.close();
+}
+
+void EvaporativeCooling::WriteTemperatures(string filename) {
+	ofstream outFile;
+	outFile.open(filename.c_str());
+	if (outFile.bad()) {
+		cerr << "ERROR: Could not open temperatures file "
+				<< filename	<< "for writing" << endl;
+		exit(1);
+	}
+	cout << Timestamp()
+			<< "Writing EC temperatures to [" + filename + "]" << endl;
+	vector<double>::const_iterator tempsIt = temperatures.begin();
+	for(; tempsIt != temperatures.end(); ++tempsIt) {
+		outFile << *tempsIt << endl;
+	}
+	outFile.close();
 }
 
 bool EvaporativeCooling::PrintAllScoresTabular() {
@@ -891,7 +932,7 @@ double EvaporativeCooling::OptimizeTemperature(vector<double> deltas) {
 		/// if classification error is lower at this delta, update best temperature
 		/// and best classification error
 		if(thisClassificationError < bestClassificationError) {
-			cout << Timestamp() << "OPTIMIZER: found better temperature: "
+			cout << Timestamp() << "--- OPTIMIZER: found better temperature: "
 					<< thisTemp << endl;
 			bestClassificationError = thisClassificationError;
 			optimalTemperature = thisTemp;
