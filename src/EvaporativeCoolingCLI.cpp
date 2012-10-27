@@ -833,7 +833,7 @@ int main(int argc, char** argv) {
 	// ---------------------------------------------------------------------------
 	// write results files
 	ec.WriteAttributeScores(outputFilesPrefix);
-	if((ecAlgorithmSteps == "all") || (ecAlgorithmSteps == "rj")) {
+	if((ecAlgorithmSteps == "all") || (ecAlgorithmSteps == "me")) {
 		ec.WriteClassificationErrors(outputFilesPrefix + ".acc");
 	}
 	if(vm.count("optimize-temp")) {
