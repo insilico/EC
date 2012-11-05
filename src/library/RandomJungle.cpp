@@ -289,7 +289,7 @@ RandomJungle::~RandomJungle() {
 	tempFilenames.push_back(outprefix + ".log");
 	tempFilenames.push_back(outprefix + ".verbose");
 	tempFilenames.push_back(outprefix + ".importance");
-	tempFilenames.push_back(outprefix + ".confusion");
+	//tempFilenames.push_back(outprefix + ".confusion");
 	tempFilenames.push_back(outprefix + ".confusion2");
 	for(vector<string>::const_iterator it=tempFilenames.begin();
 			it != tempFilenames.end(); ++it) {
