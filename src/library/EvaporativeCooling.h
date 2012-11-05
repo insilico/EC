@@ -85,10 +85,16 @@ public:
 	 ****************************************************************************/
 	void PrintAttributeScores(std::ofstream& outStream);
 	/*************************************************************************//**
+	 * Write the EC scores and attribute names to stream, includes evaporated
+	 * attributes with score of zero.
+	 * \param [in] outStream stream to write score-attribute name pairs
+	 ****************************************************************************/
+	void PrintAllAttributeScores(std::ofstream& outStream);
+	/*************************************************************************//**
 	 * Write the main effect scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs
 	 ****************************************************************************/
-	void PrintMaineffectAttributeScores(std::ofstream& outStream);
+	void PrintMainEffectAttributeScores(std::ofstream& outStream);
 	/*************************************************************************//**
 	 * Write the interaction scores and attribute names to stream.
 	 * \param [in] outStream stream to write score-attribute name pairs

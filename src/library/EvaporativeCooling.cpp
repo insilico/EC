@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 #include <omp.h>
 
@@ -446,7 +447,8 @@ bool EvaporativeCooling::ComputeECScores() {
 					&& (numWorkingAttributes == numTargetAttributes)) {
 				sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
 				ecScores.resize(numTargetAttributes);
-				copy(maineffectScores.begin(), maineffectScores.begin() + numTargetAttributes,
+				copy(maineffectScores.begin(),
+						maineffectScores.begin() + numTargetAttributes,
 						ecScores.begin());
 				return true;
 			}
@@ -498,6 +500,21 @@ bool EvaporativeCooling::ComputeECScores() {
 			cout << Timestamp() << "T optimization: " << optimalTemperature
 					<< ", complete in " << t.elapsed() << " seconds" << endl;
 		}
+
+		// write scores for each iteration
+		stringstream scoreFilename;
+		scoreFilename << "ec." << iteration << ".scores.dat";
+		ofstream outFile;
+		outFile.open(scoreFilename.str().c_str());
+		if(outFile.bad()) {
+			cerr << "ERROR: Could not open scores file " << scoreFilename.str()
+					<< "for writing" << endl;
+			exit(1);
+		}
+		cout << Timestamp()
+				<< "Writing ALL EC scores to [" + scoreFilename.str() + "]" << endl;
+		PrintAllAttributeScores(outFile);
+		outFile.close();
 
 		// -------------------------------------------------------------------------
 		// remove the worst attributes and iterate
@@ -565,17 +582,30 @@ EcAlgorithmType EvaporativeCooling::GetAlgorithmType() {
 }
 
 void EvaporativeCooling::PrintAttributeScores(ofstream& outStream) {
-	for (AttributeScoresCIt ecScoresIt = ecScores.begin(); ecScoresIt != ecScores.end();
+	for(AttributeScoresCIt ecScoresIt = ecScores.begin(); ecScoresIt != ecScores.end();
 			++ecScoresIt) {
 		outStream << fixed << setprecision(8) << (*ecScoresIt).first << "\t"
 				<< (*ecScoresIt).second << endl;
 	}
 }
 
-void EvaporativeCooling::PrintMaineffectAttributeScores(ofstream& outStream) {
+void EvaporativeCooling::PrintAllAttributeScores(ofstream& outStream) {
+	for(AttributeScoresCIt ecScoresIt = freeEnergyScores.begin();
+			ecScoresIt != freeEnergyScores.end();	++ecScoresIt) {
+		outStream << fixed << setprecision(8) << (*ecScoresIt).first << "\t"
+				<< (*ecScoresIt).second << endl;
+	}
+	for (AttributeScoresCIt ecScoresIt = evaporatedAttributes.begin();
+			ecScoresIt != evaporatedAttributes.end();	++ecScoresIt) {
+		outStream << fixed << setprecision(8) << 0 << "\t"
+				<< (*ecScoresIt).second << endl;
+	}
+}
+
+void EvaporativeCooling::PrintMainEffectAttributeScores(ofstream& outStream) {
 	sort(maineffectScores.begin(), maineffectScores.end(), scoresSortDesc);
-	for (AttributeScoresCIt rjScoresIt = maineffectScores.begin(); rjScoresIt != maineffectScores.end();
-			++rjScoresIt) {
+	for(AttributeScoresCIt rjScoresIt = maineffectScores.begin();
+			rjScoresIt != maineffectScores.end(); ++rjScoresIt) {
 		outStream << fixed << setprecision(8) << (*rjScoresIt).first << "\t"
 				<< (*rjScoresIt).second << endl;
 	}
@@ -583,8 +613,8 @@ void EvaporativeCooling::PrintMaineffectAttributeScores(ofstream& outStream) {
 
 void EvaporativeCooling::PrintInteractionAttributeScores(ofstream& outStream) {
 	sort(interactionScores.begin(), interactionScores.end(), scoresSortDesc);
-	for (AttributeScoresCIt rfScoresIt = interactionScores.begin(); rfScoresIt != interactionScores.end();
-			++rfScoresIt) {
+	for(AttributeScoresCIt rfScoresIt = interactionScores.begin();
+			rfScoresIt != interactionScores.end(); ++rfScoresIt) {
 		outStream << fixed << setprecision(8) << (*rfScoresIt).first << "\t"
 				<< (*rfScoresIt).second << endl;
 	}
@@ -618,7 +648,7 @@ void EvaporativeCooling::WriteAttributeScores(string baseFilename) {
 		}
 		cout << Timestamp()
 				<< "Writing EC main effects scores to [" + resultsFilename + "]" << endl;
-		PrintMaineffectAttributeScores(outFile);
+		PrintMainEffectAttributeScores(outFile);
 		outFile.close();
 
 		resultsFilename = baseFilename + ".ec.it";
