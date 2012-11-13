@@ -75,7 +75,8 @@ ReliefF::ReliefF(Dataset* ds, AnalysisType anaType):
 	}
 	analysisType = anaType;
 	m = dataset->NumInstances();
-	k = 10;
+	SetK(10);
+
 	weightByDistanceMethod = "equal";
 	snpMetric = "gm";
 	snpDiff = diffGMM;
@@ -137,9 +138,9 @@ ReliefF::ReliefF(Dataset* ds, po::variables_map& vm, AnalysisType anaType):
 		m = dataset->NumInstances();
 	}
 	if (vm.count("k-nearest-neighbors")) {
-		k = vm["k-nearest-neighbors"].as<unsigned int>();
+		SetK(vm["k-nearest-neighbors"].as<unsigned int>());
 	} else {
-		k = 10;
+		SetK(10);
 	}
 	snpMetric = "gm";
 	if (vm.count("snp-metric")) {
@@ -301,9 +302,9 @@ ReliefF::ReliefF(Dataset* ds, ConfigMap& configMap, AnalysisType anaType):
 		m = dataset->NumInstances();
 	}
 	if (GetConfigValue(configMap, "k-nearest-neighbors", configValue)) {
-		k = lexical_cast<unsigned int>(configValue);
+		SetK(lexical_cast<unsigned int>(configValue));
 	} else {
-		k = 10;
+		SetK(10);
 	}
 	if (GetConfigValue(configMap, "snp-metric", configValue)) {
 		snpMetric = configValue;
@@ -1024,6 +1025,31 @@ AttributeScores ReliefF::GetScores() {
 AttributeScores ReliefF::ComputeScores() {
 	ComputeAttributeScores();
 	return GetScores();
+}
+
+bool ReliefF::SetK(unsigned int newK) {
+	map<ClassLevel, vector<unsigned int> > classLevels =
+			dataset->GetClassIndexes();
+	map<ClassLevel, vector<unsigned int> >::const_iterator ciIt;
+	unsigned int minSampleCount = dataset->NumInstances();
+	for(ciIt=classLevels.begin(); ciIt != classLevels.end(); ++ciIt) {
+		if(ciIt->second.size() < minSampleCount) {
+			minSampleCount = ciIt->second.size();
+		}
+	}
+
+	if(minSampleCount < newK) {
+		cout << Timestamp() << "WARNING: Minimum class size " << minSampleCount
+				<< " is less than k " << newK << endl;
+		cout << Timestamp() << "WARNING: Setting k nearest neighbors to " <<
+				minSampleCount - 1 << endl;
+		k = minSampleCount - 1;
+	}
+	else {
+		k = newK;
+	}
+
+	return true;
 }
 
 bool ReliefF::ComputeWeightByDistanceFactors() {

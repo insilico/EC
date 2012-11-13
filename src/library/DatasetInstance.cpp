@@ -279,7 +279,8 @@ DatasetInstance::GetNNearestInstances
   if(bestNeighborIdsSameClass.size() < n) {
     cerr << endl << "ERROR: GetNNearestInstances: N: [" << n
             << "] is larger than the number of neighbors "
-            << " in same class: " << bestNeighborIdsSameClass.size() << endl;
+            << "in same class: [" << bestNeighborIdsSameClass.size()
+            << "]" << endl;
     return false;
   }
 
@@ -300,7 +301,8 @@ DatasetInstance::GetNNearestInstances
     if(ids.size() < n) {
       cerr << endl << "ERROR: GetNNearestInstances: N: [" << n
               << "] is larger than the number of neighbors for class "
-              << thisClass << ": " << bestNeighborIdsDiffClass.size() << endl;
+              << thisClass << ": [" << bestNeighborIdsDiffClass.size()
+              << "]" << endl;
       return false;
     }
     for(unsigned int i = 0; i < n; ++i) {

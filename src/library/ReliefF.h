@@ -3,7 +3,7 @@
  *
  * \brief ReliefF attribute ranking algorithm.
  *
- * Totally redone for the McKinney insilico lab in 2011.
+ * Totally redone for the McKinney in silico lab in 2011.
  * Large refactoring to move all attribute elimination handling to the
  * Dataset and its subclasses. 9/11/11
  *
@@ -82,8 +82,13 @@ public:
   bool PreComputeDistancesByMap();
   /// Overrides base class method.
   AttributeScores GetScores();
-  // Implements AttributeRanker interface.
+  /// Implements AttributeRanker interface.
   AttributeScores ComputeScores();
+  /// Set k nearest neighbors, with bounds checking
+  bool SetK(unsigned int newK);
+private:
+  /// no default constructor
+  ReliefF();
 protected:
   /// Compute theconst AttributeScores& ComputeScores(); weight by distance factors for nearest neighbors.
   bool ComputeWeightByDistanceFactors();
