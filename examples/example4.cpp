@@ -12,11 +12,11 @@
 #include <vector>
 
 /// Our Dataset class is in the parent directory.
-#include "ec/Dataset.h"
-#include "ec/DatasetInstance.h"
-#include "ec/PlinkDataset.h"
-#include "ec/PlinkBinaryDataset.h"
-#include "ec/Insilico.h"
+#include "Dataset.h"
+#include "DatasetInstance.h"
+#include "PlinkDataset.h"
+#include "PlinkBinaryDataset.h"
+#include "Insilico.h"
 
 using namespace std;
 

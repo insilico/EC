@@ -105,7 +105,8 @@ bool PlinkRawDataset::LoadSnps(string filename) {
     vector<string> dataLineParts;
     split(dataLineParts, trimmedLine);
     // only load those instances with matching IDs
-    string ID = dataLineParts[0];
+		// use both FID and IID so all PLINK files will work - 4/10/13
+    string ID = dataLineParts[0] + dataLineParts[1];
     if(!IsLoadableInstanceID(ID)) {
       cout << Timestamp() << "WARNING: Dataset ID [" << ID << "] skipped. "
               << "Not found in numerics and/or phenotype file(s)"

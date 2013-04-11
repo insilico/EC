@@ -160,7 +160,7 @@ bool Dataset::LoadDataset(vector<vector<int> >& dataMatrix,
 	for (; rowIt != dataMatrix.end(); ++rowIt, ++rowIndex) {
 		vector<int> row(numAttributes);
 		copy(rowIt->begin(), rowIt->end(), row.begin());
-		string ID = zeroPadNumber(rowIndex, 8);
+		string ID = zeroPadNumber(rowIndex, 8) + zeroPadNumber(rowIndex, 8);
 		DatasetInstance* dsi = new DatasetInstance(this);
 		dsi->LoadInstanceFromVector(row);
 		dsi->SetClass(classLabels[rowIndex]);
@@ -308,7 +308,7 @@ bool Dataset::LoadDataset(DgeData* dgeData) {
 			dsi->AddNumeric(sampleValues[numericIndex]);
 		}
 		instances.push_back(dsi);
-		string ID = sampleNames[instanceIndex];
+		string ID = sampleNames[instanceIndex] + sampleNames[instanceIndex];
 		instanceIds.push_back(ID);
 		numericsIds.push_back(ID);
 		instancesMask[ID] = instanceIndex;
@@ -374,7 +374,7 @@ bool Dataset::LoadDataset(BirdseedData* birdseedData) {
 		}
 		instances.push_back(dsi);
 
-		string ID = sampleNames[instanceIndex];
+		string ID = sampleNames[instanceIndex] + sampleNames[instanceIndex];
 		instanceIds.push_back(ID);
 //			attributeIds.push_back(ID);
 		instancesMask[ID] = instanceIndex;
@@ -3153,7 +3153,7 @@ bool Dataset::LoadSnps(std::string filename) {
 			continue;
 		}
 
-		string ID = zeroPadNumber(lineNumber, 8);
+		string ID = zeroPadNumber(lineNumber, 8) + zeroPadNumber(lineNumber, 8);
 		if (!IsLoadableInstanceID(ID)) {
 			cout << Timestamp() << "WARNING: Dataset ID [" << ID
 					<< "] skipped. " << " Line number: " << lineNumber
@@ -3472,7 +3472,8 @@ bool Dataset::LoadNumerics(string filename) {
 		}
 
 		// first column is the ID for matching data set rows - bcw - 8/3/11
-		string ID = numericsStringVector[0];
+		// use both FID and IID so all PLINK files will work - 4/10/13
+		string ID = numericsStringVector[0] + numericsStringVector[1];
 		if (!IsLoadableInstanceID(ID)) {
 			cout << Timestamp() << "WARNING: Skipping Numeric ID [" << ID
 					<< "]. "
@@ -3659,7 +3660,9 @@ bool Dataset::LoadAlternatePhenotypes(string phenotypesFilename) {
 		vector<string> lineParts;
 		split(lineParts, trimmedLine);
 
-		string ID = lineParts[0];
+		// use both FID and IID so all PLINK files will work - 4/10/13
+		// string ID = lineParts[0];
+		string ID = lineParts[0] + lineParts[1];
 		// skip IDs that don't match common IDs between numerics, phenotypes and data
 		if (!IsLoadableInstanceID(ID)) {
 			cout << Timestamp() << "WARNING: Skipping alternate phenotype ID ["

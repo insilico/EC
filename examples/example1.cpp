@@ -13,8 +13,8 @@
 #include <vector>
 
 /// Our Dataset class is in the parent directory.
-#include "ec/Dataset.h"
-#include "ec/DatasetInstance.h"
+#include "Dataset.h"
+#include "DatasetInstance.h"
 
 using namespace std;
 

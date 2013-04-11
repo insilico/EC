@@ -177,7 +177,7 @@ bool ArffDataset::LoadSnps(string filename) {
 					// only load matching IDs, line numbers for non-plink files
 					ostringstream ssLineNum;
 					ssLineNum << zeroPadNumber(lineNumber, 8);
-					string ID = ssLineNum.str();
+					string ID = ssLineNum.str() + ssLineNum.str();
 					// filter out IDs
 					if (!IsLoadableInstanceID(ID)) {
 						cout << Timestamp() << "WARNING: " << "Dataset instance ID [" << ID

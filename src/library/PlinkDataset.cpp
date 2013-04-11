@@ -181,7 +181,8 @@ bool PlinkDataset::LoadSnps(string filename) {
 
     /// get ID for matching between PLINK data, numeric and pheno files
     // use the PLINK IID as the instance ID - 9/18/12
-    string ID = pedColumnsParsed[1];
+		// use both FID and IID so all PLINK files will work - 4/10/13
+    string ID = pedColumnsParsed[0] + pedColumnsParsed[1];
     if(!IsLoadableInstanceID(ID)) {
       cout << Timestamp() << "WARNING: Dataset instance ID [" << ID << "] skipped. "
               << "Not found in numerics and/or phenotype file(s)"

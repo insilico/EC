@@ -1,5 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="84">
+<configurationDescriptor version="88">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="cppec">
+      <df name="autom4te.cache">
+      </df>
+      <df name="benchmarks">
+      </df>
+      <df name="build-aux">
+      </df>
+      <df name="doc">
+        <df name="latex">
+        </df>
+      </df>
+      <df name="examples">
+        <in>example1.cpp</in>
+        <in>example1_main.cpp</in>
+        <in>example2.cpp</in>
+        <in>example2_main.cpp</in>
+        <in>example3.cpp</in>
+        <in>example3_main.cpp</in>
+        <in>example4.cpp</in>
+        <in>example4_main.cpp</in>
+      </df>
+      <df name="m4">
+      </df>
+      <df name="src">
+        <df name="library">
+          <in>ArffDataset.cpp</in>
+          <in>ArffDataset.h</in>
+          <in>AttributeRanker.cpp</in>
+          <in>AttributeRanker.h</in>
+          <in>BestN.h</in>
+          <in>BirdseedData.cpp</in>
+          <in>BirdseedData.h</in>
+          <in>ChiSquared.cpp</in>
+          <in>ChiSquared.h</in>
+          <in>Dataset.cpp</in>
+          <in>Dataset.h</in>
+          <in>DatasetInstance.cpp</in>
+          <in>DatasetInstance.h</in>
+          <in>Deseq.cpp</in>
+          <in>Deseq.h</in>
+          <in>DgeData.cpp</in>
+          <in>DgeData.h</in>
+          <in>DistanceMetrics.cpp</in>
+          <in>DistanceMetrics.h</in>
+          <in>Edger.cpp</in>
+          <in>Edger.h</in>
+          <in>EvaporativeCooling.cpp</in>
+          <in>EvaporativeCooling.h</in>
+          <in>GSLRandomBase.h</in>
+          <in>GSLRandomFlat.h</in>
+          <in>Insilico.cpp</in>
+          <in>Insilico.h</in>
+          <in>PlinkBinaryDataset.cpp</in>
+          <in>PlinkBinaryDataset.h</in>
+          <in>PlinkDataset.cpp</in>
+          <in>PlinkDataset.h</in>
+          <in>PlinkRawDataset.cpp</in>
+          <in>PlinkRawDataset.h</in>
+          <in>RReliefF.cpp</in>
+          <in>RReliefF.h</in>
+          <in>RandomJungle.cpp</in>
+          <in>RandomJungle.h</in>
+          <in>ReliefF.cpp</in>
+          <in>ReliefF.h</in>
+          <in>ReliefFSeq.cpp</in>
+          <in>ReliefFSeq.h</in>
+          <in>SNReliefF.cpp</in>
+          <in>SNReliefF.h</in>
+          <in>Statistics.cpp</in>
+          <in>Statistics.h</in>
+          <in>StringUtils.h</in>
+        </df>
+        <in>EvaporativeCoolingCLI.cpp</in>
+        <in>EvaporativeCoolingCLINewAPI.cpp</in>
+      </df>
+      <in>config.h</in>
+    </df>
+  </logicalFolder>
   <projectmakefile>Makefile-cppec.mk</projectmakefile>
   <confs>
     <conf name="Default" type="0">

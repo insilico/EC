@@ -180,7 +180,13 @@ EvaporativeCooling::EvaporativeCooling(Dataset* ds, po::variables_map& vm,
 	interactionAlgorithm = NULL;
 	switch(itAlgorithmType) {
 	case EC_IT_ALG_RF:
-		interactionAlgorithm = new ReliefF(ds, vm, anaType);
+    if(ds->HasContinuousPhenotypes()) {
+      cout << Timestamp() << "Constructing Regression ReliefF..." << endl;
+      interactionAlgorithm = new RReliefF(ds, vm);
+    } else {
+      cout << Timestamp() << "Constructing Standard ReliefF..." << endl;
+      interactionAlgorithm = new ReliefF(ds, vm, anaType);
+    }
 		break;
 	case EC_IT_ALG_RFSEQ:
 		interactionAlgorithm = new ReliefFSeq(ds, vm);

@@ -26,10 +26,10 @@
 
 #include "rjungle/librjungle.h"
 
-#include "ec/EvaporativeCooling.h"
-#include "ec/Insilico.h"
-#include "ec/Dataset.h"
-#include "ec/DgeData.h"
+#include "EvaporativeCooling.h"
+#include "Insilico.h"
+#include "Dataset.h"
+#include "DgeData.h"
 
 using namespace std;
 namespace po = boost::program_options;
