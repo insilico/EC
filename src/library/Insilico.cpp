@@ -72,7 +72,7 @@ string Timestamp() {
 	struct tm * ptm = localtime(&now);
 	char buffer[32];
 	// Format: 20091506 - 20:20:00 -
-	strftime(buffer, 32, "%Y%d%m - %H:%M:%S - ", ptm);
+	strftime(buffer, 32, "%Y%m%d - %H:%M:%S - ", ptm);
 	string ts(buffer);
 
 	return ts;
