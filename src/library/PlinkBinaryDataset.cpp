@@ -315,10 +315,11 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   for(unsigned int attrIdx = 0; attrIdx < NumAttributes(); ++attrIdx) {
     map<char, unsigned int> thisAttrMap = attributeAlleleCounts[attrIdx];
     if(thisAttrMap.size() != 2) {
-      cerr << "ERROR: Only biallelic genotypes are supported, "
+      cout << Timestamp() << "WARNING: Only biallelic genotypes are supported, "
       		<< thisAttrMap.size() << " alleles detected in attribute index:"
       		<< attrIdx << endl;
-      return false;
+			// changed from ERROR to WARNING - 4/11/13
+      // return false;
     }
     map<char, unsigned int>::const_iterator mapIt = thisAttrMap.begin();
     char allele1 = mapIt->first;
