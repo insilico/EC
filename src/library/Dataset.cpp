@@ -3344,8 +3344,16 @@ void Dataset::ExcludeMonomorphs() {
 	unsigned int attrIdx = 0;
 	unsigned int attrsExcluded = 0;
 	vector<map<AttributeLevel, unsigned int> >::const_iterator it;
-	for (it = levelCounts.begin(); it != levelCounts.end(); ++it, ++attrIdx) {
-		if (it->size() == 1) {
+	for(it = levelCounts.begin(); it != levelCounts.end(); ++it, ++attrIdx) {
+		// check map for genotypes that have zero counts
+		unsigned int zeroCount = 0;
+		map<AttributeLevel, unsigned int>::const_iterator mIt = it->begin();
+		for(; mIt != it->end(); ++mIt) {
+			if(mIt->second == 0) {
+				++zeroCount;
+			}
+		}
+		if((it->size() == 1) || (zeroCount == (it->size() - 1))) {
 			cout << Timestamp() << "WARNING: attribute "
 					<< attributeNames[attrIdx]
 					<< " is monomorphic and being marked as excluded from the analysis"
