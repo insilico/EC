@@ -414,7 +414,7 @@ bool BirdseedData::LoadData(string snpsFile, string phenoFile, string subjectsFi
 				<< endl;
 	}
 
-	/// read phenotypes
+	/// read phenotypesc++ size of bool type
 	if(phenoFile != "") {
 		cout << Timestamp() << "Reading phenotypes from file: " << phenoFile << endl;
 		phenosFilename = phenoFile;
@@ -489,14 +489,14 @@ int BirdseedData::GetNumSNPs() {
 	return snpNames.size();
 }
 
-vector<int> BirdseedData::GetSubjectGenotypes(int subjectIndex) {
+vector<AttributeLevel> BirdseedData::GetSubjectGenotypes(int subjectIndex) {
 	if((subjectIndex < 0) || (subjectIndex >= (int) subjectNames.size())) {
 		cerr << "ERROR: BirdseedData::GetSampleCounts, index out of range: "
 				<< subjectIndex << endl;
 		exit(EXIT_FAILURE);
 	}
 
-	vector<int> returnVector;
+	vector<AttributeLevel> returnVector;
 	for(int i=0; i < (int) snpNames.size(); ++i) {
 		returnVector.push_back(snpGenotypes[i][subjectIndex]);
 	}

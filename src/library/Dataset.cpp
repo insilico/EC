@@ -106,8 +106,8 @@ Dataset::~Dataset() {
 	}
 }
 
-bool Dataset::LoadDataset(vector<vector<int> >& dataMatrix,
-		vector<int>& classLabels, vector<string>& attrNames) {
+bool Dataset::LoadDataset(vector<vector<AttributeLevel> >& dataMatrix,
+		vector<ClassLevel>& classLabels, vector<string>& attrNames) {
 
 	cout << Timestamp() << "Loading Dataset from raw data vectors" << endl;
 
@@ -156,9 +156,9 @@ bool Dataset::LoadDataset(vector<vector<int> >& dataMatrix,
 	genotypeCounts.resize(numAttributes);
 
 	unsigned int rowIndex = 0;
-	vector<vector<int> >::const_iterator rowIt = dataMatrix.begin();
+	vector<vector<AttributeLevel> >::const_iterator rowIt = dataMatrix.begin();
 	for (; rowIt != dataMatrix.end(); ++rowIt, ++rowIndex) {
-		vector<int> row(numAttributes);
+		vector<AttributeLevel> row(numAttributes);
 		copy(rowIt->begin(), rowIt->end(), row.begin());
 		string ID = zeroPadNumber(rowIndex, 8) + zeroPadNumber(rowIndex, 8);
 		DatasetInstance* dsi = new DatasetInstance(this);

@@ -31,6 +31,7 @@
 // GSL random number generator base class
 #include "GSLRandomFlat.h"
 
+// Forward class references.
 class DgeData;
 class BirdseedData;
 
@@ -48,8 +49,8 @@ public:
    * \param [in] attrNames reference to a vector of attribute names
    * \return success
    ****************************************************************************/
-  bool LoadDataset(std::vector<std::vector<int> >& dataMatrix,
-  		std::vector<int>& classLabels, std::vector<std::string>& attrNames);
+  bool LoadDataset(std::vector<std::vector<AttributeLevel> >& dataMatrix,
+  		std::vector<ClassLevel>& classLabels, std::vector<std::string>& attrNames);
   /*************************************************************************//**
    * Load the data set from files passed as parameters.
    * \param [in] snpFilename discrete values (SNPs) filename
@@ -703,7 +704,7 @@ protected:
   std::vector<std::map<char, unsigned int> > attributeAlleleCounts;
   /// minor allele, minor allele frequency
   std::vector<std::pair<char, double> > attributeMinorAllele;
-  /// Does this data set have alelelic information?
+  /// Does this data set have allelic information?
   bool hasAllelicInfo;
   /// genotype->count
   std::vector<std::map<std::string, unsigned int> > genotypeCounts;

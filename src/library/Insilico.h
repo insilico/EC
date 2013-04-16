@@ -26,11 +26,11 @@ class Dataset;
 /// T Y P E D E F S
 
 /// type of discrete attribute values
-typedef int AttributeLevel;
+typedef short AttributeLevel;
 /// type of continuous attributes
 typedef double NumericLevel;
 /// type of instance class labels
-typedef int ClassLevel;
+typedef short ClassLevel;
 
 /// distance pair type: distance, instance ID
 typedef std::pair<double, std::string> DistancePair;
@@ -56,18 +56,18 @@ const static int COMMAND_LINE_ERROR = EXIT_FAILURE;
 const static int DATASET_LOAD_ERROR = EXIT_FAILURE;
 
 /// return value for invalid distance
-const static int INVALID_DISTANCE = INT_MAX;
+const static int INVALID_DISTANCE = SHRT_MAX;
 /// return value for invalid index into attributes
-const static int INVALID_INDEX = INT_MAX;
+const static int INVALID_INDEX = SHRT_MAX;
 /// return value for invalid index into attributes
 const static unsigned int INVALID_INT_VALUE = UINT_MAX;
 
 /// invalid attribute value
-const static AttributeLevel INVALID_ATTRIBUTE_VALUE = INT_MIN;
+const static AttributeLevel INVALID_ATTRIBUTE_VALUE = SHRT_MIN;
 /// invalid attribute value
 const static NumericLevel INVALID_NUMERIC_VALUE = INT_MIN;
 /// stored value for missing discrete class
-const static ClassLevel INVALID_DISCRETE_CLASS_VALUE = INT_MIN;
+const static ClassLevel INVALID_DISCRETE_CLASS_VALUE = SHRT_MIN;
 /// stored value for missing numeric class
 const static NumericLevel INVALID_NUMERIC_CLASS_VALUE = INT_MIN;
 

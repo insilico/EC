@@ -17,6 +17,8 @@
 #include <string>
 #include <map>
 
+#include "Insilico.h"
+
 class BirdseedData {
 public:
 	BirdseedData();
@@ -39,7 +41,7 @@ public:
 	/// Get the number of SNPs
 	int GetNumSNPs();
 	/// Get SNPs for sample at index
-	std::vector<int> GetSubjectGenotypes(int subjectIndex);
+	std::vector<AttributeLevel> GetSubjectGenotypes(int subjectIndex);
 	/// Get SNP call confidences for sample at index
 	std::vector<double> GetSubjectCallConfidences(int subjectIndex);
 	/// Get the phenotype at sample index
