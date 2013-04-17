@@ -156,6 +156,7 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
       unsigned int onePercentAttributes = (unsigned int) attributesToRead * 0.01;
       string genotypeByte = "";
 
+			cout << Timestamp();
       while(attributesRead < attributesToRead) {
 
         // after reading all snps for attribute index for all instances
@@ -240,10 +241,11 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
         // express as a percentage rather than huge numbers
         float percentDone = ((float) attributesRead / attributesToRead) * 100.0;
         if((attributesRead % onePercentAttributes) == 0) {
-          cout << "." << cout.flush();
+          cout << "." << flush;
         }
         if((attributesRead % tenPercentAttributes) == 0) {
-          cout << Timestamp() << (int) percentDone << "%" << endl;
+          cout << (int) percentDone << "%" << endl;
+					cout << Timestamp();
         }
 
       } // !done
