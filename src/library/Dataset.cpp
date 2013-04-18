@@ -3340,6 +3340,51 @@ void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {
 	}
 }
 
+void Dataset::UpdateAllLevelCountsByAttribute() {
+	cout << Timestamp() << "Updating all level counts:" << endl;
+	levelCounts.clear();
+	levelCounts.resize(NumAttributes());
+	if (hasPhenotypes && !hasContinuousPhenotypes) {
+		levelCountsByClass.clear();
+		levelCountsByClass.resize(NumAttributes());
+	}
+	/// initialize level count maps to contain at least three levels
+	for (unsigned int i = 0; i < NumAttributes(); ++i) {
+		levelCounts[i][0] = 0;
+		levelCounts[i][1] = 0;
+		levelCounts[i][2] = 0;
+	}
+	unsigned int numAttributes = NumAttributes();
+	// parallel attribute updates should not require a critical section
+	#pragma omp parallel for
+	for(unsigned int attributeIndex=0; attributeIndex < numAttributes; 
+					++attributeIndex) {
+		for(unsigned int instanceIndex=0; instanceIndex < NumInstances(); 
+						instanceIndex++) {
+			DatasetInstance* dsi = GetInstance(instanceIndex);
+			AttributeLevel thisAttributeLevel = dsi->GetAttribute(attributeIndex);
+			if (thisAttributeLevel != MISSING_ATTRIBUTE_VALUE) {
+				++levelCounts[attributeIndex][thisAttributeLevel];
+				if (hasPhenotypes && !hasContinuousPhenotypes) {
+					ClassLevel thisClassLevel = dsi->GetClass();
+					++levelCountsByClass[attributeIndex][make_pair(
+							thisAttributeLevel, thisClassLevel)];
+				}
+			}
+		}
+		if (attributeIndex && ((attributeIndex % 1000) == 0)) {
+			cout << Timestamp() << attributeIndex << "/" << numAttributes
+					<< endl;
+			cout.flush();
+		}
+	}
+	cout << Timestamp() << " done" << endl;
+
+	/// exclude monomorphic SNPs
+	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
+	ExcludeMonomorphs();
+}
+
 void Dataset::ExcludeMonomorphs() {
 	unsigned int attrIdx = 0;
 	unsigned int attrsExcluded = 0;
@@ -3354,10 +3399,10 @@ void Dataset::ExcludeMonomorphs() {
 			}
 		}
 		if((it->size() == 1) || (zeroCount == (it->size() - 1))) {
-			cout << Timestamp() << "WARNING: attribute "
-					<< attributeNames[attrIdx]
-					<< " is monomorphic and being marked as excluded from the analysis"
-					<< endl;
+//			cout << Timestamp() << "WARNING: attribute "
+//					<< attributeNames[attrIdx]
+//					<< " is monomorphic and being marked as excluded from the analysis"
+//					<< endl;
 			MaskRemoveVariable(attributeNames[attrIdx]);
 			++attrsExcluded;
 		}

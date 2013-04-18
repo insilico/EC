@@ -605,6 +605,8 @@ protected:
   virtual bool LoadSnps(std::string filename);
   /// Update level counts for all instances by calling UpdateLevelCounts(inst)
   void UpdateAllLevelCounts();
+	/// Update level counts by attribute in parallel. DOES NOT CHECK MASKS!!!
+  void UpdateAllLevelCountsByAttribute();
   /// Exclude any monomorphic SNPs, since they add no information about class
   void ExcludeMonomorphs();
   /// Create dummy alleles from genotypes for data sets that have no allele info

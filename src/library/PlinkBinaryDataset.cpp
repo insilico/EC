@@ -75,16 +75,8 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
   // ---------------------------------------------------------------------------
   // resize all attribue properties vectors to needed size and to allow
   // operator [] indexing
-  levelCounts.resize(numAttributesRead);
-  levelCountsByClass.resize(numAttributesRead);
   attributeLevelsSeen.resize(numAttributesRead);
 
-  // add all possible genotypes to level counts
-  for(unsigned int i=0; i < numAttributesRead; ++i) {
-    levelCounts[i][0] = 0;
-    levelCounts[i][1] = 0;
-    levelCounts[i][2] = 0;
-  }
   // preallocate all instance attributes
   for(unsigned int i = 0; i < instances.size(); ++i) {
     instances[i]->attributes.resize(numAttributesRead);
@@ -224,8 +216,7 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
 //								<< " -> " << "attribute level: " << attributeLevel 
 //								<< endl;
 
-        // finally, we can set the attribute value - if this instance is
-        // to be included
+        // finally, we can set the attribute value
 				instances[instanceIndex]->attributes[attributeColumn] = attributeLevel;
 				attributeLevelsSeen[attributeColumn].insert(stringGenotype);
         ++attributesRead;
@@ -360,7 +351,7 @@ bool PlinkBinaryDataset::LoadSnps(string filename) {
             << " classes in the data set" << endl;
   }
 
-  UpdateAllLevelCounts();
+  UpdateAllLevelCountsByAttribute();
 
   hasGenotypes = true;
 
