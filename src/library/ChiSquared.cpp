@@ -34,10 +34,12 @@ ChiSquared::~ChiSquared() {
 
 const vector<pair<double, double> >& ChiSquared::ComputeScoresWithPValues() {
   // for each attribute
-  for(unsigned int curAttribute = 0;
-      curAttribute < dataset->NumAttributes();
-      curAttribute++) {
-    scoresPvalues.push_back(ComputeScore(curAttribute));
+	vector<unsigned int> attributeIndicies =
+		dataset->MaskGetAttributeIndices(DISCRETE_TYPE);
+	for (unsigned int attrIdx = 0; attrIdx < attributeIndicies.size();
+		++attrIdx) {
+		unsigned int A = attributeIndicies[attrIdx];
+    scoresPvalues.push_back(ComputeScore(A));
     // PrintTables();
   } // next attribute
 
@@ -129,8 +131,8 @@ pair<double, double> ChiSquared::ComputeScore(unsigned int index) {
               expectedContingencyTable[curClass][curLevel];
 
       double denom = (double) expectedContingencyTable[curClass][curLevel];
-      chiSquaredValues[curClass][curLevel] = (denom) ? (diff * diff) / denom : 0.0;
-
+      chiSquaredValues[curClass][curLevel] = 
+							(denom) ? (diff * diff) / denom : 0.0;
       curChiSquaredSum += chiSquaredValues[curClass][curLevel];
     }
   }
@@ -208,7 +210,8 @@ void ChiSquared::WriteScoresWithPValues(string outFilename, unsigned int topN) {
 }
 
 void ChiSquared::PrepareForAttribute(unsigned int attributeIndex) {
-  numLevels = dataset->NumLevels(attributeIndex);
+  //numLevels = dataset->NumLevels(attributeIndex);
+  numLevels = 3;
   //  cout << "Preparing for attribute [" << attributeIndex << "] "
   //          << "with [" << numLevels << "] levels" << endl;
 
