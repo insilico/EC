@@ -781,7 +781,6 @@ bool ReliefF::PreComputeDistances() {
 			dataset->GetInstanceIndexForID(instanceIds[i], dsi1Index);
 			unsigned int dsi2Index;
 			dataset->GetInstanceIndexForID(instanceIds[j], dsi2Index);
-			/// be sure to call Dataset::ComputeInstanceToInstanceDistance
 			distanceMatrix[i][j] = distanceMatrix[j][i] =
 					dataset->ComputeInstanceToInstanceDistance(
 							dataset->GetInstance(dsi1Index),

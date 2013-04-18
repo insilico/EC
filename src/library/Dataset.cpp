@@ -3372,13 +3372,11 @@ void Dataset::UpdateAllLevelCountsByAttribute() {
 				}
 			}
 		}
-		if (attributeIndex && ((attributeIndex % 1000) == 0)) {
-			cout << Timestamp() << attributeIndex << "/" << numAttributes
-					<< endl;
-			cout.flush();
+		if (attributeIndex && ((attributeIndex % 100000) == 0)) {
+			cout << Timestamp() << attributeIndex << "/" << numAttributes << endl;
 		}
 	}
-	cout << Timestamp() << " done" << endl;
+	cout << Timestamp() << "Level count update done" << endl;
 
 	/// exclude monomorphic SNPs
 	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
@@ -3386,24 +3384,22 @@ void Dataset::UpdateAllLevelCountsByAttribute() {
 }
 
 void Dataset::ExcludeMonomorphs() {
-	unsigned int attrIdx = 0;
+	if(attributeMinorAllele.size() != attributesMask.size()) {
+		cerr << "ERROR size of attribute minor allele structure " 
+						<< attributeMinorAllele.size()
+						<< " is not equal to the size of the attributes mask structure"
+						<< attributesMask.size() << endl;
+		exit(EXIT_FAILURE);
+	}
 	unsigned int attrsExcluded = 0;
-	vector<map<AttributeLevel, unsigned int> >::const_iterator it;
-	for(it = levelCounts.begin(); it != levelCounts.end(); ++it, ++attrIdx) {
-		// check map for genotypes that have zero counts
-		unsigned int zeroCount = 0;
-		map<AttributeLevel, unsigned int>::const_iterator mIt = it->begin();
-		for(; mIt != it->end(); ++mIt) {
-			if(mIt->second == 0) {
-				++zeroCount;
-			}
-		}
-		if((it->size() == 1) || (zeroCount == (it->size() - 1))) {
-//			cout << Timestamp() << "WARNING: attribute "
-//					<< attributeNames[attrIdx]
-//					<< " is monomorphic and being marked as excluded from the analysis"
-//					<< endl;
-			MaskRemoveVariable(attributeNames[attrIdx]);
+	vector<string> attributeMaskNames = GetAttributeNames();
+	unsigned int attrMaskIdx = 0;
+	vector<pair<char, double> >::const_iterator it;
+	for(it = attributeMinorAllele.begin(); 
+			it != attributeMinorAllele.end(); 
+			++it, ++attrMaskIdx) {
+		if(it->second < 0.000001) {
+			MaskRemoveVariable(attributeMaskNames[attrMaskIdx]);
 			++attrsExcluded;
 		}
 	}
