@@ -104,6 +104,8 @@ int main(int argc, char** argv) {
 		("help", "produce help message")
 		("verbose", "verbose output")
 		("convert", "convert data set to data set - no ec")
+		("fast-gwas", "run in fast GWAS mode with minimal metadata")
+		("monomorphic-filter", "exclude monomorphic SNPs from EC analysis")
 		("optimize-temp,T", "optimize coupling constant T")
 		(
 		"config-file,c",
@@ -530,18 +532,27 @@ int main(int argc, char** argv) {
 		case SNP_ONLY_ANALYSIS:
 			cout << Timestamp() << "Reading SNPs data set" << endl;
 			ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
+			if(!ds) {
+				break;
+			}
 			datasetLoaded = ds->LoadDataset(snpsFilename, "",
 																			altPhenotypeFilename, indIds);
 			break;
 		case NUMERIC_ONLY_ANALYSIS:
 			cout << Timestamp() << "Reading numeric data set" << endl;
 			ds = new Dataset();
+			if(!ds) {
+				break;
+			}
 			datasetLoaded = ds->LoadDataset("", numericsFilename,
 																			altPhenotypeFilename, indIds);
 			break;
 		case INTEGRATED_ANALYSIS:
 			cout << Timestamp() << "Reading datasets for integrated analysis" << endl;
 			ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
+			if(!ds) {
+				break;
+			}
 			datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
 																			altPhenotypeFilename, indIds);
 			break;
@@ -582,6 +593,9 @@ int main(int argc, char** argv) {
 			}
 			if(snpsFilename != "") {
 				ds = ChooseSnpsDatasetByType(snpsFilename, snpsFileType);
+				if(!ds) {
+					break;
+				}
 				datasetLoaded = ds->LoadDataset(snpsFilename, numericsFilename,
 												altPhenotypeFilename, indIds);
 			}
@@ -591,6 +605,9 @@ int main(int argc, char** argv) {
 						birdseedSubjectsFilename, birdseedIncludeSnpsFilename,
 						birdseedExcludeSnpsFilename)) {
 					ds = new Dataset();
+					if(!ds) {
+						break;
+					}
 					datasetLoaded = ds->LoadDataset(birdseed);
 				}
 			}
@@ -814,6 +831,14 @@ int main(int argc, char** argv) {
 	// ---------------------------------------------------------------------------
 	// FINALLY! run EC algorithm
 	cout << Timestamp() << "Running EC" << endl;
+	if(vm.count("monomorphic-filter")) {
+		/// exclude monomorphic SNPs
+		ds->ExcludeMonomorphs();
+	}
+	if(vm.count("fast-gwas")) {
+		cout << Timestamp() << "!!! Fast GWAS mode !!!" << endl;
+		ds->SetFastGwasMode(true);
+	}
 	EvaporativeCooling ec(ds, vm, analysisType);
 	if(!ec.ComputeECScores()) {
 		cerr << "ERROR: Failed to calculate EC scores" << endl;

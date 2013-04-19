@@ -59,7 +59,8 @@ Dataset::Dataset() {
 	hasAlternatePhenotypes = false;
 	hasPhenotypes = true;
 	hasContinuousPhenotypes = false;
-
+	fastGWAS = false;
+	
 	classColumn = 0;
 
 	maskIsPushed = false;
@@ -3318,10 +3319,6 @@ void Dataset::UpdateAllLevelCounts() {
 	}
 	cout << Timestamp() << instanceCount << "/" << instancesMask.size()
 			<< " done" << endl;
-
-	/// exclude monomorphic SNPs
-	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
-	ExcludeMonomorphs();
 }
 
 void Dataset::UpdateLevelCounts(DatasetInstance* dsi) {
@@ -3377,13 +3374,10 @@ void Dataset::UpdateAllLevelCountsByAttribute() {
 		}
 	}
 	cout << Timestamp() << "Level count update done" << endl;
-
-	/// exclude monomorphic SNPs
-	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
-	ExcludeMonomorphs();
 }
 
 void Dataset::ExcludeMonomorphs() {
+	cout << Timestamp() << "Excluding monomorphic SNPs" << endl;
 	if(attributeMinorAllele.size() != attributesMask.size()) {
 		cerr << "ERROR size of attribute minor allele structure " 
 						<< attributeMinorAllele.size()
@@ -3935,4 +3929,12 @@ bool Dataset::WriteNewPlinkPedDataset(string baseDatasetFilename) {
 bool Dataset::WriteNewPlinkCovarDataset(string baseDatasetFilename) {
 	// not sure I need this
 	return true;
+}
+
+void Dataset::SetFastGwasMode(bool fastGwasFlag) {
+	fastGWAS = fastGwasFlag;
+}
+
+bool Dataset::GetFastGwasMode() {
+	return fastGWAS;
 }

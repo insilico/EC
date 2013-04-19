@@ -595,6 +595,11 @@ public:
   std::pair<RandomJungleTreeType, std::string> DetermineTreeType();
   /// Dump the SNP transition/transversion information to file
   bool WriteSnpTiTvInfo(std::string titvFilename);
+  /// Exclude any monomorphic SNPs, since they add no information about class
+  void ExcludeMonomorphs();
+	/// fast GWAS mode
+	void SetFastGwasMode(bool fastGwasFlag);
+	bool GetFastGwasMode();
 protected:
   /*************************************************************************//**
    * Load SNPs from file using the data set filename.
@@ -607,8 +612,6 @@ protected:
   void UpdateAllLevelCounts();
 	/// Update level counts by attribute in parallel. DOES NOT CHECK MASKS!!!
   void UpdateAllLevelCountsByAttribute();
-  /// Exclude any monomorphic SNPs, since they add no information about class
-  void ExcludeMonomorphs();
   /// Create dummy alleles from genotypes for data sets that have no allele info
   void CreateDummyAlleles();
   /*************************************************************************//**
@@ -773,6 +776,9 @@ protected:
 
   /// random number generator classes use GNU Scientific Library (GSL)
   GSLRandomFlat* rng;
+	
+	/// fast GWAS mode to run as fast as possible with minimal metadata
+	bool fastGWAS;
 };
 
 #endif // DATASET_H
