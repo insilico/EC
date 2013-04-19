@@ -151,8 +151,6 @@ bool Dataset::LoadDataset(vector<vector<AttributeLevel> >& dataMatrix,
 	cout << Timestamp() << attributeNames.size() << " attribute names read"
 			<< endl;
 
-	levelCounts.resize(numAttributes);
-	levelCountsByClass.resize(numAttributes);
 	attributeLevelsSeen.resize(numAttributes);
 	genotypeCounts.resize(numAttributes);
 
@@ -345,8 +343,6 @@ bool Dataset::LoadDataset(BirdseedData* birdseedData) {
 		attributeNames.push_back(snpNames[i]);
 		attributesMask[snpNames[i]] = i;
 	}
-	levelCounts.resize(numAttributes);
-	levelCountsByClass.resize(numAttributes);
 	attributeLevelsSeen.resize(numAttributes);
 	genotypeCounts.resize(numAttributes);
 	attributeAlleles.resize(numAttributes);
@@ -504,6 +500,7 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 	if (outputDatasetType == ARFF_DATASET) {
 		newDatasetStream << "@RELATION dataset" << endl << endl;
 	}
+	cout << Timestamp() << "Writing new data set header" << endl;
 	map<string, unsigned int>::const_iterator ait = attributesMask.begin();
 	for (; ait != attributesMask.end(); ++ait) {
 		switch (outputDatasetType) {
@@ -526,6 +523,7 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 			return false;
 		}
 	}
+
 	map<string, unsigned int>::const_iterator nit = numericsMask.begin();
 	for (; nit != numericsMask.end(); ++nit) {
 		switch (outputDatasetType) {
@@ -576,8 +574,12 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 	if (outputDatasetType == ARFF_DATASET) {
 		newDatasetStream << endl << "@DATA" << endl;
 	}
+	cout << Timestamp() << "Writing new data set attributes" << endl;
 	vector<string> instanceIds = GetInstanceIds();
 	for (unsigned int iIdx = 0; iIdx < NumInstances(); iIdx++) {
+		if(iIdx && (iIdx % 100 == 0)) {
+			cout << Timestamp() << iIdx << "/" << NumInstances() << endl;
+		}
 		unsigned instanceIndex = 0;
 		GetInstanceIndexForID(instanceIds[iIdx], instanceIndex);
 		// write discrete attribute values
@@ -653,6 +655,8 @@ bool Dataset::WriteNewDataset(string newDatasetFilename,
 			newDatasetStream << discreteClassLevel << endl;
 		}
 	}
+
+	cout << Timestamp() << NumInstances() << "/" << NumInstances() << endl;
 
 	newDatasetStream.close();
 
@@ -2153,6 +2157,7 @@ void Dataset::RunSnpDiagnosticTests(string logFilename,
 	vector<map<AttributeLevel, unsigned int> >::const_iterator lcIt;
 	// PrintLevelCounts();
 	unsigned int freqCountBad = 0;
+	UpdateAllLevelCountsByAttribute();
 	for (lcIt = levelCounts.begin(); lcIt != levelCounts.end();
 			++lcIt, ++attributeIndex) {
 		vector<unsigned int> ftGenotypeCounts;
@@ -2461,6 +2466,7 @@ double Dataset::GetClassProbability(ClassLevel thisClass) {
 
 double Dataset::GetProbabilityValueGivenClass(unsigned int attributeIndex,
 		AttributeLevel A, ClassLevel classValue) {
+	UpdateAllLevelCountsByAttribute();
 	map<pair<AttributeLevel, ClassLevel>, unsigned int> thisAttrLevelCounts =
 			levelCountsByClass[attributeIndex];
 	unsigned int instancesInThisClass = classIndexes[classValue].size();
@@ -3135,8 +3141,6 @@ bool Dataset::LoadSnps(std::string filename) {
 		return false;
 	}
 
-	levelCounts.resize(numAttributes);
-	levelCountsByClass.resize(numAttributes);
 	attributeLevelsSeen.resize(numAttributes);
 	genotypeCounts.resize(numAttributes);
 

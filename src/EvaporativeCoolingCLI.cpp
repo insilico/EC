@@ -624,6 +624,7 @@ int main(int argc, char** argv) {
 			return 0;
 			break;
 		case DATASET_CONVERSION:
+			cout << Timestamp() << "Dataset conversion mode" << endl;
 			if((snpsFilename != "" || birdseedFilename != "") &&
 					numericsFilename == ""
 					) {
@@ -645,6 +646,9 @@ int main(int argc, char** argv) {
 					cerr << "ERROR: Failure to load data set for conversion"
 							<< endl << endl;
 				}
+	
+				cout << Timestamp() << "Output data set filename: " 
+								<< outputDatasetFilename << endl;
 				switch(outputDatasetType) {
 					case TAB_DELIMITED_DATASET:
 					case CSV_DELIMITED_DATASET:
@@ -653,7 +657,7 @@ int main(int argc, char** argv) {
 						ds->WriteNewDataset(outputDatasetFilename, outputDatasetType);
 						break;
 					case PLINK_BED_DATASET:
-						cout << "PLINK BED output format not supported yet" << endl;
+						cerr << "PLINK BED output format not supported yet" << endl;
 						exit(COMMAND_LINE_ERROR);
 						break;
 					case PLINK_COVAR_DATASET:
@@ -673,7 +677,7 @@ int main(int argc, char** argv) {
 				return 0;
 			}
 			else {
-				cerr << "ERROR: Data set conversion with SNP data sets"
+				cerr << "ERROR: Data set conversion for SNP data sets failed"
 						<< endl << endl;
 				exit(COMMAND_LINE_ERROR);
 			}

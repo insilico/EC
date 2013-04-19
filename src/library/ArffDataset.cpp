@@ -144,8 +144,6 @@ bool ArffDataset::LoadSnps(string filename) {
 				int numAttributes = attributesMask.size();
 				if (numAttributes) {
 					hasGenotypes = true;
-					levelCounts.resize(numAttributes);
-					levelCountsByClass.resize(numAttributes);
 					attributeLevelsSeen.resize(numAttributes);
 
 					attributeAlleleCounts.resize(numAttributes);
